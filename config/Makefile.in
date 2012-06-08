@@ -356,6 +356,8 @@ BUILDROOFIT    := @buildroofit@
 
 BUILDMINUIT2   := @buildminuit2@
 
+BUILDVC        := @buildvc@
+
 BUILDUNURAN    := @buildunuran@
 
 BUILDVC        := @buildvc@

@@ -60,6 +60,7 @@ CINTCFLAGS    = -m64 -pipe -W -Wall -fsigned-char -fno-common \
                 -DG__ROOT -DG__REDIRECTIO -DG__OSFDLL \
                 -DG__STD_EXCEPTION $(TARGETFLAGS)
 COMPILER      = gnu
+AVXFLAGS      = -mavx
 
 ifeq ($(WERROR),yes)
 CXXFLAGS     += -Werror
