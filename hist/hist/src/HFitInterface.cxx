@@ -114,6 +114,8 @@ void FillData(BinData & dv, const TH1 * hfit, TF1 * func)
    
    // get fit option 
    const DataOptions & fitOpt = dv.Opt();
+   
+   bool isVectorizedFunc = func != 0 && func->IsVectorized();
 
 
    // store instead of bin center the bin edges 
@@ -216,10 +218,10 @@ void FillData(BinData & dv, const TH1 * hfit, TF1 * func)
 
             // need to evaluate function to know about rejected points
             // hugly but no other solutions
-            if (func != 0) { 
-               TF1::RejectPoint(false);
+            if (func != 0 && !isVectorizedFunc) { 
+               func->RejectPoint(false);
                (*func)( &x[0] );  // evaluate using stored function parameters
-               if (TF1::RejectedPoint() ) continue; 
+               if (func->RejectedPoint() ) continue; 
             }
 
 
@@ -471,7 +473,7 @@ void Init2DGaus(const ROOT::Fit::BinData & data, TF1 * f1)
 
 // filling fit data from TGraph objects
 
-BinData::ErrorType GetDataType(const TGraph * gr, DataOptions & fitOpt) { 
+BinData::ErrorType GetDataType(const TGraph * gr, const DataOptions & fitOpt) { 
    // get type of data for TGraph objects
    double *ex = gr->GetEX();
    double *ey = gr->GetEY();
@@ -486,7 +488,6 @@ BinData::ErrorType GetDataType(const TGraph * gr, DataOptions & fitOpt) {
       type =  BinData::kNoError; 
    }
    // need to treat case when all errors are zero 
-   // note that by default fitOpt.fCoordError is true
    else if ( ex != 0 && fitOpt.fCoordErrors)  { 
       // check that all errors are not zero
       int i = 0; 
@@ -495,30 +496,20 @@ BinData::ErrorType GetDataType(const TGraph * gr, DataOptions & fitOpt) {
          ++i;
       }
    }
-   // case of asymmetric errors (by default fAsymErrors is true)
    else if ( ( eyl != 0 && eyh != 0)  && fitOpt.fAsymErrors)  { 
       // check also if that all errors are non zero's
       int i = 0; 
-      bool zeroErrorX = true;
-      bool zeroErrorY = true;
-      while (i < gr->GetN() && (zeroErrorX || zeroErrorY)) { 
+      bool zeroError = true;
+      while (i < gr->GetN() && zeroError) { 
          double e2X = ( gr->GetErrorXlow(i) + gr->GetErrorXhigh(i) );
          double e2Y = eyl[i] + eyh[i];
-         zeroErrorX &= (e2X <= 0); 
-         zeroErrorY &= (e2Y <= 0);
+         if ( e2X > 0 || e2Y > 0) zeroError = false; 
          ++i;
       }
-      if (zeroErrorX && zeroErrorY) 
+      if (zeroError) 
          type = BinData::kNoError;
-      else if (!zeroErrorX && zeroErrorY) 
-         type = BinData::kCoordError; 
-      else if (zeroErrorX && !zeroErrorY) {
+      else 
          type = BinData::kAsymError; 
-         fitOpt.fCoordErrors = false; 
-      }
-      else {
-         type = BinData::kAsymError; 
-      }
    }
 
    // need to look also a case when all errors in y are zero 
@@ -608,9 +599,9 @@ void DoFillData ( BinData  & dv,  const TGraph * gr,  BinData::ErrorType type, T
       // need to evaluate function to know about rejected points
       // hugly but no other solutions
       if (func) { 
-         TF1::RejectPoint(false);
+         func->RejectPoint(false);
          (*func)( x ); // evaluate using stored function parameters 
-         if (TF1::RejectedPoint() ) continue; 
+         if (func->RejectedPoint() ) continue; 
       }
 
 
@@ -648,7 +639,6 @@ void DoFillData ( BinData  & dv,  const TGraph * gr,  BinData::ErrorType type, T
 
          // skip points with total error = 0
          if ( errorX <=0 && errorY <= 0 ) continue; 
-
          
          if (type == BinData::kAsymError)   { 
             // asymmetric errors 
@@ -800,20 +790,14 @@ void FillData ( BinData  & dv, const TGraph * gr,  TF1 * func ) {
    fitOpt.fErrors1 = (type == BinData::kNoError);
    // set this if we want to have error=1 for points with zero errors (by default they are skipped)
    // fitOpt.fUseEmpty = true;
-
-   // use coordinate or asym  errors in case option is set  and type is consistent
-   fitOpt.fCoordErrors &= (type ==  BinData::kCoordError) ||  (type ==  BinData::kAsymError) ;
-   fitOpt.fAsymErrors &= (type ==  BinData::kAsymError);
+   fitOpt.fCoordErrors = (type ==  BinData::kCoordError);
+   fitOpt.fAsymErrors = (type ==  BinData::kAsymError);
 
 
-   // if data are filled already check if there are consistent - otherwise do nothing
+   // if sata are filled already check if there are consistent - otherwise do nothing
    if (dv.Size() > 0 && dv.NDim() == 1 ) { 
       // check if size is correct otherwise flag an errors 
       if ( dv.GetErrorType() != type ) {
-         Error("FillData","Inconsistent TGraph with previous data set- skip all graph data"); 
-         return;
-      }
-      if (dv.PointSize() == 5 && type != BinData::kAsymError ) {
          Error("FillData","Inconsistent TGraph with previous data set- skip all graph data"); 
          return;
       }
@@ -925,9 +909,9 @@ void FillData ( BinData  & dv, const TGraph2D * gr, TF1 * func ) {
       // need to evaluate function to know about rejected points
       // hugly but no other solutions
       if (func) { 
-         TF1::RejectPoint(false);
+         func->RejectPoint(false);
          (*func)( x ); // evaluate using stored function parameters 
-         if (TF1::RejectedPoint() ) continue; 
+         if (func->RejectedPoint() ) continue; 
       }
 
 
