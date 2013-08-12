@@ -71,6 +71,7 @@ options="                    \
    enable_hdfs               \
    enable_krb5               \
    enable_ldap               \
+   enable_lvmini             \
    enable_mathmore           \
    enable_memstat            \
    enable_minuit2            \
@@ -151,6 +152,7 @@ enable_qt=no
 enable_qtgsi=no
 enable_roofit=no
 enable_minuit2=no
+enable_lvmini=no
 enable_rpath=no
 enable_ruby=no
 enable_shadowpw=
@@ -173,6 +175,7 @@ if test "x$ENABLEALL" = "xyes"; then
     enable_qtgsi=yes
     enable_roofit=yes
     enable_minuit2=yes
+    enable_lvmini=yes
     enable_ruby=yes
     enable_table=yes
     enable_unuran=yes
@@ -222,6 +225,7 @@ SSL              \
 AFS              \
 ROOFIT           \
 MINUIT2          \
+LVMINI           \
 TABLE            \
 XMLDIR           \
 ROOTDICTTYPE     \
@@ -1519,6 +1523,7 @@ enable/disable options, prefix with either --enable- or --disable-
   hdfs               HDFS support; requires libhdfs from HDFS >= 0.19.1
   krb5               Kerberos5 support, requires Kerberos libs
   ldap               LDAP support, requires (Open)LDAP libs
+  lvmini             Build the LVMini minimizer
   genvector          Build the new libGenVector library
   mathmore           Build the new libMathMore extended math library, requires GSL (vers. >= 1.8)
   memstat            A memory statistics utility, helps to detect memory leaks
@@ -6046,6 +6051,21 @@ fi
 
 ######################################################################
 #
+### echo %%% LVMini Library - Contributed library
+#
+message "Checking whether to build libLVMini"
+if test "x$enable_lvmini" = "xyes" || test ! "x$LVMINI" = "x"; then
+    enable_lvmini="yes"
+    result "yes"
+else
+    enable_lvmini=""
+    result "no"
+fi
+
+
+
+######################################################################
+#
 ### echo %%% Unuran Library - Contributed library
 #
 message "Checking whether to build libUnuran"
@@ -6256,6 +6276,7 @@ if test "x$show_pkglist" = "xyes" ; then
     test "x$enable_fitsio"   = "xyes" && pl="$pl root-plugin-graf2d-fitsio"
     test "x$enable_gviz"     = "xyes" && pl="$pl root-plugin-graf2d-gviz"
     test "x$enable_minuit2"  = "xyes" && pl="$pl root-plugin-math-minuit2"
+    test "x$enable_lvmini"   = "xyes" && pl="$pl root-plugin-math-lvmini"
     test "x$enable_pythia6"  = "xyes" && pl="$pl root-plugin-montecarlo-pythia6"
     test "x$enable_alien"    = "xyes" && pl="$pl root-plugin-net-alien"
     test "x$enable_bonjour"  = "xyes" && pl="$pl root-plugin-net-bonjour"
@@ -6698,6 +6719,7 @@ sed -e "s|@aclocaldir@|$aclocaldir|"            \
     -e "s|@buildreflex@|$enable_reflex|"        \
     -e "s|@buildroofit@|$enable_roofit|"        \
     -e "s|@buildminuit2@|$enable_minuit2|"      \
+    -e "s|@buildlvmini@|$enable_lvmini|"        \
     -e "s|@buildunuran@|$enable_unuran|"        \
     -e "s|@buildgdml@|$enable_gdml|"            \
     -e "s|@buildmonalisa@|$enable_monalisa|"    \

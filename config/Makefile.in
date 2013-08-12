@@ -346,6 +346,8 @@ BUILDROOFIT    := @buildroofit@
 
 BUILDMINUIT2   := @buildminuit2@
 
+BUILDLVMINI    := @buildlvmini@
+
 BUILDUNURAN    := @buildunuran@
 
 BUILDGDML      := @buildgdml@

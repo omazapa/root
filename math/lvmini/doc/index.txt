@@ -1,0 +1,81 @@
+
+BEGIN_HTML
+<h2>LVMini Package</h2>
+
+<p><b>LVMini</b> is an optimizer particularly suited for solving large scale minimizations with many parameters, written by V. Blobel. It uses the L-BFGS algorithm for large-scale
+optimization, which is a matrixless quasi-Newton method, which allows to take advantage of the good convergence properties of Newton methods without having to store
+the full matrix of second derivatives. If no error estimates are required, the memory requirement scales only linearly with the number of parameters. Otherwise,
+it scales quadratically to provide enough space for the covariance matrix.</p>
+
+<p>This ROOT module uses the original Fortran LVMini code, wrapped into a class, <cood>ROOT::LVMini::LVMiniMinimizer</code>, which implements the interface
+<code>ROOT::Math::Minimizer</code> from <a href="http://www.cern.ch/mathlibs/sw/html/MathCore.html">MathCore</a>.</p>
+
+<p>The method requires the calculation of the gradient of the function to be minimized, with respect to its parameters. This means that, when fitting a TH1,
+the "G" fit option has to be provided. If it is not provided, the minimizer cannot run and the fit will fail. When the "G" option is provided, ROOT will
+provide numerical derivatives for the parameters of the function. However, to exploit the full potential of the minimizer, analytic gradients should be
+provided wherever possible. For fitting a <code>TH1</code>, this can be done by using the <code>TF1::SetGradientFunction</code> function. The gradient function should calculate the
+derivatives with respect to all parameters, and store them in the array given to it as the third parameter. It should also compute the function value itself,
+and return it, since often it is more efficient to compute the function value and its gradient at the same time.</p>
+
+<p>The computation of the analytical gradient function is crucial for the procedure. If the analytical gradient is computed incorrectly, the minimization will
+very likely fail. The function <code>TF1::CheckGradientFunction</code> can be used to check the correctness of the calculation of derivatives for the currently chosen
+parameters. It is suggested to call the function after having set the start parameters right before invoking the fit routine. The function will compare the
+result from the analytical gradient computation with a numerical derivative and print a warning if the observed deviation is above a threshold.</p>
+
+<p>The minimizer can be instantiated using the Plug-In manager, using the "LVMini" module. The string "NoErrors" can be passed for the algorithm to avoid calculation
+of errors. This can be used when parameter errors or correlations are not needed after the fit, in order to save both memory and CPU time. In order to use the
+minimizer with the TH1::Fit function, <code>ROOT::Fit::FitConfig::SetDefaultMinimizer("LVMini", "")</code> should be called before running the fit.</p>
+
+<p>Here is an example for a simple straight line fitting using this minimizer:</p>
+
+<p><div class="code"><pre>
+double gradient(double *x, double *p, double *u)
+{
+	// df/dp[0]:
+        u[0] = x[0];
+	// df/dp[1]:
+        u[1] = 1.;
+	// f:
+        return p[0]*x[0] + p[1];
+}
+
+int main()
+{
+        TRandom* rand = new TRandom3;
+        rand->SetSeed();
+
+        TH1D* h = new TH1D("testHisto", "testHisto", 100, 0.0, 100.0);
+        for(int i = 1; i <= h->GetNbinsX(); ++i)
+        {
+                h->SetBinContent(i, rand->Poisson(i));
+                h->SetBinError(i, TMath::Sqrt(h->GetBinContent(i)));
+        }
+
+        ROOT::Fit::FitConfig::SetDefaultMinimizer("LVMini", "");
+
+        TF1* f = new TF1("testFunc", "[0]*x + [1]", 0, 100);
+        f->SetGradientFunction(gradient);
+        f->SetParName(0, "slope"); f->SetParameter(0, 5.);
+        f->SetParName(1, "constant"); f->SetParameter(1, 5.);
+	f->CheckGradientFunction();
+        TFitResultPtr result = h->Fit(f, "SG");
+
+        std::cout << minimizerDef[i].Name << " Straight line fit result: " << std::endl;
+        std::cout << "  NCalls=" << result->NCalls() << std::endl;
+        for(unsigned int i = 0; i < 2; ++i)
+                std::cout << "  " << result->ParName(i) << ": " << result->Parameter(i) << " +/- " << result->ParError(i) << std::endl;
+
+        return 0;
+}
+</pre></div></p><div class="clear" />
+
+<h3>References</h3>
+<p>
+<ol>
+<li>
+V. Blobel, <em>Large-scale optimization with the limited-memory BFGS program LVMINI</em> (<a href="http://desy.de/~blobel/lvmini.pdf">pdf</a>);
+</li>
+</ol>
+</p>
+<hr>
+END_HTML
