@@ -34,6 +34,8 @@
 #include "Math/IFunctionfwd.h"
 #endif
 
+#include <limits>
+
 
 namespace ROOT {
 namespace Math {
@@ -203,12 +205,32 @@ namespace Math {
       */
       virtual void  Gradient(const double *x, double * grad) const = 0; 
 
+       /**
+        Evaluate all the vector of function derivatives (gradient)  at a point x and vector of 2nd derivative.
+        Derived classes must re-implement if they compute the 2nd derivative
+        */
+      virtual void Gradient(const double * x, double * grad, double *  grad2) const {
+           Gradient(x, grad);
+           // use NaN to flag that g2 is not implemented 
+           if (grad2) *grad2 = std::numeric_limits<double>::quiet_NaN(); 
+       }
+
+
       /**
          Return the partial derivative with respect to the passed coordinate 
       */
       double Derivative(const double * x, unsigned int icoord = 0) const  { 
          return DoDerivative(x, icoord); 
       }
+      /**
+         Return the partial derivative  with respect to the passed coordinate and the second derivative
+         To be overloaded by derived classes otherwise the second-derivative is set to a NaN
+       */
+      double Derivative(const double * x, unsigned int icoord, double & deriv2) const  { 
+         return DoDerivative(x, icoord); 
+         deriv2 = std::numeric_limits<double>::quiet_NaN();  
+      }
+
 
  
       /** 
@@ -218,7 +240,17 @@ namespace Math {
           evaluate value and derivative at the same time
        
       */
-      virtual void FdF (const double * x, double & f, double * df) const  = 0; 
+      virtual void FdF (const double * x, double & f, double * df) const  = 0;
+
+      /**
+         Same function as before but returning also vector of diagonal second derivatives
+         Re-implement if function implements second derivatives 
+       */
+      virtual void FdF (const double * x, double & f, double * df,  double * df2  ) const {
+         FdF(x,f,df);
+         if (df2) *df2 = std::numeric_limits<double>::quiet_NaN();  
+      }
+       
 
 
    private: 
@@ -228,6 +260,7 @@ namespace Math {
          function to evaluate the derivative with respect each coordinate. To be implemented by the derived class 
       */ 
       virtual  double  DoDerivative(const double * x, unsigned int icoord ) const = 0; 
+
 
    };
 
@@ -255,7 +288,14 @@ namespace Math {
       double Derivative(double x ) const  { 
          return DoDerivative(x ); 
       }
-
+      /**
+         Return the derivative of the function at a point x and 
+         eventually second derivative. 
+      */
+      virtual double Derivative(double x, double & deriv2 ) const  { 
+         return DoDerivative(x ); 
+         deriv2 = std::numeric_limits<double>::quiet_NaN();  
+      }
  
       /** 
           Optimized method to evaluate at the same time the function value and derivative at a point x.
@@ -265,6 +305,16 @@ namespace Math {
        
       */
       virtual void FdF (double x, double & f, double & df) const = 0; 
+
+      /**
+         Same function as before but returning also the second derivative
+         Re-implement if function implements second derivatives calculation
+         By default is implemented using previous function and setting a NaN for the second derivative
+       */
+      virtual void FdF (double x, double & f, double & df,  double & df2  ) const {
+         FdF(x,f,df);
+         df2 = std::numeric_limits<double>::quiet_NaN();  
+      }
 
 
       /**
@@ -286,6 +336,13 @@ namespace Math {
        */
       void FdF(const double * x, double & f, double * df) const  {
          FdF(*x, f, *df);
+      }
+      /**
+         Compatibility method with multi-dimensional interface for Gradient and function evaluation
+       */
+      void FdF(const double * x, double & f, double * df, double *df2) const  {
+         FdF(*x, f, *df);
+         if (df2) df2[0] = std::numeric_limits<double>::quiet_NaN();  
       }
       
 
@@ -337,8 +394,24 @@ namespace Math {
       */
       virtual void  Gradient(const double *x, double * grad) const { 
          unsigned int ndim = NDim(); 
-         for (unsigned int icoord  = 0; icoord < ndim; ++icoord) 
-            grad[icoord] = BaseGrad::Derivative(x,icoord); 
+         for (unsigned int icoord  = 0; icoord < ndim; ++icoord) {
+               grad[icoord] = BaseGrad::Derivative(x,icoord); 
+         }
+      }
+
+      /** 
+          Evaluate all the vector of function derivatives (gradient)  at a point x.
+          Derived classes must re-implement it if more efficient than evaluting one at a time
+      */
+      virtual void  Gradient(const double *x, double * grad, double * grad2) const { 
+         unsigned int ndim = NDim(); 
+         if (grad2) {
+            for (unsigned int icoord  = 0; icoord < ndim; ++icoord) {
+               grad[icoord] = BaseGrad::Derivative(x,icoord, grad2[icoord]); 
+            }
+         }
+         else 
+            Gradient(x,grad);
       }
 
       using  BaseFunc::NDim;
@@ -354,6 +427,10 @@ namespace Math {
       virtual void FdF (const double * x, double & f, double * df) const { 
          f = BaseFunc::operator()(x); 
          Gradient(x,df);
+      }
+      virtual void FdF (const double * x, double & f, double * df, double * g2) const { 
+         f = BaseFunc::operator()(x); 
+         Gradient(x,df,g2);
       }
 
 

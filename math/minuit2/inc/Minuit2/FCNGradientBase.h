@@ -39,6 +39,11 @@ public:
    
    virtual bool CheckGradient() const {return true;}
    
+   virtual void Gradient(const std::vector<double>& v, std::vector<double>& grad, std::vector<double>& g2) const {
+      grad = Gradient(v);
+      g2.clear();  // to flag that second derivatives are not implemented
+   }
+   
 };
 
   }  // namespace Minuit2

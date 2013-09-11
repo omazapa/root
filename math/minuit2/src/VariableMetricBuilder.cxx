@@ -24,7 +24,7 @@
 #include "Minuit2/MnStrategy.h"
 #include "Minuit2/MnHesse.h"
 
-//#define DEBUG 
+//#define DEBUG
 #include "Minuit2/MnPrint.h" 
 
 // #if defined(DEBUG) || defined(WARNINGMSG)

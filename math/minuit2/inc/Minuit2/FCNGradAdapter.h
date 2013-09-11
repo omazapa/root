@@ -41,8 +41,8 @@ public:
 
    FCNGradAdapter(const Function & f, double up = 1.) : 
       fFunc(f) , 
-      fUp (up) , 
-      fGrad(std::vector<double>(fFunc.NDim() ) ) 
+      fUp (up)  
+      //fGrad(std::vector<double>(fFunc.NDim() ) )
 
    {}
 
@@ -57,17 +57,38 @@ public:
    }
 
    double Up() const {return fUp;}
-  
-   std::vector<double> Gradient(const std::vector<double>& v) const { 
-      fFunc.Gradient(&v[0], &fGrad[0]);
+   
+   std::vector<double> Gradient(const std::vector<double>& v) const{
+      std::vector<double> grad(v.size() );
+      fFunc.Gradient(&v[0], &grad[0]);
 
 #ifdef DEBUG
       std::cout << " gradient in FCNAdapter = { " ;
-      for (unsigned int i = 0; i < fGrad.size(); ++i) 
-         std::cout << fGrad[i] << "\t";
+      for (unsigned int i = 0; i < grad.size(); ++i)
+         std::cout << grad[i] << "\t";
       std::cout << "}" << std::endl;
 #endif
-      return fGrad; 
+
+      return grad;
+   }
+  
+    void Gradient(const std::vector<double>& v, std::vector<double>& grad, std::vector<double>& g2) const {
+       if (g2.size() > 0) {
+          fFunc.Gradient(&v[0], &grad[0], &g2[0] );
+          // case g2 is not implemented 
+          if (g2[0] == std::numeric_limits<double>::quiet_NaN() ) g2.clear(); 
+       }   
+       else {
+          fFunc.Gradient(&v[0], &grad[0]);
+       }
+
+#ifdef DEBUG
+      std::cout << " gradient in FCNAdapter = { " ;
+      for (unsigned int i = 0; i < grad.size(); ++i)
+         std::cout << grad[i] << "\t";
+      std::cout << "}" << std::endl;
+#endif
+
    }
    // forward interface
    //virtual double operator()(int npar, double* params,int iflag = 4) const;
@@ -76,7 +97,7 @@ public:
 private:
    const Function & fFunc; 
    double fUp; 
-   mutable std::vector<double> fGrad; 
+   //mutable std::vector<double> fGrad;
 };
 
    } // end namespace Minuit2

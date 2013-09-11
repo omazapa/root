@@ -21,10 +21,15 @@ namespace ROOT {
 FunctionGradient AnalyticalGradientCalculator::operator()(const MinimumParameters& par) const {
    // evaluate analytical gradient. take care of parameter transformations 
    
-   std::vector<double> grad = fGradCalc.Gradient(fTransformation(par.Vec()));
-   assert(grad.size() == fTransformation.Parameters().size());
+   std::vector<double> grad (fTransformation.Parameters().size());
+   std::vector<double> grad2 (fTransformation.Parameters().size());
+   fGradCalc.Gradient(fTransformation(par.Vec()),grad, grad2);
    
    MnAlgebraicVector v(par.Vec().size());
+   // make vector of second derivatives if grad2 is computed (i.e. vector is not cleared)
+   MnAlgebraicVector v2 ( grad2.size() > 0 ? par.Vec().size() : 0 );  
+
+
    for(unsigned int i = 0; i < par.Vec().size(); i++) {
       unsigned int ext = fTransformation.ExtOfInt(i);
       if(fTransformation.Parameter(ext).HasLimits()) {
@@ -33,12 +38,18 @@ FunctionGradient AnalyticalGradientCalculator::operator()(const MinimumParameter
          //       double dd = pt->dInt2ext(par.Vec()(i), fTransformation.Parameter(ext).Lower(), fTransformation.Parameter(ext).Upper() );       
          double dd = fTransformation.DInt2Ext(i, par.Vec()(i));
          v(i) = dd*grad[ext];
+         if (v2.size() > 0) v2(i)= dd*dd*grad2[ext]; 
       } else {
          v(i) = grad[ext];
+         if (v2.size() > 0) v2(i) = grad2[ext];
       }
    }
-   
-   return FunctionGradient(v);
+   if (v2.size() > 0) {
+      MnAlgebraicVector s(par.Vec().size());
+      return FunctionGradient(v, v2, s);
+   }
+   else 
+      return FunctionGradient(v);
 }
 
 FunctionGradient AnalyticalGradientCalculator::operator()(const MinimumParameters& par, const FunctionGradient&) const {

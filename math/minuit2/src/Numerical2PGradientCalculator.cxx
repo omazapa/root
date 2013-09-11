@@ -17,7 +17,7 @@
 #include "Minuit2/MnStrategy.h"
 
 
-//#define DEBUG
+#define DEBUG
 #if defined(DEBUG) || defined(WARNINGMSG)
 #include "Minuit2/MnPrint.h" 
 #ifdef _OPENMP

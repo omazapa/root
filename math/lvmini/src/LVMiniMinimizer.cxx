@@ -14,6 +14,9 @@
 
 #include "Math/IFunction.h"
 #include "Math/IOptions.h"
+#include "Math/NumGradFunction.h"
+#include <cassert>
+#include <iostream>
 
 // Declare the fortran symbols
 extern "C" {
@@ -43,6 +46,10 @@ LVMiniMinimizer::LVMiniMinimizer(const char* type):
 LVMiniMinimizer::~LVMiniMinimizer()
 {
    delete[] fAux;
+   if (fFunc)
+   {
+      delete fFunc;
+   }
 }
 
 void LVMiniMinimizer::Clear()
@@ -51,18 +58,36 @@ void LVMiniMinimizer::Clear()
    fVariableNames.clear();
 
    delete[] fAux;
+   if (fFunc)
+   {
+      delete fFunc;
+      fFunc = 0;
+   }
    fAux = 0;
 }
 
 void LVMiniMinimizer::SetFunction(const ROOT::Math::IMultiGenFunction& func)
 {
-   std::cerr << "LVMiniMinimizer::SetFunction: LVMini needs gradient, use LVMiniMinimizer::SetFunction(const IMultiGradFunction&) instead!" << std::endl;
-   std::cerr << "If you are using TH1::Fit, use the fitting option \"G\", and, ideally, provide an analytic gradient calculation with TF1::SetGradientFunction" << std::endl;
+//   std::cerr << "LVMiniMinimizer::SetFunction: LVMini needs gradient, use LVMiniMinimizer::SetFunction(const IMultiGradFunction&) instead!" << std::endl;
+//   std::cerr << "If you are using TH1::Fit, use the fitting option \"G\", and, ideally, provide an analytic gradient calculation with TF1::SetGradientFunction" << std::endl;
+   ROOT::Math::NumGradFunction* gradf = new ROOT::Math::NumGradFunction(func);
+   // need to delete (memory leak)
+   if (fFunc)
+   {
+      delete fFunc;
+   }
+   fFunc = gradf; //new
 }
 
 void LVMiniMinimizer::SetFunction(const ROOT::Math::IMultiGradFunction& func)
 {
-   fFunc = &func;
+   if (fFunc)
+   {
+      delete fFunc;
+   }
+   fFunc = dynamic_cast< ROOT::Math::IMultiGradFunction*>(func.Clone());
+   assert(fFunc);
+   //fFunc = const_cast<ROOT::Math::IMultiGradFunction*>(&func);
 }
 
 bool LVMiniMinimizer::SetVariable(unsigned int var, const std::string& varname, double start, double step)
@@ -74,8 +99,8 @@ bool LVMiniMinimizer::SetVariable(unsigned int var, const std::string& varname, 
    }
    else
    {
-      // we can safely ignore step because the algorithm uses the analytical gradient
       fVariables.push_back(start);
+      fSteps.push_back(step);
       fVariableNames.push_back(varname);
       return true;
    }
@@ -94,9 +119,18 @@ bool LVMiniMinimizer::Minimize()
       std::cerr << "LVMiniMinimizer::Minimize: No function to minimize provided!" << std::endl;
       return false;
    }
+   
+   // check if using the numerical gradient calculation using the 
+   // NumGradFunction
+   ROOT::Math::NumGradFunction* gradf = dynamic_cast< ROOT::Math::NumGradFunction*>(fFunc);
+   if (gradf) {
+      // assert(fVariables.size() == gradf->NDim() );
+      // std::cout<< "f = " << (*gradf)(&fVariables[0]) << std::endl;
+      gradf->SetStrategy(Strategy());
+      gradf->SetInitialGradient( &fSteps[0] );
+   }
 
    int npar = fVariables.size();
-   if(fDebug) npar = -npar;
 
    // I haven't seen a clear guide on how many vector pairs
    // should be used. This is a rough estimate from table 1 of
@@ -104,14 +138,22 @@ bool LVMiniMinimizer::Minimize()
    // 6 and 29.
    int mvec = std::min(std::max(6, npar / 5), 29);
    if(fCalcErrors) mvec = -mvec;
+   int npar_sign = npar;
+   if(fDebug) npar_sign = -npar;
 
    int mdim = lvmdim_(&npar, &mvec);
+    
+    float tol = Tolerance(); // edited by L. Moneta
+    float wlf1 = 0.001;
+    float wlf2 = 0.9;
+    lvmeps_(&tol, &wlf1, &wlf2); //end of edits
 
    delete[] fAux;
    fAux = new double[mdim];
 
    int nfcn = fMaxCalls;
-   lvmini_(&npar, &mvec, &nfcn, fAux);
+
+   lvmini_(&npar_sign, &mvec, &nfcn, fAux);
 
    unsigned int fMaxIterations = fMaxIter;
    if(fMaxIterations == 0) fMaxIterations = 10000;
@@ -119,9 +161,16 @@ bool LVMiniMinimizer::Minimize()
    int iret = -1;
    fIterations = 0;
 
+   // check if the second derivatives are computed
+   std::vector<double> g2(npar);
+  
    do
    {
-      fFunc->FdF(&fVariables[0], fMin, &fAux[0]);
+      // compute also the second derivatives
+      fFunc->FdF(&fVariables[0], fMin, &fAux[0], &g2[0]);
+      if (g2[0] != std::numeric_limits<double>::quiet_NaN() )
+         std::copy(g2.begin(), g2.end(), &fAux[npar]);
+ 
       lvmfun_(&fVariables[0], &fMin, &iret, &fAux[0]);
    } while(++fIterations < fMaxIterations && iret < 0);
    fStatus = iret;

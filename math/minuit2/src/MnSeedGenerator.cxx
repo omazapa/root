@@ -40,6 +40,7 @@
 
 
 #include <math.h>
+//#include <iostream>
 
 
 namespace ROOT {
@@ -67,6 +68,7 @@ MinimumSeed MnSeedGenerator::operator()(const MnFcn& fcn, const GradientCalculat
 
    if (printLevel > 1) { 
       std::cout << "MnSeedGenerator: for initial parameters FCN = " << fcnmin << std::endl;
+       std::cout << "x = " << x << std::endl;
    }
    
    MinimumParameters pa(x, fcnmin);
@@ -134,11 +136,17 @@ MinimumSeed MnSeedGenerator::operator()(const MnFcn& fcn, const AnalyticalGradie
    for(unsigned int i = 0; i < n; i++) x(i) = st.IntParameters()[i];
    double fcnmin = fcn(x);
    MinimumParameters pa(x, fcnmin);
+    int printLevel = MnPrint::Level();
+    if (printLevel > 1) {
+        std::cout << "MnSeedGenerator: for initial parameters FCN = " << fcnmin << std::endl;
+        std::cout << "x = " << x << std::endl;
+    }
+
    
    InitialGradientCalculator igc(fcn, st.Trafo(), stra);
    FunctionGradient tmp = igc(pa);
    FunctionGradient grd = gc(pa);
-   FunctionGradient dgrad(grd.Grad(), tmp.G2(), tmp.Gstep());
+   FunctionGradient dgrad(grd.Grad(), grd.G2(), tmp.Gstep());
    
    if(gc.CheckGradient()) {
       bool good = true;

@@ -95,9 +95,10 @@ private:
 
    const bool fCalcErrors;
 
-   const ROOT::Math::IMultiGradFunction* fFunc;
+   ROOT::Math::IMultiGradFunction* fFunc;
 
    std::vector<double> fVariables;
+   std::vector<double> fSteps;
    std::vector<std::string> fVariableNames;
 
    // Filled after minimization
