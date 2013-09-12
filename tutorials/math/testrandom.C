@@ -37,6 +37,7 @@
 #include <TRandom1.h>
 #include <TRandom2.h>
 #include <TRandom3.h>
+#include <TRandom4.h>
 #include <TStopwatch.h>
 #include <TF1.h>
 #include <TUnuran.h>
@@ -44,63 +45,289 @@
 #include <TFile.h>
 
 
+const int N = 5000000;
+float cpn = 1000000000./N;
+
+void testRndm(TRandom * r) { 
+   TStopwatch sw; 
+   sw.Start();
+   double x; 
+   for (int i=0;i<N;i++) {
+      x = r->Rndm(i);
+   }
+   printf(" %8.3f",sw.CpuTime()*cpn);
+}
+
+void testRndmArray(TRandom * r) { 
+
+   TStopwatch sw; 
+   const int NR = 1000;
+   double rn[NR];
+   sw.Start();
+   for (int i=0;i<N/NR;i++) {
+      r->RndmArray(NR,rn);
+   }
+   printf(" %8.3f",sw.CpuTime()*cpn);
+}
+
+void testGaus(TRandom * r) { 
+   TStopwatch sw; 
+   sw.Start();
+   double x;
+   for (int i=0;i<N;i++) {
+      x = r->Gaus(0,1);
+   }
+   printf(" %8.3f",sw.CpuTime()*cpn);
+}
+
+void testRannor(TRandom * r) { 
+   TStopwatch sw; 
+   sw.Start();
+   double x,y;
+   for (int i=0;i<N;i++) {
+      r->Rannor(x,y);
+   }
+   printf(" %8.3f",sw.CpuTime()*cpn);
+}
+
+void testLandau(TRandom * r) { 
+   TStopwatch sw; 
+   sw.Start();
+   double x;
+   for (int i=0;i<N;i++) {
+      x = r->Landau(0,1);
+   }
+   printf(" %8.3f",sw.CpuTime()*cpn);
+}
+
+void testExp(TRandom * r) { 
+   TStopwatch sw; 
+   sw.Start();
+   double x;
+   for (int i=0;i<N;i++) {
+      x = r->Exp(1);
+   }
+   printf(" %8.3f",sw.CpuTime()*cpn);
+}
+
+void testBinomial(TRandom * r, int n , double p) { 
+   TStopwatch sw; 
+   sw.Start();
+   double x;
+   for (int i=0;i<N;i++) {
+      x = r->Binomial(n,p);
+   }
+   printf(" %8.3f",sw.CpuTime()*cpn);
+}
+
+void testPoisson(TRandom * r, int n ) { 
+   TStopwatch sw; 
+   sw.Start();
+   double x;
+   for (int i=0;i<N;i++) {
+      x = r->Poisson(n);
+   }
+   printf(" %8.3f",sw.CpuTime()*cpn);
+}
+
+void testTF1Gaus(TRandom * r) { 
+  TF1 *f1 = new TF1("f1","gaus",-4,4);
+  f1->SetParameters(1,0,1);
+  gRandom = r;
+  TStopwatch sw; 
+  sw.Start();
+  double x; 
+  for (int i=0;i<N;i++) {
+     x = f1->GetRandom();
+  }
+  printf(" %8.3f",sw.CpuTime()*cpn);
+  delete f1;
+}
+
+void testTF1Landau(TRandom * r) { 
+  TF1 *f1 = new TF1("f1","landau",-5,15);
+  f1->SetParameters(1,0,1);
+  gRandom = r;
+  TStopwatch sw; 
+  sw.Start();
+  double x; 
+  for (int i=0;i<N;i++) {
+     x = f1->GetRandom();
+  }
+  printf(" %8.3f",sw.CpuTime()*cpn);
+  delete f1;
+}
+
+void testUnuranGaus(TRandom * r) { 
+  // test using Unuran
+  TUnuran unr(r);
+
+  // continuous distribution (ex. Gaus)
+  TF1 *f1 = new TF1("f1","gaus",-4,4);
+  f1->SetParameters(1,0,1);
+  TUnuranContDist dist(f1);
+  // use arou method (is probably the fastest) 
+  unr.Init(dist,"arou");
+  TStopwatch sw; 
+  sw.Start();
+  double x; 
+  for (int i=0;i<N;i++) {
+     x = unr.Sample();
+  }
+  printf(" %8.3f",sw.CpuTime()*cpn);
+  delete f1;
+}
+
+void testUnuranPoisson(TRandom * r, int n) { 
+  // test using Unuran
+  TUnuran unr(r);
+  unr.InitPoisson(n);
+  TStopwatch sw; 
+  sw.Start();
+  double x; 
+  for (int i=0;i<N;i++) {
+     x = unr.SampleDiscr();
+  }
+  printf(" %8.3f",sw.CpuTime()*cpn);
+}
+
+void testUnuranBinomial(TRandom * r, int n, double p) { 
+  // test using Unuran
+  TUnuran unr(r);
+  unr.InitBinomial(n,p);
+  TStopwatch sw; 
+  sw.Start();
+  double x; 
+  for (int i=0;i<N;i++) {
+     x = unr.SampleDiscr();
+  }
+  printf(" %8.3f",sw.CpuTime()*cpn);
+}
+
+
+
+/////////////////////////////////////////////////////////////////////
+
+
 void testAll() {
-  int i, N = 5000000;
-  float cpn = 1000000000./N;
-  double x,y;
   TRandom *rsave = gRandom;
-  TRandom *r0 = new TRandom();
-  TRandom *r1 = new TRandom1();
-  TRandom *r2 = new TRandom2();
-  TRandom *r3 = new TRandom3();
+  const int NGEN = 5; 
+  TRandom * r[NGEN]; 
+  r[0] = new TRandom();
+  r[1] = new TRandom1();
+  r[2] = new TRandom2();
+  r[3] = new TRandom3();
+  r[4] = new TRandom4();
 
   TStopwatch sw;
   printf("Distribution            nanoseconds/call\n");
-  printf("                    TRandom  TRandom1 TRandom2 TRandom3\n");
+  printf("                    TRandom  TRandom1 TRandom2 TRandom3 TRandom4\n");
 
-  sw.Start();
-  for (i=0;i<N;i++) {
-     x = r0->Rndm(i);
+  printf("Rndm..............");
+  for (int i = 0; i < NGEN; ++i) {
+     testRndm(r[i]);
   }
-  printf("Rndm.............. %8.3f",sw.CpuTime()*cpn);
-  sw.Start();
-  for (i=0;i<N;i++) {
-     x = r1->Rndm(i);
+  printf("\n");
+  printf("RndmArray.........");
+  for (int i = 0; i < NGEN; ++i) {
+     testRndmArray(r[i]);
   }
-  printf(" %8.3f",sw.CpuTime()*cpn);
-  sw.Start();
-  for (i=0;i<N;i++) {
-     x = r2->Rndm(i);
-  }
-  printf(" %8.3f",sw.CpuTime()*cpn);
-  sw.Start();
-  for (i=0;i<N;i++) {
-     x = r3->Rndm(i);
-  }
-  printf(" %8.3f\n",sw.CpuTime()*cpn);
+  printf("\n");
 
-  const int NR = 1000;
-  double rn[NR];
-  sw.Start();
-  for (i=0;i<N;i+=NR) {
-     r0->RndmArray(NR,rn);
+  printf("Gaus..............");
+  for (int i = 0; i < NGEN; ++i) {
+     testGaus(r[i]);
   }
-  printf("RndmArray......... %8.3f",sw.CpuTime()*cpn);
-  sw.Start();
-  for (i=0;i<N;i+=NR) {
-     r1->RndmArray(NR,rn);
+  printf("\n");
+
+  printf("Rannor............");
+  for (int i = 0; i < NGEN; ++i) {
+     testRannor(r[i]);
   }
-  printf(" %8.3f",sw.CpuTime()*cpn);
-  sw.Start();
-  for (i=0;i<N;i+=NR) {
-     r2->RndmArray(NR,rn);
+  printf("\n");
+
+  printf("Exponential.......");
+  for (int i = 0; i < NGEN; ++i) {
+     testExp(r[i]);
   }
-  printf(" %8.3f",sw.CpuTime()*cpn);
-  sw.Start();
-  for (i=0;i<N;i+=NR) {
-     r3->RndmArray(NR,rn);
+  printf("\n");
+
+  printf("Binomial(5,0.5)...");
+  for (int i = 0; i < NGEN; ++i) {
+     testBinomial(r[i],5,0.5);
   }
-  printf(" %8.3f\n",sw.CpuTime()*cpn);
+  printf("\n");
+
+  printf("Binomial(15,0.5)...");
+  for (int i = 0; i < NGEN; ++i) {
+     testBinomial(r[i],15,0.5);
+  }
+  printf("\n");
+
+  printf("Poisson(3).........");
+  for (int i = 0; i < NGEN; ++i) {
+     testPoisson(r[i],3);
+  }
+  printf("\n");
+
+  printf("Poisson(10).........");
+  for (int i = 0; i < NGEN; ++i) {
+     testPoisson(r[i],10);
+  }
+  printf("\n");
+
+  printf("Poisson(70).........");
+  for (int i = 0; i < NGEN; ++i) {
+     testPoisson(r[i],70);
+  }
+  printf("\n");
+
+  printf("Poisson(100)........");
+  for (int i = 0; i < NGEN; ++i) {
+     testPoisson(r[i],100);
+  }
+  printf("\n");
+
+  printf("GausTF1.............");
+  for (int i = 0; i < NGEN; ++i) {
+     testTF1Gaus(r[i]);
+  }
+  printf("\n");
+
+  printf("LandauTF1...........");
+  for (int i = 0; i < NGEN; ++i) {
+     testTF1Landau(r[i]);
+  }
+  printf("\n");
+
+  printf("GausUNURAN..........");
+  for (int i = 0; i < NGEN; ++i) {
+     testUnuranGaus(r[i]);
+  }
+  printf("\n");
+
+  printf("PoissonUNURAN(10)...");
+  for (int i = 0; i < NGEN; ++i) {
+     testUnuranPoisson(r[i],10);
+  }
+  printf("\n");
+
+  printf("PoissonUNURAN(100)..");
+  for (int i = 0; i < NGEN; ++i) {
+     testUnuranPoisson(r[i],100);
+  }
+  printf("\n");
+
+  printf("BinomUNURAN(15,0.5).");
+  for (int i = 0; i < NGEN; ++i) {
+     testUnuranBinomial(r[i],15,0.5);
+  }
+  printf("\n");
+
+
+
+#ifdef LATER
+  // Gaus
 
   sw.Start();
   for (i=0;i<N;i++) {
@@ -122,6 +349,13 @@ void testAll() {
      x = r3->Gaus(0,1);
   }
   printf(" %8.3f\n",sw.CpuTime()*cpn);
+  sw.Start();
+  for (i=0;i<N;i++) {
+     x = r4->Gaus(0,1);
+  }
+  printf(" %8.3f\n",sw.CpuTime()*cpn);
+
+  // runnnor
   
   sw.Start();
   for (i=0;i<N;i+=2) {
@@ -144,6 +378,9 @@ void testAll() {
   }
   printf(" %8.3f\n",sw.CpuTime()*cpn);
 
+  // Landau
+
+
   sw.Start();
   for (i=0;i<N;i++) {
      x = r0->Landau(0,1);
@@ -163,7 +400,14 @@ void testAll() {
   for (i=0;i<N;i++) {
      x = r3->Landau(0,1);
   }
+  printf(" %8.3f",sw.CpuTime()*cpn);
+  sw.Start();
+  for (i=0;i<N;i++) {
+     x = r4->Landau(0,1);
+  }
   printf(" %8.3f\n",sw.CpuTime()*cpn);
+
+  // Exponential
 
   sw.Start();
   for (i=0;i<N;i++) {
@@ -189,11 +433,6 @@ void testAll() {
   sw.Start();
   for (i=0;i<N;i++) {
      x = r0->Binomial(5,0.5);
-  }
-  printf("Binomial(5,0.5)... %8.3f",sw.CpuTime()*cpn);
-  sw.Start();
-  for (i=0;i<N;i++) {
-     x = r1->Binomial(5,0.5);
   }
   printf(" %8.3f",sw.CpuTime()*cpn);
   sw.Start();
@@ -312,14 +551,6 @@ void testAll() {
   }
   printf(" %8.3f\n",sw.CpuTime()*cpn);
 
-  TF1 *f1 = new TF1("f1","gaus",-4,4);
-  f1->SetParameters(1,0,1);
-  gRandom = r0;
-  sw.Start();
-  for (i=0;i<N;i++) {
-     x = f1->GetRandom();
-  }
-  printf("GausTF1........... %8.3f",sw.CpuTime()*cpn);
   gRandom = r1;
   sw.Start();
   for (i=0;i<N;i++) {
@@ -339,8 +570,6 @@ void testAll() {
   }
   printf(" %8.3f\n",sw.CpuTime()*cpn);
 
-  TF1 *f2 = new TF1("f2","landau",-5,15);
-  f2->SetParameters(1,0,1);
 
   gRandom = r0;
   sw.Start();
@@ -456,11 +685,11 @@ void testAll() {
   }
   printf(" %8.3f\n",sw.CpuTime()*cpn);
 
-
-  delete r0;
-  delete r1;
-  delete r2;
-  delete r3;
+#endif
+  delete r[0];
+  delete r[1];
+  delete r[2];
+  delete r[3];
   gRandom = rsave;
 
 #ifdef LATER  
@@ -654,7 +883,6 @@ int testRandom3() {
 
      return rc1 + rc2;
    }
-
 
 void testrandom()
 {
