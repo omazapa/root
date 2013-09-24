@@ -15,6 +15,7 @@
 #include "Math/IFunction.h"
 #include "Math/IOptions.h"
 #include "Math/NumGradFunction.h"
+#include "Math/MinimTransformFunction.h"
 #include <cassert>
 #include <iostream>
 
@@ -26,6 +27,21 @@ extern "C" {
    extern void lvmfun_(double* x, double* f, int* iret, double* aux);
    extern int lvmind_(int* iarg);
    extern void lvmprt_(int* lup, double* aux, int* iarg);
+}
+
+namespace {
+   double getCovMatrixEntry(double aux[], int i, int j) {
+      int iarg = 5;
+      int ind = lvmind_(&iarg);
+      if(ind == 0) return -1.;
+
+      // Matrix is symmetric
+      if(j > i) std::swap(i, j);
+
+      const unsigned int ijInd = ind - 1 + (j + 1) + ((i + 1) * (i + 1) - (i + 1)) / 2;
+      //std::cout << "Index: " << ijInd << ", entry=" << aux[ijInd] << std::endl;
+      return aux[ijInd];
+   }
 }
 
 namespace ROOT { 
@@ -102,8 +118,40 @@ bool LVMiniMinimizer::SetVariable(unsigned int var, const std::string& varname, 
       fVariables.push_back(start);
       fSteps.push_back(step);
       fVariableNames.push_back(varname);
+      fVarTypes.push_back(ROOT::Math::kDefault);
       return true;
    }
+}
+
+bool LVMiniMinimizer::SetLowerLimitedVariable(unsigned int ivar, const std::string & name, double val, double step, double lower) {
+   bool ret = SetVariable(ivar, name, val, step);
+   if (!ret) return false;
+   fBounds[ivar] = std::make_pair( lower, lower);
+   fVarTypes[ivar] = ROOT::Math::kLowBound;
+   return true;
+}
+
+bool LVMiniMinimizer::SetUpperLimitedVariable(unsigned int ivar, const std::string & name, double val, double step, double upper ) {
+   bool ret = SetVariable(ivar, name, val, step);
+   if (!ret) return false;
+   fBounds[ivar] = std::make_pair( upper, upper);
+   fVarTypes[ivar] = ROOT::Math::kUpBound;
+   return true;
+}
+
+bool LVMiniMinimizer::SetLimitedVariable(unsigned int ivar, const std::string & name, double val, double step, double lower, double upper) {
+   bool ret = SetVariable(ivar, name, val, step);
+   if (!ret) return false;
+   fBounds[ivar] = std::make_pair( lower, upper);
+   fVarTypes[ivar] = ROOT::Math::kBounds;
+   return true;
+}
+
+bool LVMiniMinimizer::SetFixedVariable(unsigned int ivar , const std::string & name , double val ) {
+   bool ret = SetVariable(ivar, name, val, 0.);
+   if (!ret) return false;
+   fVarTypes[ivar] = ROOT::Math::kFix;
+   return true;
 }
 
 bool LVMiniMinimizer::Minimize()
@@ -130,7 +178,25 @@ bool LVMiniMinimizer::Minimize()
       gradf->SetInitialGradient( &fSteps[0] );
    }
 
+   // Transformation of input variables
+   std::auto_ptr<ROOT::Math::MinimTransformFunction> trFunc;
+   ROOT::Math::IMultiGradFunction* func = fFunc;
+   bool doTransform = false;
+   for(unsigned int ivar = 0; !doTransform && ivar < fVarTypes.size(); ++ivar)
+      doTransform = (fVarTypes[ivar] != ROOT::Math::kDefault);
+
    int npar = fVariables.size();
+   std::vector<double> x(fVariables);
+   if(doTransform)
+   {
+      trFunc.reset(new ROOT::Math::MinimTransformFunction(fFunc, fVarTypes, fVariables, fBounds));
+      trFunc->InvTransformation(&fVariables[0], &x[0]);
+
+      npar = trFunc->NDim();
+      x.resize(npar);
+
+      func = trFunc.get();
+   }
 
    // I haven't seen a clear guide on how many vector pairs
    // should be used. This is a rough estimate from table 1 of
@@ -143,10 +209,12 @@ bool LVMiniMinimizer::Minimize()
 
    int mdim = lvmdim_(&npar, &mvec);
     
+#if 0
     float tol = Tolerance(); // edited by L. Moneta
     float wlf1 = 0.001;
     float wlf2 = 0.9;
     lvmeps_(&tol, &wlf1, &wlf2); //end of edits
+#endif
 
    delete[] fAux;
    fAux = new double[mdim];
@@ -163,17 +231,21 @@ bool LVMiniMinimizer::Minimize()
 
    // check if the second derivatives are computed
    std::vector<double> g2(npar);
-  
    do
    {
-      // compute also the second derivatives
-      fFunc->FdF(&fVariables[0], fMin, &fAux[0], &g2[0]);
+      func->FdF(&x[0], fMin, &fAux[0], &g2[0]);
       if (g2[0] != std::numeric_limits<double>::quiet_NaN() )
          std::copy(g2.begin(), g2.end(), &fAux[npar]);
- 
-      lvmfun_(&fVariables[0], &fMin, &iret, &fAux[0]);
+      lvmfun_(&x[0], &fMin, &iret, &fAux[0]);
    } while(++fIterations < fMaxIterations && iret < 0);
+
    fStatus = iret;
+
+   // Remember minimum location
+   const double* xout = &x[0];
+   if(doTransform)
+      xout = trFunc->Transformation(&x[0]);
+   std::copy(&xout[0], &xout[npar], fVariables.begin());
 
    if(iret == -1)
    {
@@ -190,26 +262,71 @@ bool LVMiniMinimizer::Minimize()
    }
    else
    {
-      if(fCalcErrors)
-         fValidError = true;
-
-      // Adjust errors by fUp. We don't do this for the covariance matrix, because for the
-      // covariance matrix we do it in CovMatrix(). However, for Errors(), we
-      // return a pointer directly into the fAux array.
-      // In principle a cleaner solution would be to scale the function and gradient value
-      // by fUp, but this would mean doing it in every iteration, while this way we have
-      // to do it only once after the minimization. The result is the same.
-      int iarg = 2;
-      int ind = lvmind_(&iarg);
-      iarg = 3;
-      int ind2 = lvmind_(&iarg);
-
-      const double sqrt2fUp = sqrt(2.0 * fUp);
-      for(unsigned int i = 0; i < fVariables.size(); ++i)
+      // Read and transform the errors and covariance matrix.
+      // First, read (internal) covariance matrix into an array
+      double* covMatrix;
+      if(doTransform)
       {
-        fAux[ind + i] *= sqrt2fUp;
-        fAux[ind2 + i] *= sqrt2fUp;
+         covMatrix = new double[npar * npar];
       }
+      else
+      {
+         fCovMatrix.resize(npar * npar);
+         covMatrix = &fCovMatrix[0];
+      }
+
+      if(fCalcErrors)
+      {
+         fValidError = true;
+         // TODO: Could be optimized, by only obtaining the index once
+         // and then iterating.
+         for(unsigned int i = 0; i < static_cast<unsigned int>(npar); ++i)
+         {
+            for(unsigned int j = 0; j < i; ++j)
+            {
+               covMatrix[i * npar + j] = covMatrix[j * npar + i] = getCovMatrixEntry(fAux, i, j) * 2 * fUp;
+            }
+
+            covMatrix[i * npar + i] = getCovMatrixEntry(fAux, i, i) * 2 * fUp;
+         }
+
+#if 0
+         int iarg = 3;
+         int ind = lvmind_(&iarg);
+         for(unsigned int i = 0; i < static_cast<unsigned int>(npar); ++i)
+            std::cout << "Error " << i << ": " << fAux[ind + i] << std::endl;
+#endif
+      }
+      else
+      {
+         fValidError = false;
+
+         // Read approximate errors, and fill a diagonal covariance matrix
+         int iarg = 2;
+         int ind = lvmind_(&iarg);
+         if(ind != 0)
+         {
+            for(unsigned int i = 0; i < static_cast<unsigned int>(npar); ++i)
+            {
+               for(unsigned int j = 0; j < i; ++j)
+                  covMatrix[i * npar + j] = covMatrix[j + npar + i] = 0.;
+               covMatrix[i * npar + i] = fAux[ind + i] * 2 * fUp;
+            }
+         }
+      }
+
+      // Next, convert internal to external covariance matrix
+      if(doTransform)
+      {
+         fCovMatrix.resize(fVariables.size() * fVariables.size());
+         trFunc->MatrixTransformation(&x[0], covMatrix, &fCovMatrix[0]);
+         delete[] covMatrix;
+      }
+
+      // Finally, fill external errors from diagonal elements of covariance matrix
+      fErrors.resize(fVariables.size());
+      for(unsigned int i = 0; i < fVariables.size(); ++i)
+         fErrors[i] = sqrt(fCovMatrix[i * fVariables.size() + i]);
 
       // Minimization complete
       return true;
@@ -229,15 +346,14 @@ double LVMiniMinimizer::Edm() const
    const double* grad = MinGradient();
    double gradSqr = 0.;
    for(unsigned int i = 0; i < fVariables.size(); ++i)
-      gradSqr += grad[i]*grad[i]; // TODO: *2.0*fUp?
+      if(fVarTypes[i] != ROOT::Math::kFix)
+         gradSqr += grad[i]*grad[i]; // TODO: *2.0*fUp?
    return sqrt(gradSqr);
 }
 
 const double* LVMiniMinimizer::X() const
 {
-   int iarg = 1;
-   int ind = lvmind_(&iarg);
-   return &fAux[ind];
+   return &fVariables[0];
 }
 
 const double* LVMiniMinimizer::MinGradient() const
@@ -260,7 +376,11 @@ unsigned int LVMiniMinimizer::NDim() const
 
 unsigned int LVMiniMinimizer::NFree() const
 {
-   return fVariables.size();
+   unsigned int nFree = 0;
+   for(unsigned int i = 0; i < fVarTypes.size(); ++i)
+      if(fVarTypes[i] != ROOT::Math::kFix)
+         ++nFree;
+   return nFree;
 }
 
 bool LVMiniMinimizer::ProvidesError() const
@@ -270,44 +390,20 @@ bool LVMiniMinimizer::ProvidesError() const
 
 const double* LVMiniMinimizer::Errors() const
 {
-   int iarg = 2;
-   if(fCalcErrors) iarg = 3;
-
-   int ind = lvmind_(&iarg);
-   if(ind == 0) return NULL; // should not happen
-
-   return &fAux[ind];
+   return &fErrors[0];
 }
 
 double LVMiniMinimizer::CovMatrix(unsigned int i, unsigned int j) const
 {
-   int iarg = 5;
-   int ind = lvmind_(&iarg);
-   if(ind == 0) return -1.;
-
-   // Matrix is symmetric
-   if(j > i) std::swap(i, j);
-
-   const unsigned int ijInd = ind - 1 + (j + 1) + ((i + 1) * (i + 1) - (i + 1)) / 2;
-   return 2. * fUp * fAux[ijInd];
+   return fCovMatrix[i * fVariables.size() + j];
 }
 
 bool LVMiniMinimizer::GetCovMatrix(double* cov) const
 {
-   // TODO: Could be optimized, by only obtaining the index once
-   // and then iterating.
-   const unsigned int ndim = fVariables.size();
-   for(unsigned int i = 0; i < ndim; ++i)
-   {
-      for(unsigned int j = 0; j < i; ++j)
-      {
-         cov[i * ndim + j] = CovMatrix(i, j);
-         cov[j * ndim + i] = cov[i * ndim + j];
-      }
+   if(!fCalcErrors)
+      return false;
 
-      cov[i * ndim + i] = CovMatrix(i, i);
-   }
-
+   std::copy(fCovMatrix.begin(), fCovMatrix.end(), cov);
    return true;
 }
 
@@ -321,11 +417,14 @@ int LVMiniMinimizer::CovMatrixStatus() const
 
 double LVMiniMinimizer::GlobalCC(unsigned int i) const
 {
+   // TODO: Recalculate this from the covariance matrix
+/*
    int iarg = 4;
    int ind = lvmind_(&iarg);
    if(ind == 0) return -1.;
 
-   return fAux[ind + i];
+   return fAux[ind + i];*/
+   return -1.;
 }
 
 void LVMiniMinimizer::PrintResults()

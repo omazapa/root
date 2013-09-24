@@ -8,10 +8,12 @@
  *                                                                    *
  **********************************************************************/
 
-// Header file for class Minuit2Minimizer
+// Header file for class LVMiniMinimizer
 
 #ifndef ROOT_LVMini_LVMiniMinimizer
 #define ROOT_LVMini_LVMiniMinimizer
+
+#include <map>
 
 #ifndef ROOT_Math_Minimizer
 #include "Math/Minimizer.h"
@@ -23,6 +25,10 @@
 
 #ifndef ROOT_Math_IParamFunctionfwd
 #include "Math/IParamFunctionfwd.h"
+#endif
+
+#ifndef ROOT_Math_MinimizerVariable
+#include "Math/MinimizerVariable.h"
 #endif
 
 namespace ROOT { 
@@ -73,6 +79,10 @@ public:
    virtual void SetFunction(const ROOT::Math::IMultiGenFunction& func);
    virtual void SetFunction(const ROOT::Math::IMultiGradFunction& func);
    virtual bool SetVariable(unsigned int var, const std::string& varname, double start, double step);
+   virtual bool SetLowerLimitedVariable(unsigned int ivar, const std::string& name, double val, double step, double lower);
+   virtual bool SetUpperLimitedVariable(unsigned int ivar, const std::string& name, double val, double step, double upper);
+   virtual bool SetLimitedVariable(unsigned int ivar, const std::string& name, double val, double step, double lower, double upper);
+   virtual bool SetFixedVariable(unsigned int ivar, const std::string& name, double val);
    virtual bool Minimize();
    virtual double MinValue() const;
    virtual double Edm() const;
@@ -100,12 +110,17 @@ private:
    std::vector<double> fVariables;
    std::vector<double> fSteps;
    std::vector<std::string> fVariableNames;
+   std::vector<ROOT::Math::EMinimVariableType> fVarTypes;  // vector specifyng the type of variables
+   std::map< unsigned int, std::pair<double, double> > fBounds; // map specifying the bound using as key the parameter index
+   
 
    // Filled after minimization
    double* fAux;
    double fMin;
    mutable std::vector<double> fMinGradient;
    unsigned int fIterations;
+   mutable std::vector<double> fErrors;
+   mutable std::vector<double> fCovMatrix;
 }; 
 
    } // end namespace LVMini
