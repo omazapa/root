@@ -46,12 +46,14 @@ int main()
 			continue;
 		}
 
-		mn->SetPrintLevel(0);
+		//mn->SetPrintLevel(0);
 		mn->SetFunction(gradFunctor);
 		mn->SetVariable(0, "x1", -1.2, 0.1);
-		mn->SetVariable(1, "x2", 1.0, 0.1);
+		//mn->SetVariable(1, "x2", 1.1, 0.1);
+		//mn->SetUpperLimitedVariable(1, "x2", 1.1, 0.1, 1.6);
+		mn->SetLimitedVariable(1, "x2", 1.0, 0.1, 0., 2.0);
 		mn->Minimize();
-		mn->Hesse();
+		//mn->Hesse();
 
 		std::cout << "  Minimization done!" << std::endl;
 		std::cout << "  Status=" << mn->Status() << std::endl;
