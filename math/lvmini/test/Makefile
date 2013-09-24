@@ -34,6 +34,10 @@ MINIMIZEOBJ      = testMinimize.$(ObjSuf)
 MINIMIZESRC      = testMinimize.$(SrcSuf)
 MINIMIZE         = testMinimize$(ExeSuf)
 
+MINIMIZETRANSFORMEDOBJ      = testMinimizeTransformed.$(ObjSuf)
+MINIMIZETRANSFORMEDSRC      = testMinimizeTransformed.$(SrcSuf)
+MINIMIZETRANSFORMED         = testMinimizeTransformed$(ExeSuf)
+
 STRAIGHTLINEFITOBJ      = testStraightLineFit.$(ObjSuf)
 STRAIGHTLINEFITSRC      = testStraightLineFit.$(SrcSuf)
 STRAIGHTLINEFIT         = testStraightLineFit$(ExeSuf)
@@ -42,9 +46,9 @@ WEIBULLFITOBJ      = testWeibullFit.$(ObjSuf)
 WEIBULLFITSRC      = testWeibullFit.$(SrcSuf)
 WEIBULLFIT         = testWeibullFit$(ExeSuf)
 
-OBJS          = $(MINIMIZEOBJ) $(STRAIGHTLINEFITOBJ) $(WEIBULLFITOBJ)
+OBJS          = $(MINIMIZEOBJ) $(MINIMIZETRANSFORMEDOBJ) $(STRAIGHTLINEFITOBJ) $(WEIBULLFITOBJ)
 
-PROGRAMS      = $(MINIMIZE) $(STRAIGHTLINEFIT) $(WEIBULLFIT)
+PROGRAMS      = $(MINIMIZE) $(MINIMIZETRANSFORMED) $(STRAIGHTLINEFIT) $(WEIBULLFIT)
 
 .SUFFIXES: .$(SrcSuf) .$(ObjSuf) $(ExeSuf)
 
@@ -52,6 +56,10 @@ PROGRAMS      = $(MINIMIZE) $(STRAIGHTLINEFIT) $(WEIBULLFIT)
 all:            $(PROGRAMS)
 
 $(MINIMIZE): 	$(MINIMIZEOBJ)
+		$(LD) $(LDFLAGS) $^ $(LIBS) $(EXTRALIBS) $(OutPutOpt)$@
+		@echo "$@ done"
+
+$(MINIMIZETRANSFORMED): 	$(MINIMIZETRANSFORMEDOBJ)
 		$(LD) $(LDFLAGS) $^ $(LIBS) $(EXTRALIBS) $(OutPutOpt)$@
 		@echo "$@ done"
 
