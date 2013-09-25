@@ -179,7 +179,7 @@ bool LVMiniMinimizer::Minimize()
    }
 
    // Transformation of input variables
-   std::auto_ptr<ROOT::Math::MinimTransformFunction> trFunc;
+   ROOT::Math::MinimTransformFunction* trFunc = 0;
    ROOT::Math::IMultiGradFunction* func = fFunc;
    bool doTransform = false;
    for(unsigned int ivar = 0; !doTransform && ivar < fVarTypes.size(); ++ivar)
@@ -189,13 +189,15 @@ bool LVMiniMinimizer::Minimize()
    std::vector<double> x(fVariables);
    if(doTransform)
    {
-      trFunc.reset(new ROOT::Math::MinimTransformFunction(fFunc, fVarTypes, fVariables, fBounds));
+      trFunc = new ROOT::Math::MinimTransformFunction(fFunc, fVarTypes, fVariables, fBounds);
       trFunc->InvTransformation(&fVariables[0], &x[0]);
 
       npar = trFunc->NDim();
       x.resize(npar);
 
-      func = trFunc.get();
+      func = trFunc;
+      //N.B. the Minim transform function manages the given function pointer 
+      fFunc = trFunc; 
    }
 
    // I haven't seen a clear guide on how many vector pairs

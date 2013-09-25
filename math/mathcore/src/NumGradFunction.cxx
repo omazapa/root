@@ -57,8 +57,9 @@ double NumGradFunction::DoEval (const double * x) const {
 }
 
 double NumGradFunction::DoDerivative (const double * x, unsigned int i) const {
+   // one should not call this function. It is not efficient
     const double * derivs = fDerivator->Differentiate(x);
-    return derivs[i-1];
+    return derivs[i];
 }
 
 unsigned int NumGradFunction::NDim() const {

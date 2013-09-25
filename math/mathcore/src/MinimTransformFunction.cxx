@@ -117,23 +117,32 @@ void  MinimTransformFunction::InvStepTransformation(const double * x, const doub
    }
 }
 
-void  MinimTransformFunction::GradientTransformation(const double * x, const double *gExt, double * gInt) const { 
+void  MinimTransformFunction::GradientTransformation(const double * x, const double *gExt, double * gInt, const double * g2Ext,  double * g2Int) const { 
    //transform gradient vector (external -> internal) at internal point x
    unsigned int nfree = fIndex.size(); 
    for (unsigned int i = 0; i < nfree; ++i ) { 
       unsigned int extIndex = fIndex[i]; 
       const MinimizerVariable & var = fVariables[ extIndex ];
       assert (!var.IsFixed() );
-      if (var.IsLimited() )  
-         gInt[i] = gExt[ extIndex ] * var.DerivativeIntToExt( x[i] ); 
-      else
-         gInt[i] = gExt[ extIndex ];   
+      if (var.IsLimited() )  { 
+         double dExtdInt = var.DerivativeIntToExt( x[i] );
+         gInt[i] = gExt[ extIndex ] * dExtdInt ; 
+         if (g2Ext)  g2Int[i] = g2Ext[ extIndex ] * dExtdInt * dExtdInt; 
+
+      }
+      else {
+         gInt[i] = gExt[ extIndex ]; 
+         if (g2Ext) g2Int[i] = g2Ext[extIndex]; 
+      }
    }
 }
 
 
+
 void  MinimTransformFunction::MatrixTransformation(const double * x, const double *covInt, double * covExt) const { 
    //transform covariance matrix (internal -> external) at internal point x
+   // since covariance matrix is inverse of Hessian, we can use the same d ext / dint derivatives for the transformation
+   // (the same used for transforming external -> internal derivatives)
    // use row storages for matrices  m(i,j) = rep[ i * dim + j]
    // ignore fixed points 
    unsigned int nfree = fIndex.size(); 

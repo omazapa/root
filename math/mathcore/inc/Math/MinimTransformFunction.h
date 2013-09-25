@@ -90,12 +90,44 @@ public:
    void  InvStepTransformation(const double * x, const double * sext,  double * sint) const;
 
    ///transform gradient vector (external -> internal) at internal point x
-   void GradientTransformation(const double * x, const double *gExt, double * gInt) const;  
+   /// Optionally transform also the diagonal vector of the second derivatives  
+   void GradientTransformation(const double * x, const double *gExt, double * gInt, const double *g2Ext = 0, double * g2Int = 0) const;  
 
    ///transform covariance matrix (internal -> external) at internal point x
    /// use row storages for matrices  m(i,j) = rep[ i * dim + j]
    void MatrixTransformation(const double * x, const double *covInt, double * covExt) const;  
 
+   // reimplement Gradient
+   virtual void  Gradient(const double *x, double * grad) const { 
+      std::vector<double> gExt( NDim() );
+      fFunc->Gradient( Transformation(x) , &gExt[0] ); 
+      GradientTransformation(x,  &gExt[0], grad );
+   }
+
+   // reimplement Gradient with second derivatives
+   virtual void  Gradient(const double *x, double * grad, double * grad2) const { 
+      std::vector<double> gExt( NDim() );
+      std::vector<double> g2Ext( NDim() );
+      fFunc->Gradient( Transformation(x) , &gExt[0], &g2Ext[0]); 
+      GradientTransformation(x,  &gExt[0], grad, &g2Ext[0], grad2 );
+   }
+
+   /// re-implement also FdF 
+   virtual void FdF (const double * x, double & f, double * g) const { 
+      std::vector<double> gExt( NDim() );
+      fFunc->FdF( Transformation(x) , f, &gExt[0] ); 
+      // now transform the derivatives
+      GradientTransformation(x,  &gExt[0], g );
+   }
+
+   /// re-implement also FdF with second derivatives 
+   virtual void FdF (const double * x, double & f, double * g, double * g2) const { 
+      std::vector<double> gExt( NDim() );
+      std::vector<double> g2Ext( NDim() );
+      fFunc->FdF( Transformation(x) , f, &gExt[0], &g2Ext[0]); 
+      // now transform the derivatives
+      GradientTransformation(x,  &gExt[0], g, &g2Ext[0], g2 );
+   }
 
 private: 
 
