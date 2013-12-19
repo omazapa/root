@@ -22,13 +22,18 @@
 #define NITER 1  // number of iterations
 #endif
 #ifndef NLOOP_MIN
-#define NLOOP_MIN 1000;
+#define NLOOP_MIN 5000;
 #endif
 
 #ifdef HAVE_CLHEP
 #include "CLHEP/Matrix/SymMatrix.h"
 #include "CLHEP/Matrix/Matrix.h"
 #include "CLHEP/Matrix/Vector.h"
+#endif
+
+#ifdef HAVE_EIGEN
+#include "Eigen/Core"
+#include "Eigen/Dense"
 #endif
 
 //#define DEBUG
@@ -145,13 +150,21 @@ int test_smatrix_op() {
     MnMatrixNN  C1;  testATBA_S(B,C0,t_ama,C1);
     //if (k == 0) C1.Print(std::cout);
     MnMatrixNN  C2;  testInv_S(C1,t_inv,C2);
+    //if (k == 0) C2.Print(std::cout);
     MnVectorN   v3;  testVeq(v,t_veq,v3);
+    //if (k == 0) v3.Print(std::cout);
     MnVectorN   v4;  testVad(v2,v3,t_vad,v4);
+    //if (k == 0) v4.Print(std::cout);
     MnVectorN   v5;  testVscale(v4,2.0,t_vsc,v5);
+    //if (k == 0) v5.Print(std::cout);
     MnMatrixNN  C3;  testMeq(C,t_meq,C3);
+    //if (k == 0) C3.Print(std::cout);
     MnMatrixNN  C4;  testMad(C2,C3,t_mad,C4);
+    //if (k == 0) C4.Print(std::cout);
     MnMatrixNN  C5;  testMscale(C4,0.5,t_msc,C5);
+    //if (k == 0) C5.Print(std::cout);
     MnMatrixNN  C6;  testMT_S(C5,t_tra,C6);
+    //if (k == 0) C6.Print(std::cout);
 
 #ifdef DEBUG
     if (k == 0) { 
@@ -694,6 +707,126 @@ int test_hepmatrix_sym_op() {
 #endif  // HAVE_CLHEP
 
 
+#ifdef HAVE_EIGEN
+
+template<unsigned int NDIM1, unsigned int NDIM2> 
+int test_eigen_op() {
+
+
+    
+  typedef Eigen::Matrix<double, NDIM1, NDIM1> MnMatrixNN;
+  typedef Eigen::Matrix<double, NDIM2, NDIM2> MnMatrixMM;
+  typedef Eigen::Matrix<double, NDIM1, NDIM2> MnMatrixNM;
+  typedef Eigen::Matrix<double, NDIM2 , NDIM1> MnMatrixMN;
+  typedef Eigen::Matrix<double, NDIM1, 1> MnVectorN;
+  typedef Eigen::Matrix<double, NDIM2, 1> MnVectorM;
+
+  
+
+
+  int first = NDIM1;  //Can change the size of the matrices
+  int second = NDIM2;
+
+
+  std::cout << "************************************************\n";
+  std::cout << "  Eigen operations test  "   <<  first << " x " << second  << std::endl;
+  std::cout << "************************************************\n";
+  
+  double t_veq, t_meq, t_vad, t_mad, t_dot, t_mv, t_gmv, t_mm, t_prd, t_inv, t_vsc, t_msc, t_ama, t_tra = 0;
+  
+
+  double totTime1, totTime2; 
+   
+  double r1,r2;
+  int npass = NITER; 
+  TRandom3 r(111);
+
+  for (int k = 0; k < npass; k++) {
+
+
+    MnMatrixNM A;
+    MnMatrixMN B;
+    MnMatrixNN C; 
+    MnMatrixMM D; 
+    MnVectorN v;
+    MnVectorM p;
+
+    TStopwatch w; 
+
+    { 
+      // fill matrices with random data
+
+      fillRandomMat(r,A,first,second);
+      fillRandomMat(r,B,second,first);
+      fillRandomMat(r,C,first,first);
+      fillRandomMat(r,D,second,second);
+
+      fillRandomVec(r,v,first);
+      fillRandomVec(r,p,second);
+    }
+
+#ifdef DEBUG
+    std::cout << "pass " << k << std::endl;
+    if (k == 0) { 
+      std::cout << " A = " << A << std::endl;
+      std::cout << " B = " << B << std::endl;
+      std::cout << " C = " << C << std::endl;
+      std::cout << " D = " << D << std::endl;
+      std::cout << " v = " << v << std::endl;
+      std::cout << " p = " << p << std::endl;
+    }
+#endif
+	
+    w.Start(); 
+    
+	        
+    MnVectorN   v1;  testMV(A,v,t_mv,v1);
+    //if (k == 0) v1.Print(std::cout);
+    MnVectorN   v2;  testGMV(A,v,v1,t_gmv,v2);
+    //if (k == 0) v2.Print(std::cout);
+    MnMatrixNN  C0;  testMM(A,B,C,t_mm,C0);
+    //if (k == 0) C0.Print(std::cout);
+    MnMatrixNN  C1;  testATBA_E(B,C0,t_ama,C1);
+    //if (k == 0) C1.Print(std::cout);
+    MnMatrixNN  C2;  testInv_E(C1,t_inv,C2);
+    MnVectorN   v3;  testVeq(v,t_veq,v3);
+    MnVectorN   v4;  testVad(v2,v3,t_vad,v4);
+    MnVectorN   v5;  testVscale(v4,2.0,t_vsc,v5);
+    MnMatrixNN  C3;  testMeq(C,t_meq,C3);
+    MnMatrixNN  C4;  testMad(C2,C3,t_mad,C4);
+    MnMatrixNN  C5;  testMscale(C4,0.5,t_msc,C5);
+    MnMatrixNN  C6;  testMT_E(C5,t_tra,C6);
+
+
+    r1 = testDot_E(v3,v5,t_dot);
+    r2 = testInnerProd_E(C6,v5,t_prd);
+
+#ifdef DEBUG
+    if (k == 0) { 
+      std::cout << " C6 = " << C6 << std::endl;
+      std::cout << " v5 = " << v5 << std::endl;
+    }
+#endif
+
+
+    //    MnMatrix C2b(NDIM1,NDIM1); testInv_T2(C1,t_inv2,C2b);
+
+    w.Stop();
+    totTime1 = w.RealTime();
+    totTime2 = w.CpuTime();
+  
+  }
+  //  tr.dump();
+
+  std::cout << "Total Time = " << totTime1 << "  (s)  -  cpu " <<  totTime2 << "  (s) " << std::endl; 
+  std::cerr << "Eigen:   r1 = " << r1 << " r2 = " << r2 << std::endl; 
+
+  return 0;
+}
+
+#endif  // endif EIGEN
+
+
 #if defined(HAVE_CLHEP) && defined (TEST_SYM)
 #define NTYPES 6
 #define TEST(N) \
@@ -704,7 +837,24 @@ int test_hepmatrix_sym_op() {
    TEST_TYPE=3; test_smatrix_sym_op<N,N>(); \
    TEST_TYPE=4; test_tmatrix_sym_op<N,N>();     \
    TEST_TYPE=5; test_hepmatrix_sym_op<N,N>();
-#elif !defined(HAVE_CLHEP) && defined (TEST_SYM)
+#elif defined(HAVE_EIGEN) && defined (TEST_SYM) && !defined (HAVE_CLHEP)
+#define NTYPES 5
+#define TEST(N) \
+   MATRIX_SIZE=N;  \
+   TEST_TYPE=0; test_smatrix_op<N,N>(); \
+   TEST_TYPE=1; test_tmatrix_op<N,N>();     \
+   TEST_TYPE=2; test_eigen_op<N,N>();   \
+   TEST_TYPE=3; test_smatrix_sym_op<N,N>(); \
+   TEST_TYPE=4; test_tmatrix_sym_op<N,N>();     
+//   TEST_TYPE=5; test_hepmatrix_sym_op<N,N>();
+#elif defined(HAVE_EIGEN) && !defined (TEST_SYM) && !defined (HAVE_CLHEP)
+#define NTYPES 3
+#define TEST(N) \
+   MATRIX_SIZE=N;  \
+   TEST_TYPE=0; test_smatrix_op<N,N>(); \
+   TEST_TYPE=1; test_tmatrix_op<N,N>();     \
+   TEST_TYPE=2; test_eigen_op<N,N>();   
+#elif !defined(HAVE_CLHEP) && defined (TEST_SYM) && !defined(HAVE_EIGEN)
 #define NTYPES 4
 #define TEST(N) \
    MATRIX_SIZE=N;  \
@@ -712,7 +862,7 @@ int test_hepmatrix_sym_op() {
    TEST_TYPE=1; test_tmatrix_op<N,N>();     \
    TEST_TYPE=2; test_smatrix_sym_op<N,N>(); \
    TEST_TYPE=3; test_tmatrix_sym_op<N,N>();     
-#elif defined(HAVE_CLHEP) && !defined (TEST_SYM)
+#elif defined(HAVE_CLHEP) && !defined (TEST_SYM) && !defined(HAVE_EIGEN)
 #define NTYPES 3
 #define TEST(N) \
    MATRIX_SIZE=N;  \
@@ -786,16 +936,23 @@ int main(int argc , char *argv[] ) {
 
   typeNames[0] = "SMatrix";
   typeNames[1] = "TMatrix";
-#if !defined(HAVE_CLHEP) && defined (TEST_SYM)
+#if !defined(HAVE_CLHEP) && !defined(HAVE_EIGEN) && defined (TEST_SYM)
   typeNames[2] = "SMatrix_sym";
   typeNames[3] = "TMatrix_sym";
-#elif defined(HAVE_CLHEP) && defined (TEST_SYM)
+#elif defined(HAVE_CLHEP) && !defined(HAVE_EIGEN) && defined (TEST_SYM)
   typeNames[2] = "HepMatrix";
   typeNames[3] = "SMatrix_sym";
   typeNames[4] = "TMatrix_sym";
   typeNames[5] = "HepMatrix_sym";
-#elif defined(HAVE_CLHEP) && !defined (TEST_SYM)
+#elif defined(HAVE_CLHEP) && !defined(HAVE_EIGEN) && !defined (TEST_SYM)
   typeNames[2] = "HepMatrix";
+#elif defined(HAVE_EIGEN) && defined (TEST_SYM) && !defined(HAVE_CLHEP)
+  typeNames[2] = "EMatrix";
+  typeNames[3] = "SMatrix_sym";
+  typeNames[4] = "TMatrix_sym";
+#elif defined(HAVE_EIGEN) && !defined (TEST_SYM) && !defined(HAVE_CLHEP)
+  typeNames[2] = "EMatrix";
+
 #endif
 
 #endif
