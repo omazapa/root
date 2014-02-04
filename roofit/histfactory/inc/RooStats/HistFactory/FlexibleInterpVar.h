@@ -72,7 +72,7 @@ namespace HistFactory{
     mutable std::vector<double> _logHi ; //! cached logs
     mutable std::vector<double> _powLo ; //! cached powers
     mutable std::vector<double> _powHi ; //! cached powers
-    mutable double _a[6]               ; //! cached poly coefficients
+     mutable std::vector<std::vector< double> > _polCoeff;     //! cached poly coefficients
 
     Double_t evaluate() const;
 
