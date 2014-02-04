@@ -289,6 +289,10 @@ Double_t FlexibleInterpVar::evaluate() const
   //const RooArgSet* nset = _paramList.nset() ;
   int i=0;
 
+  // TString name = GetName();
+  // if (name == TString("ZHWW_ll12_vzll_epsilon") )
+  //    //    std::cout << "evaluate flexible interp var - init flag is " << _logInit << std::endl;
+
   while((param=(RooAbsReal*)_paramIter->Next())) {
     //    param->Print("v");
 
@@ -426,7 +430,7 @@ Double_t FlexibleInterpVar::evaluate() const
 
         assert(i < _polCoeff.size() );
 
-        std::vector<double> coeff = _polCoeff[i]; 
+        const std::vector<double> & coeff = _polCoeff[i]; 
 
         double a = coeff[0];
         double b = coeff[1];
