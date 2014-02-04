@@ -287,6 +287,7 @@ Double_t FlexibleInterpVar::evaluate() const
 
 
     Int_t icode = _interpCode[i] ;
+
     switch(icode) {
 
     case 0: {
@@ -335,6 +336,7 @@ Double_t FlexibleInterpVar::evaluate() const
     }
     case 4: {
       double boundary = _interpBoundary;
+      //std::cout << icode << " param " << param->GetName() << "  " << param->getVal() << " boundary " << boundary << std::endl;
       // piece-wise log + parabolic
       if(param->getVal()>=boundary)
 	{
@@ -366,6 +368,39 @@ Double_t FlexibleInterpVar::evaluate() const
 	  for (unsigned int j=0 ; j<_low.size() ; j++) {
 	    _powLo[j] = pow(_low.at(j)/_nominal,  x0);
 	  }
+
+          // GHL: Swagato's suggestions
+          double pow_up       = _powHi[i] ;
+          double pow_down     = _powLo[i] ;
+          double pow_up_log   = _high[i] <= 0.0 ? 0.0 : pow_up*_logHi[i] ;
+          double pow_down_log = _low[i] <= 0.0 ? 0.0 : -pow_down*_logLo[i] ;
+          double pow_up_log2  = _high[i] <= 0.0 ? 0.0 : pow_up_log*_logHi[i] ;
+          double pow_down_log2= _low[i] <= 0.0 ? 0.0 : -pow_down_log*_logLo[i] ;
+          /*
+            double pow_up       = pow(_high[i]/_nominal, x0);
+            double pow_down     = pow(_low[i]/_nominal,  x0);
+            double pow_up_log   = pow_up*TMath::Log(_high[i]);
+            double pow_down_log = -pow_down*TMath::Log(_low[i]);
+            double pow_up_log2  = pow_up_log*TMath::Log(_high[i]);
+            double pow_down_log2= pow_down_log*TMath::Log(_low[i]);
+          */
+          double S0 = (pow_up+pow_down)/2;
+          double A0 = (pow_up-pow_down)/2;
+          double S1 = (pow_up_log+pow_down_log)/2;
+          double A1 = (pow_up_log-pow_down_log)/2;
+          double S2 = (pow_up_log2+pow_down_log2)/2;
+          double A2 = (pow_up_log2-pow_down_log2)/2;
+
+//fcns+der+2nd_der are eq at bd
+
+          // cache  coefficient of th epolynomial 
+
+          _a[0] = 1./(8*x0)        *(      15*A0 -  7*x0*S1 + x0*x0*A2);
+          _a[1] = 1./(8*x0*x0)     *(-24 + 24*S0 -  9*x0*A1 + x0*x0*S2);
+          _a[2] = 1./(4*pow(x0, 3))*(    -  5*A0 +  5*x0*S1 - x0*x0*A2);
+          _a[3] = 1./(4*pow(x0, 4))*( 12 - 12*S0 +  7*x0*A1 - x0*x0*S2);
+          _a[4] = 1./(8*pow(x0, 5))*(    +  3*A0 -  3*x0*S1 + x0*x0*A2);
+          _a[5] = 1./(8*pow(x0, 6))*( -8 +  8*S0 -  5*x0*A1 + x0*x0*S2);
 	  
 	}
 	
@@ -373,39 +408,18 @@ Double_t FlexibleInterpVar::evaluate() const
 	// if( _low[i] == 0 ) _low[i] = 0.0001;
 	// if( _high[i] == 0 ) _high[i] = 0.0001;
 
-	// GHL: Swagato's suggestions
-	double pow_up       = _powHi[i] ;
-	double pow_down     = _powLo[i] ;
-	double pow_up_log   = _high[i] <= 0.0 ? 0.0 : pow_up*_logHi[i] ;
-	double pow_down_log = _low[i] <= 0.0 ? 0.0 : -pow_down*_logLo[i] ;
-	double pow_up_log2  = _high[i] <= 0.0 ? 0.0 : pow_up_log*_logHi[i] ;
-	double pow_down_log2= _low[i] <= 0.0 ? 0.0 : -pow_down_log*_logLo[i] ;
-	/*
-	double pow_up       = pow(_high[i]/_nominal, x0);
-	double pow_down     = pow(_low[i]/_nominal,  x0);
-	double pow_up_log   = pow_up*TMath::Log(_high[i]);
-	double pow_down_log = -pow_down*TMath::Log(_low[i]);
-	double pow_up_log2  = pow_up_log*TMath::Log(_high[i]);
-	double pow_down_log2= pow_down_log*TMath::Log(_low[i]);
-	*/
-	double S0 = (pow_up+pow_down)/2;
-	double A0 = (pow_up-pow_down)/2;
-	double S1 = (pow_up_log+pow_down_log)/2;
-	double A1 = (pow_up_log-pow_down_log)/2;
-	double S2 = (pow_up_log2+pow_down_log2)/2;
-	double A2 = (pow_up_log2-pow_down_log2)/2;
+        double a = _a[0];
+        double b = _a[1];
+        double c = _a[2];
+        double d = _a[3];
+        double e = _a[4];
+        double f = _a[5];
+             
 
-//fcns+der+2nd_der are eq at bd
-	double a = 1./(8*pow(x0, 1))*(      15*A0 -  7*x0*S1 + x0*x0*A2);
-	double b = 1./(8*pow(x0, 2))*(-24 + 24*S0 -  9*x0*A1 + x0*x0*S2);
-	double c = 1./(4*pow(x0, 3))*(    -  5*A0 +  5*x0*S1 - x0*x0*A2);
-	double d = 1./(4*pow(x0, 4))*( 12 - 12*S0 +  7*x0*A1 - x0*x0*S2);
-	double e = 1./(8*pow(x0, 5))*(    +  3*A0 -  3*x0*S1 + x0*x0*A2);
-	double f = 1./(8*pow(x0, 6))*( -8 +  8*S0 -  5*x0*A1 + x0*x0*S2);
-
-	double xx = x*x ;
-	double xxx = xx*x ;
-	total *= 1 + a*x + b*xx + c*xxx + d*xx*xx + e*xxx*xx + f*xxx*xxx;
+	// double xx = x*x ;
+	// double xxx = xx*x ;
+	// total *= 1 + a*x + b*xx + c*xxx + d*xx*xx + e*xxx*xx + f*xxx*xxx;
+        total *= 1. + x * (a + x * ( b + x * ( c + x * ( d + x * ( e + x * f ) ) ) ) );
       }
       else if (param->getVal()<=-boundary)
 	{
