@@ -13,11 +13,11 @@ if( "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" AND CLANG_MAJOR GREATER 2 AND CL
 endif()
 
 if( ModernGcc)
-   set(additional_compile_flags "-O3 -fast-math")
+   set(additional_compile_flags "-O3 --fast-math")
 endif()
 
 if( ModernClang)
-   set(additional_compile_flags "-O3 -fast-math ${alwaysInlineClang}")
+   set(additional_compile_flags "-O3 --fast-math ${alwaysInlineClang}")
 endif()
 
 ROOT_EXECUTABLE(${testname} ${testname}.cxx LIBRARIES ${Libraries} ADDITIONAL_COMPILE_FLAGS ${additional_compile_flags} )
