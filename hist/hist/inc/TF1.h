@@ -77,6 +77,8 @@ protected:
    Double_t     fMaximum;    //Maximum value for plotting
    Double_t     fMinimum;    //Minimum value for plotting
    TMethodCall *fMethodCall; //!Pointer to MethodCall in case of interpreted function
+   Bool_t       fNormalized; //Normalization option (false by default)
+   Double_t    fNormIntegral;//Integral of the function before being normalized
    ROOT::Math::ParamFunctor fFunctor;   //! Functor object to wrap any C++ callable object
 
    static Bool_t fgAbsValue;  //use absolute value of function when computing integral
@@ -119,27 +121,29 @@ public:
       TAttLine(),
       TAttFill(),
       TAttMarker(),
-      fXmin      ( xmin ),
-      fXmax      ( xmax ),
-      fNpx       ( 100 ),
-      fType      ( 1 ),
-      fNpfits    ( 0 ),
-      fNDF       ( 0 ),
-      fNsave     ( 0 ),
-      fChisquare ( 0 ),
-      fIntegral  ( 0 ),
-      fParErrors ( 0 ),
-      fParMin    ( 0 ),
-      fParMax    ( 0 ),
-      fSave      ( 0 ),
-      fAlpha     ( 0 ),
-      fBeta      ( 0 ),
-      fGamma     ( 0 ),
-      fParent    ( 0 ),
-      fHistogram ( 0 ),
-      fMaximum   ( -1111 ),
-      fMinimum   ( -1111 ),
-      fMethodCall ( 0),
+      fXmin       ( xmin ),
+      fXmax       ( xmax ),
+      fNpx        ( 100 ),
+      fType       ( 1 ),
+      fNpfits     ( 0 ),
+      fNDF        ( 0 ),
+      fNsave      ( 0 ),
+      fChisquare  ( 0 ),
+      fIntegral   ( 0 ),
+      fParErrors  ( 0 ),
+      fParMin     ( 0 ),
+      fParMax     ( 0 ),
+      fSave       ( 0 ),
+      fAlpha      ( 0 ),
+      fBeta       ( 0 ),
+      fGamma      ( 0 ),
+      fParent     ( 0 ),
+      fHistogram  ( 0 ),
+      fMaximum    ( -1111 ),
+      fMinimum    ( -1111 ),
+      fMethodCall ( 0 ),
+      fNormalized ( 0 ),
+      fNormIntegral(0),
       fFunctor( ROOT::Math::ParamFunctor(f) )
    {
       CreateFromFunctor(name, npar);
@@ -180,6 +184,8 @@ public:
       fMaximum   ( -1111 ),
       fMinimum   ( -1111 ),
       fMethodCall( 0 ),
+      fNormalized( 0 ),
+      fNormIntegral(0),
       fFunctor   ( ROOT::Math::ParamFunctor(p,memFn) )
    {
       CreateFromFunctor(name, npar);
@@ -269,7 +275,13 @@ public:
    virtual void     SetMinimum(Double_t minimum=-1111); // *MENU*
    virtual void     SetNDF(Int_t ndf);
    virtual void     SetNumberFitPoints(Int_t npfits) {fNpfits = npfits;}
+   virtual void     SetNormalized(Bool_t flag);
    virtual void     SetNpx(Int_t npx=100); // *MENU*
+   virtual void     SetParameter(const char *name, Double_t value);
+   virtual void     SetParameter(Int_t ipar, Double_t value);
+   virtual void     SetParameters(const Double_t *params);
+   virtual void     SetParameters(Double_t p0,Double_t p1,Double_t p2=0.,Double_t p3=0.,Double_t p4=0.,Double_t p5=0.,
+                                  Double_t p6=0.,Double_t p7=0.,Double_t p8=0.,Double_t p9=0.,Double_t p10=0.);
    virtual void     SetParError(Int_t ipar, Double_t error);
    virtual void     SetParErrors(const Double_t *errors);
    virtual void     SetParLimits(Int_t ipar, Double_t parmin, Double_t parmax);

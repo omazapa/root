@@ -389,6 +389,8 @@ TF1::TF1(): TFormula(), TAttLine(), TAttFill(), TAttMarker()
    fMinimum   = -1111;
    fMaximum   = -1111;
    fMethodCall = 0;
+   fNormIntegral = 0;
+   fNormalized = false;
    SetFillStyle(0);
 }
 
@@ -446,6 +448,8 @@ TF1::TF1(const char *name,const char *formula, Double_t xmin, Double_t xmax)
    fHistogram  = 0;
    fMinimum    = -1111;
    fMaximum    = -1111;
+   fNormIntegral = 0;
+   fNormalized = false;
    fMethodCall = 0;
 
    if (fNdim != 1 && xmin < xmax) {
@@ -513,6 +517,8 @@ TF1::TF1(const char *name, Double_t xmin, Double_t xmax, Int_t npar)
    fMinimum    = -1111;
    fMaximum    = -1111;
    fMethodCall = 0;
+   fNormIntegral = 0;
+   fNormalized = false;
    fNdim       = 1;
 
    TF1 *f1old = (TF1*)gROOT->GetListOfFunctions()->FindObject(name);
@@ -597,6 +603,8 @@ TF1::TF1(const char *name,Double_t (*fcn)(Double_t *, Double_t *), Double_t xmin
    fHistogram  = 0;
    fMinimum    = -1111;
    fMaximum    = -1111;
+   fNormalized = false;
+   fNormIntegral = 0;
    fNdim       = 1;
 
    // Store formula in linked list of formula in ROOT
@@ -668,6 +676,8 @@ TF1::TF1(const char *name,Double_t (*fcn)(const Double_t *, const Double_t *), D
    fHistogram  = 0;
    fMinimum    = -1111;
    fMaximum    = -1111;
+   fNormalized = false;
+   fNormIntegral = 0;
    fNdim       = 1;
 
    // Store formula in linked list of formula in ROOT
@@ -712,6 +722,8 @@ TF1::TF1(const char *name, ROOT::Math::ParamFunctor f, Double_t xmin, Double_t x
    fMaximum   ( -1111 ),
    fMinimum   ( -1111 ),
    fMethodCall( 0 ),
+   fNormalized (0),
+   fNormIntegral(0),
    fFunctor   ( ROOT::Math::ParamFunctor(f) )
 {
    // F1 constructor using the Functor class.
@@ -794,8 +806,11 @@ TF1::~TF1()
    if (fBeta)      delete [] fBeta;
    if (fGamma)     delete [] fGamma;
    if (fSave)      delete [] fSave;
+    
+   // delete fNormIntegral;
    delete fHistogram;
    delete fMethodCall;
+
 
    if (fParent) fParent->RecursiveRemove(this);
 }
@@ -806,26 +821,28 @@ TF1::TF1(const TF1 &f1) : TFormula(), TAttLine(f1), TAttFill(f1), TAttMarker(f1)
 {
    // Constuctor.
 
-   fXmin      = 0;
-   fXmax      = 0;
-   fNpx       = 100;
-   fType      = 0;
-   fNpfits    = 0;
-   fNDF       = 0;
-   fNsave     = 0;
-   fChisquare = 0;
-   fIntegral  = 0;
-   fParErrors = 0;
-   fParMin    = 0;
-   fParMax    = 0;
-   fAlpha     = 0;
-   fBeta      = 0;
-   fGamma     = 0;
-   fParent    = 0;
-   fSave      = 0;
-   fHistogram = 0;
-   fMinimum   = -1111;
-   fMaximum   = -1111;
+   fXmin       = 0;
+   fXmax       = 0;
+   fNpx        = 100;
+   fType       = 0;
+   fNpfits     = 0;
+   fNDF        = 0;
+   fNsave      = 0;
+   fChisquare  = 0;
+   fIntegral   = 0;
+   fParErrors  = 0;
+   fParMin     = 0;
+   fParMax     = 0;
+   fAlpha      = 0;
+   fBeta       = 0;
+   fGamma      = 0;
+   fParent     = 0;
+   fSave       = 0;
+   fHistogram  = 0;
+   fMinimum    = -1111;
+   fMaximum    = -1111;
+   fNormalized = false;
+   fNormIntegral = 0;
    fMethodCall = 0;
    SetFillStyle(0);
 
@@ -899,6 +916,8 @@ void TF1::Copy(TObject &obj) const
    ((TF1&)obj).fNsave     = fNsave;
    ((TF1&)obj).fSave      = 0;
    ((TF1&)obj).fHistogram = 0;
+   ((TF1&)obj).fNormalized = fNormalized;
+   ((TF1&)obj).fNormIntegral = fNormIntegral;
    ((TF1&)obj).fMethodCall = 0;
    if (fNsave) {
       ((TF1&)obj).fSave = new Double_t[fNsave];
@@ -1309,26 +1328,58 @@ Double_t TF1::EvalPar(const Double_t *x, const Double_t *params)
    // InitArgs should be called everytime these addresses change.
 
    fgCurrent = this;
-
-   if (fType == 0) return TFormula::EvalPar(x,params);
-   Double_t result = 0;
-   if (fType == 1)  {
+    
+    if (fType == 0)
+    {
+        if (fNormalized && fNormIntegral == 0)
+        {
+            std::cout << "TF1::EvalPar: error! The integral is zero." << std::endl;
+        }
+        if (fNormalized && fNormIntegral != 0)
+        {
+           // std::cout << "TF1::EvalPar : integral is : " << fNormIntegral <<  std::endl;
+            return TFormula::EvalPar(x,params)/fNormIntegral;
+        }
+        else
+        {
+            std::cout << " fNormalized is false" << std::endl;
+            return TFormula::EvalPar(x,params);
+        }
+        
+    }
+    
+    Double_t result = 0;
+    if (fType == 1)
+    {
 //       if (fFunction) {
 //          if (params) result = (*fFunction)((Double_t*)x,(Double_t*)params);
 //          else        result = (*fFunction)((Double_t*)x,fParams);
-      if (!fFunctor.Empty()) {
-         if (params) result = fFunctor((Double_t*)x,(Double_t*)params);
-         else        result = fFunctor((Double_t*)x,fParams);
-
-      }else          result = GetSave(x);
+        if (!fFunctor.Empty())
+        {
+            if (params) result = fFunctor((Double_t*)x,(Double_t*)params);
+            else        result = fFunctor((Double_t*)x,fParams);
+        }
+        else          result = GetSave(x);
+         
+        if (fNormalized && fNormIntegral!=0)
+        {
+            result = result/fNormIntegral;
+        }
+        return result;
+    }
+   if (fType == 2)
+    {
+        if (fMethodCall) fMethodCall->Execute(result);
+        else             result = GetSave(x);
+       
+        if (fNormalized && fNormIntegral!=0)
+        {
+           result = result/fNormIntegral;
+        }
+           
       return result;
-   }
-   if (fType == 2) {
-      if (fMethodCall) fMethodCall->Execute(result);
-      else             result = GetSave(x);
-      return result;
-   }
-
+    }
+    
    return result;
 }
 
@@ -2294,6 +2345,7 @@ void TF1::InitArgs(const Double_t *x, const Double_t *params)
 //______________________________________________________________________________
 void TF1::InitStandardFunctions()
 {
+    
    // Create the basic function objects
 
    TF1 *f1;
@@ -3080,6 +3132,14 @@ void TF1::SetNDF(Int_t ndf)
 
 
 //______________________________________________________________________________
+void TF1::SetNormalized(Bool_t flag)
+{
+    // Choose if the TF1 function has to be normalized or not
+    
+    fNormalized = flag;
+}
+
+//______________________________________________________________________________
 void TF1::SetNpx(Int_t npx)
 {
    // Set the number of points used to draw the function
@@ -3103,6 +3163,55 @@ void TF1::SetNpx(Int_t npx)
    Update();
 }
 
+//______________________________________________________________________________
+void TF1::SetParameter(const char *name, Double_t value)
+{
+    // Initialize parameter number ipar.
+    TFormula::SetParameter(name, value);
+    if (fNormalized)
+    {
+        fNormIntegral = TF1::Integral(fXmin,fXmax);
+        std::cout << "TF1::SetParameter: The integral at this point is : " << fNormIntegral << std::endl;
+        
+    }
+}
+
+//______________________________________________________________________________
+void TF1::SetParameter(Int_t ipar, Double_t value)
+{
+    // Initialize the parameter number ipar
+    // and normalize the function if the flag fNormalized is true
+    
+    TFormula::SetParameter(ipar, value);
+    if (fNormalized)
+    {
+        fNormIntegral = TF1::Integral(fXmin,fXmax);
+        std::cout << "TF1::SetParameter: The integral at this point is : " << fNormIntegral << std::endl;
+    }
+}
+//______________________________________________________________________________
+void TF1::SetParameters(const Double_t *params)
+{
+    TFormula::SetParameters(params);
+    if (fNormalized)
+    {
+        fNormIntegral = TF1::Integral(fXmin,fXmax);
+        std::cout << "TF1::SetParameters: The integral at this point is : " << fNormIntegral << std::endl;
+    }
+}
+
+//______________________________________________________________________________
+void TF1::SetParameters(Double_t p0,Double_t p1,Double_t p2,Double_t p3,Double_t p4,
+                        Double_t p5,Double_t p6,Double_t p7,Double_t p8,Double_t p9,Double_t p10)
+{
+    TFormula::SetParameters(p0,p1,p2,p3,p4,p5,p6,p7,p8,p9,p10);
+    if (fNormalized)
+    {
+        fNormIntegral = TF1::Integral(fXmin,fXmax);
+        std::cout << "TF1::SetParameters: The integral at this point is : " << fNormIntegral << std::endl;
+
+    }
+}
 
 //______________________________________________________________________________
 void TF1::SetParError(Int_t ipar, Double_t error)
