@@ -371,7 +371,10 @@ double FitUtil::EvaluateChi2(const IModelFunction & func, const BinData & data, 
       xc.resize(data.NDim() );
    }
 
-   for (unsigned int i = 0; i < n; ++ i) {
+
+   (const_cast<IModelFunction &>(func)).SetParameters(p);
+    for (unsigned int i = 0; i < n; ++ i) {
+
 
 
       double y = 0, invError = 1.;
@@ -381,7 +384,7 @@ double FitUtil::EvaluateChi2(const IModelFunction & func, const BinData & data, 
       double fval = 0;
 
       double binVolume = 1.0;
-      if (useBinVolume) {
+        if (useBinVolume) {
          unsigned int ndim = data.NDim();
          const double * x2 = data.BinUpEdge(i);
          for (unsigned int j = 0; j < ndim; ++j) {
@@ -395,7 +398,7 @@ double FitUtil::EvaluateChi2(const IModelFunction & func, const BinData & data, 
       const double * x = (useBinVolume) ? &xc.front() : x1;
 
       if (!useBinIntegral) {
-         fval = func ( x, p );
+         fval = func ( x );
       }
       else {
          // calculate integral normalized by bin volume

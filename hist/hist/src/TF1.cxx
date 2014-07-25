@@ -157,13 +157,14 @@ void TF1NormSum::SetParameters(const double* params)
     {
         fParams1[i] = params[i+NOfFunctions];
     }
-      ffunction1 -> SetParameters(fParams1);
+    ffunction1 -> SetParameters(fParams1);
     
     for (Int_t i=0; i<fNpar2;i++)
     {
         fParams2[i] = params[i+NOfFunctions+fNpar1];
     }
     ffunction2 -> SetParameters(fParams2);
+    // ffunction1 -> Print();
     //ffunction2 -> Print();
 }
 
@@ -1364,6 +1365,8 @@ Double_t TF1::EvalPar(const Double_t *x, const Double_t *params)
     
     if (fType == 0)
     {
+        //std::cout << GetName() << " fNormalized = " << fNormalized << ", fNormIntegral = " << fNormIntegral << std::endl;
+
         if (fNormalized && fNormIntegral != 0)  return TFormula::EvalPar(x,params)/fNormIntegral;
         else                                    return TFormula::EvalPar(x,params);
         
@@ -1377,7 +1380,7 @@ Double_t TF1::EvalPar(const Double_t *x, const Double_t *params)
 //          else        result = (*fFunction)((Double_t*)x,fParams);
         if (!fFunctor.Empty())
         {
-            if (params) result = fFunctor((Double_t*)x,(Double_t*)params);
+            if (params && params!=fParams) result = fFunctor((Double_t*)x,(Double_t*)params);
             else        result = fFunctor((Double_t*)x,0);
         }
         else          result = GetSave(x);
@@ -3405,7 +3408,13 @@ void TF1::Update()
       delete [] fBeta;     fBeta     = 0;
       delete [] fGamma;    fGamma    = 0;
    }
-    if (fNormalized)    IntegrateForNormalization();
+
+    if (fNormalized)
+    {
+        fNormalized = false;
+        IntegrateForNormalization();
+        fNormalized = true;
+    }
     std::vector<double>x(fNdim);
   //  std::cout << "TF1::Update() before  " << fParams[0] << std::endl;
     if ((fType == 1) && !fFunctor.Empty())  fFunctor(x.data(), (Double_t*)fParams);
