@@ -260,7 +260,7 @@ public:
                                    *name2="p2",const char *name3="p3",const char
                                    *name4="p4", const char *name5="p5",const char *name6="p6",const char *name7="p7",const char
                                    *name8="p8",const char *name9="p9",const char *name10="p10"); // *MENU*
-   virtual void        Update() {;}
+    virtual void        Update() {;}
 
    static  void        SetMaxima(Int_t maxop=1000, Int_t maxpar=1000, Int_t maxconst=1000);
 

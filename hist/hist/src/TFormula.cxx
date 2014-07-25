@@ -3351,7 +3351,7 @@ void TFormula::SetParameters(Double_t p0,Double_t p1,Double_t p2,Double_t p3,Dou
    // All arguments except THE FIRST TWO are optional
    // In case of a function with only one parameter, call this function with p1=0.
    // Minimum two arguments are required to differentiate this function
-   // from the SetParameters(cont Double_t *params)
+   // from the SetParameters(const Double_t *params)
 
    if (fNpar > 0) fParams[0] = p0;
    if (fNpar > 1) fParams[1] = p1;

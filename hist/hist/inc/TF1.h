@@ -86,9 +86,13 @@ protected:
    static TF1   *fgCurrent;   //pointer to current function being processed
 
    void CreateFromFunctor(const char *name, Int_t npar);
-
+   void IntegrateForNormalization();
    virtual Double_t GetMinMaxNDim(Double_t * x , Bool_t findmax, Double_t epsilon = 0, Int_t maxiter = 0) const;
    virtual void GetRange(Double_t * xmin, Double_t * xmax) const;
+<<<<<<< HEAD
+=======
+    
+>>>>>>> Implémentation de la classe TF1NormSum
 
 public:
     // TF1 status bits
@@ -310,7 +314,44 @@ public:
    //static  TGraph  *CalcGaussLegendreSamplingPoints(Int_t num=21, Double_t eps=3.0e-11);
    static  void     CalcGaussLegendreSamplingPoints(Int_t num, Double_t *x, Double_t *w, Double_t eps=3.0e-11);
 
-   ClassDef(TF1,7)  //The Parametric 1-D function
+   ClassDef(TF1,8)  //The Parametric 1-D function
+};
+
+//class adding two functions: c1*f1+c2*f2
+class TF1NormSum {
+    
+protected:
+    
+    TF1* ffunction1;
+    TF1* ffunction2;
+    Double_t fcoeff1;
+    Double_t fcoeff2;
+    Int_t fNpar1;
+    Int_t fNpar2;
+    Double_t  *fParams1;
+    Double_t  *fParams2;
+    
+public:
+    
+    // Constructor using 2 functions and, if different than 1, 2 coeffients for the sum c1*f1+c2*f2.
+    // If it is not already modified by the SetParameters(const double* params),
+    // the parameters are the internal paramters of the TF1 object
+    TF1NormSum(TF1* function1, TF1* function2, Double_t coeff1=1., Double_t coeff2=1.)
+    :ffunction1(function1),ffunction2(function2),fcoeff1(coeff1),fcoeff2(coeff2),fParams1(0),fParams2(0)
+    {
+        fNpar1   = ffunction1 -> GetNpar();
+        fNpar2   = ffunction2 -> GetNpar();
+        fParams1 = ffunction1 -> GetParameters();
+        fParams2 = ffunction1 -> GetParameters();
+        //if the function is not already normalized, it normalizes it
+        if (!ffunction1 -> IsNormalized())  ffunction1  -> SetNormalized(true);
+        if (!ffunction2 -> IsNormalized())  ffunction2  -> SetNormalized(true);
+    }
+    
+    // Overload the parenthesis to add the functions
+    double  operator()(double* x, double* p);
+
+    virtual void SetParameters(const double* params);
 };
 
 inline Double_t TF1::operator()(Double_t x, Double_t y, Double_t z, Double_t t) const

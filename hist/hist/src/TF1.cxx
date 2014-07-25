@@ -97,7 +97,8 @@ public:
       fN(n),
       fX0(x0)
    {
-      fFunc->InitArgs(fX, fPar);
+       fFunc -> InitArgs(fX, fPar);
+       if (par) f->SetParameters(par);
    }
 
    ROOT::Math::IGenFunction * Clone()  const {
@@ -109,7 +110,7 @@ public:
    // evaluate |f(x)|
    Double_t DoEval( Double_t x) const {
       fX[0] = x;
-      Double_t fval = fFunc->EvalPar( fX, fPar);
+      Double_t fval = fFunc->EvalPar( fX, 0);
       if (fAbsVal && fval < 0)  return -fval;
       return fval;
    }
@@ -133,6 +134,38 @@ public:
 };
 
 
+// Overload the parenthesis to add the functions
+double TF1NormSum::operator()(double* x, double* p)
+{
+    if (p!=0)   TF1NormSum::SetParameters(p);// first refresh the parameters
+  //std::cout << " TF1NormSum::operator() " << p << std::endl;
+    return fcoeff1 * ffunction1->EvalPar(x,0) + fcoeff2 * ffunction2->EvalPar(x, 0);
+}
+    
+// Initialize array of all parameters.
+// Overload the TF1::SetParameters() method.
+// double *params must contains first an array of the coefficients, then an array of the parameters.
+void TF1NormSum::SetParameters(const double* params)
+{
+    Int_t NOfFunctions = 2;
+    //ajouter un debug si les deux tableaux n'ont pas la même taille!
+    
+    fcoeff1 = params[0];
+    fcoeff2 = params[1];
+    
+    for (Int_t i=0; i<fNpar1;i++)
+    {
+        fParams1[i] = params[i+NOfFunctions];
+    }
+      ffunction1 -> SetParameters(fParams1);
+    
+    for (Int_t i=0; i<fNpar2;i++)
+    {
+        fParams2[i] = params[i+NOfFunctions+fNpar1];
+    }
+    ffunction2 -> SetParameters(fParams2);
+    //ffunction2 -> Print();
+}
 
 //______________________________________________________________________________
 /* Begin_Html
@@ -1331,20 +1364,8 @@ Double_t TF1::EvalPar(const Double_t *x, const Double_t *params)
     
     if (fType == 0)
     {
-        if (fNormalized && fNormIntegral == 0)
-        {
-            std::cout << "TF1::EvalPar: error! The integral is zero." << std::endl;
-        }
-        if (fNormalized && fNormIntegral != 0)
-        {
-           // std::cout << "TF1::EvalPar : integral is : " << fNormIntegral <<  std::endl;
-            return TFormula::EvalPar(x,params)/fNormIntegral;
-        }
-        else
-        {
-            std::cout << " fNormalized is false" << std::endl;
-            return TFormula::EvalPar(x,params);
-        }
+        if (fNormalized && fNormIntegral != 0)  return TFormula::EvalPar(x,params)/fNormIntegral;
+        else                                    return TFormula::EvalPar(x,params);
         
     }
     
@@ -1357,7 +1378,7 @@ Double_t TF1::EvalPar(const Double_t *x, const Double_t *params)
         if (!fFunctor.Empty())
         {
             if (params) result = fFunctor((Double_t*)x,(Double_t*)params);
-            else        result = fFunctor((Double_t*)x,fParams);
+            else        result = fFunctor((Double_t*)x,0);
         }
         else          result = GetSave(x);
          
@@ -1377,7 +1398,7 @@ Double_t TF1::EvalPar(const Double_t *x, const Double_t *params)
            result = result/fNormIntegral;
         }
            
-      return result;
+        return result;
     }
     
    return result;
@@ -2448,7 +2469,7 @@ Double_t TF1::IntegralOneDim(Double_t a, Double_t b,  Double_t epsrel, Double_t 
    //      g->IntegralFast(n,x,w,0,100000)= 1.253
 
 
-   TF1_EvalWrapper wf1( this, fParams, fgAbsValue );
+   TF1_EvalWrapper wf1( this, 0, fgAbsValue );
    Double_t result = 0;
 
    if (ROOT::Math::IntegratorOneDimOptions::DefaultIntegratorType() == ROOT::Math::IntegrationOneDim::kGAUSS ) {
@@ -2681,7 +2702,15 @@ Double_t TF1::IntegralMultiple(Int_t n, const Double_t *a, const Double_t *b, In
    return result;
 }
 
-
+//______________________________________________________________________________
+void TF1::IntegrateForNormalization()
+{
+    // Store the value of the integral, which will be used for normalization
+    // in the TF1::EvalPar method
+    
+    fNormIntegral = TF1::Integral(fXmin,fXmax);
+    
+}
 //______________________________________________________________________________
 Bool_t TF1::IsInside(const Double_t *x) const
 {
@@ -3137,6 +3166,8 @@ void TF1::SetNormalized(Bool_t flag)
     // Choose if the TF1 function has to be normalized or not
     
     fNormalized = flag;
+  //  std::cout << " TF1::SetNormalized " << std::endl;
+    Update();
 }
 
 //______________________________________________________________________________
@@ -3168,36 +3199,22 @@ void TF1::SetParameter(const char *name, Double_t value)
 {
     // Initialize parameter number ipar.
     TFormula::SetParameter(name, value);
-    if (fNormalized)
-    {
-        fNormIntegral = TF1::Integral(fXmin,fXmax);
-        std::cout << "TF1::SetParameter: The integral at this point is : " << fNormIntegral << std::endl;
-        
-    }
 }
 
 //______________________________________________________________________________
 void TF1::SetParameter(Int_t ipar, Double_t value)
 {
-    // Initialize the parameter number ipar
+    // Initialize the parameter number ipar with the value value
     // and normalize the function if the flag fNormalized is true
     
     TFormula::SetParameter(ipar, value);
-    if (fNormalized)
-    {
-        fNormIntegral = TF1::Integral(fXmin,fXmax);
-        std::cout << "TF1::SetParameter: The integral at this point is : " << fNormIntegral << std::endl;
-    }
 }
+
 //______________________________________________________________________________
 void TF1::SetParameters(const Double_t *params)
 {
+
     TFormula::SetParameters(params);
-    if (fNormalized)
-    {
-        fNormIntegral = TF1::Integral(fXmin,fXmax);
-        std::cout << "TF1::SetParameters: The integral at this point is : " << fNormIntegral << std::endl;
-    }
 }
 
 //______________________________________________________________________________
@@ -3205,12 +3222,6 @@ void TF1::SetParameters(Double_t p0,Double_t p1,Double_t p2,Double_t p3,Double_t
                         Double_t p5,Double_t p6,Double_t p7,Double_t p8,Double_t p9,Double_t p10)
 {
     TFormula::SetParameters(p0,p1,p2,p3,p4,p5,p6,p7,p8,p9,p10);
-    if (fNormalized)
-    {
-        fNormIntegral = TF1::Integral(fXmin,fXmax);
-        std::cout << "TF1::SetParameters: The integral at this point is : " << fNormIntegral << std::endl;
-
-    }
 }
 
 //______________________________________________________________________________
@@ -3394,6 +3405,11 @@ void TF1::Update()
       delete [] fBeta;     fBeta     = 0;
       delete [] fGamma;    fGamma    = 0;
    }
+    if (fNormalized)    IntegrateForNormalization();
+    std::vector<double>x(fNdim);
+  //  std::cout << "TF1::Update() before  " << fParams[0] << std::endl;
+    if ((fType == 1) && !fFunctor.Empty())  fFunctor(x.data(), (Double_t*)fParams);
+   // std::cout << "TF1::Update() after " << fParams[0] << std::endl;
 }
 
 
