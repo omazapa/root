@@ -1,0 +1,5 @@
+#ifndef ROOT_RGITCOMMIT_H
+#define ROOT_RGITCOMMIT_H
+#define ROOT_GIT_BRANCH "heads/TF1-dev"
+#define ROOT_GIT_COMMIT "v6-00-01-375-gefa6a78"
+#endif

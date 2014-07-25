@@ -30,6 +30,7 @@
 #include "Math/BrentRootFinder.h"
 #include "Math/BrentMinimizer1D.h"
 #include "Math/BrentMethods.h"
+#include "Math/DistFunc.h"
 #include "Math/Integrator.h"
 #include "Math/IntegratorMultiDim.h"
 #include "Math/IntegratorOptions.h"
@@ -133,41 +134,164 @@ public:
    Double_t fX0;
 };
 
+// TF1NormSum _______________________________________________________________
+
+TF1NormSum::TF1NormSum(TF1* function1, TF1* function2, Double_t coeff1, Double_t coeff2)
+:fNOfFunctions(0)
+{
+    fNOfFunctions    = 2;
+    fFunctions       = {function1, function2};
+    fNOfParams       = {function1 -> GetNpar(), function2 -> GetNpar()};
+    fCoeffs          = {coeff1, coeff2};
+    fParams          = std::vector < Double_t* > (fNOfFunctions);
+    fCstIndexes      = std::vector < Int_t     > (fNOfFunctions);
+    fNOfNonCstParams = std::vector < Int_t     > (fNOfFunctions);
+    fNOfNonCstParams = fNOfParams;
+    
+    
+    for (unsigned int n=0; n<fNOfFunctions; n++)
+    {
+        
+        if (!fFunctions[n] -> IsNormalized())
+            fFunctions[n]  -> SetNormalized(true);                      // normalize the functions if it is not already done
+        
+        fCstIndexes[n] = fFunctions[n] -> GetParNumber("Constant");     // return -1 if there is no constant parameter
+        if (fCstIndexes[n]!=-1)                                         // if there exists a constant parameter
+        {
+            fFunctions[n] -> FixParameter(fCstIndexes[n], 1.);          // fixes the parameters called "Constant" to 1
+            fNOfNonCstParams[n] -= 1;                                   // the number of non fixed parameter thus decreases
+            std::vector <Double_t> temp(fNOfNonCstParams[n]);
+            int k = 0;                                                  // index for the temp arry, k wil go form 0 until fNofNonCstParameter
+            for (int i=0; i<fNOfParams[n]; i++)                         // go through all the parameter to
+            {
+                if (i==fCstIndexes[n])   continue;                      // go to next step if this is the constant parameter
+                temp[k] = fFunctions[n] -> GetParameter(i);             // takes all the internal paramteres instead of the constant one
+                k++;
+             }
+            fParams[n] = temp.data();
+            continue;
+        }
+        fParams[n]       = fFunctions[n] -> GetParameters();
+    }
+}
+
+
+TF1NormSum::TF1NormSum(const std::vector <TF1*> &functions, const std::vector <Double_t> &coeffs)
+: fNOfFunctions(0), fFunctions(functions), fCoeffs(coeffs)
+{
+    fNOfFunctions    = functions.size();
+    fNOfParams       = std::vector < Int_t     > (fNOfFunctions);
+    fParams          = std::vector < Double_t* > (fNOfFunctions);
+    fCstIndexes      = std::vector < Int_t     > (fNOfFunctions);
+    fNOfNonCstParams = std::vector < Int_t     > (fNOfFunctions);
+    
+    for (unsigned int n=0; n < fNOfFunctions; n++)
+    {
+        //normalize the functions if it is not already done
+        if (!fFunctions[n] -> IsNormalized())  fFunctions[n]  -> SetNormalized(true);
+        
+        fNOfParams[n]       = fFunctions[n] -> GetNpar();
+        fNOfNonCstParams[n] = fNOfParams[n];
+        fCstIndexes[n]      = fFunctions[n] -> GetParNumber("Constant");//return -1 if there is no constant parameter
+       
+        if (fCstIndexes[n]!= -1)                                        //if there exists a constant parameter
+        {
+            fFunctions[n] -> FixParameter(fCstIndexes[n], 1.);          //fixes the parameters called "Constant" to 1
+            fNOfNonCstParams[n] -= 1;                                   //the number of non fixed parameter thus decreases
+            std::vector <Double_t> temp(fNOfNonCstParams[n]);
+            int k = 0;                                                  //index for the temp arry, k wil go form 0 until fNofNonCstParameter
+            for (int i=0; i<fNOfParams[n]; i++)                         //go through all the parameter to
+            {
+                if (i==fCstIndexes[n])   continue;                      //go to next step if this is the constant parameter
+                temp[k] = fFunctions[n] -> GetParameter(i);             //takes all the internal paramteres instead of the constant one
+                k++;
+            }
+            fParams[n] = temp.data();
+            continue;
+        }
+        fParams[n] = fFunctions[n] -> GetParameters();
+
+    }
+}
 
 // Overload the parenthesis to add the functions
 double TF1NormSum::operator()(double* x, double* p)
 {
-    if (p!=0)   TF1NormSum::SetParameters(p);// first refresh the parameters
-  //std::cout << " TF1NormSum::operator() " << p << std::endl;
-    return fcoeff1 * ffunction1->EvalPar(x,0) + fcoeff2 * ffunction2->EvalPar(x, 0);
+    if (p!=0)   TF1NormSum::SetParameters(p);                           // first refresh the parameters
+
+    Double_t sum = 0.;
+    for (unsigned int n=0; n<fNOfFunctions; n++)
+    {
+        sum += fCoeffs[n]*(fFunctions[n] -> EvalPar(x,0));
+    }
+    return sum;
 }
     
 // Initialize array of all parameters.
 // Overload the TF1::SetParameters() method.
 // double *params must contains first an array of the coefficients, then an array of the parameters.
-void TF1NormSum::SetParameters(const double* params)
+void TF1NormSum::SetParameters(const double* params)//params should have the size [fNOfFunctions][fNOfNonCstParams]
 {
-    Int_t NOfFunctions = 2;
-    //ajouter un debug si les deux tableaux n'ont pas la même taille!
     
-    fcoeff1 = params[0];
-    fcoeff2 = params[1];
-    
-    for (Int_t i=0; i<fNpar1;i++)
+    for (unsigned int n=0; n<fNOfFunctions; n++)                        //initialization of the coefficients
     {
-        fParams1[i] = params[i+NOfFunctions];
+        fCoeffs[n] = params[n];
     }
-    ffunction1 -> SetParameters(fParams1);
-    
-    for (Int_t i=0; i<fNpar2;i++)
+    std::vector <std::vector <Double_t> >temp(fNOfFunctions);
+    std::vector <std::vector <Double_t> >temptotal(fNOfFunctions);
+    int offset = 0;
+    Double_t FixedValue = 1.;
+    for (unsigned int n=0; n<fNOfFunctions; n++)
     {
-        fParams2[i] = params[i+NOfFunctions+fNpar1];
+        temptotal[n] = std::vector < Double_t > (fNOfParams[n]);        // temptotal is used for the TF1::SetParameters, so doesn't contains coefficients, but does contain cst parameters
+        temp[n]      = std::vector < Double_t > (fNOfNonCstParams[n]);  // temp is used for the class member fParams, so does not contain the cst parameters
+        if (n>0)    offset = fNOfNonCstParams[n-1];                     // offset to go along the list of parameters
+        int k = 0;                                                      // incrementer for temp
+        
+        for (int i=0; i<fNOfParams[n]; i++)
+        {
+            if (i == fCstIndexes[n])
+            {
+                temptotal[n][i] = 1. ;                                  // this is the constant parameter, that is not in the entered params array
+                continue;
+            }
+            temp[n][k]      = params[k+fNOfFunctions+offset];
+            temptotal[n][i] = params[k+fNOfFunctions+offset];
+            k++;
+        }
+        fParams[n]    =  temp[n].data();                                // fParams doesn't take the coefficients, and neither the cst parameters
+        fFunctions[n] -> SetParameters(temptotal[n].data());
+        
+        FixedValue = 1.;
+        if (fFunctions[n]->GetNumber() == 200)  FixedValue = 0.;        // if this is an exponential
+        fFunctions[n] -> FixParameter(fCstIndexes[n],FixedValue);
     }
-    ffunction2 -> SetParameters(fParams2);
-    // ffunction1 -> Print();
-    //ffunction2 -> Print();
+}
+// Initialize array of all parameters.
+// Overload the TF1::SetParameters() method.
+// A maximum of 10 parameters must be used, with first the coefficients, then the parameters
+void TF1NormSum::SetParameters(Double_t p0, Double_t p1, Double_t p2, Double_t p3, Double_t p4,
+                               Double_t p5, Double_t p6, Double_t p7, Double_t p8, Double_t p9, Double_t p10)
+{
+    const double params[] = {p0,p1,p2,p3,p4,p5,p6,p7,p8,p9,p10};
+    TF1NormSum::SetParameters(params);
+
+}
+//return the number of (non constant) paramters including the coefficients: for 2 functions: c1,c2,p0,p1,p2,p3...
+Int_t TF1NormSum::GetNpar() const
+{
+    Int_t NofParams = 0;
+    for (unsigned int n=0; n<fNOfFunctions; n++)
+    {
+       NofParams += fNOfNonCstParams[n];
+    }
+    return NofParams + fNOfFunctions;                                   //fNOfFunctions for the  coefficientws
 }
 
+Double_t* TF1NormSum::GetParameters(Int_t FunctionNo) const
+{
+    return fParams[FunctionNo];
+}
 //______________________________________________________________________________
 /* Begin_Html
 <center><h2>TF1: 1-Dim function class</h2></center>
@@ -1351,7 +1475,7 @@ Double_t TF1::EvalPar(const Double_t *x, const Double_t *params)
    // If argument params is omitted or equal 0, the internal values
    // of parameters (array fParams) will be used instead.
    // For a 1-D function only x[0] must be given.
-   // In case of a multi-dimemsional function, the arrays x must be
+   // In	 case of a multi-dimemsional function, the arrays x must be
    // filled with the corresponding number of dimensions.
    //
    // WARNING. In case of an interpreted function (fType=2), it is the
@@ -1365,8 +1489,6 @@ Double_t TF1::EvalPar(const Double_t *x, const Double_t *params)
     
     if (fType == 0)
     {
-        //std::cout << GetName() << " fNormalized = " << fNormalized << ", fNormIntegral = " << fNormIntegral << std::endl;
-
         if (fNormalized && fNormIntegral != 0)  return TFormula::EvalPar(x,params)/fNormIntegral;
         else                                    return TFormula::EvalPar(x,params);
         
@@ -2711,9 +2833,25 @@ void TF1::IntegrateForNormalization()
     // Store the value of the integral, which will be used for normalization
     // in the TF1::EvalPar method
     
-    fNormIntegral = TF1::Integral(fXmin,fXmax);
-    
+    if (TF1::GetNumber() == 200)                                        // exp(p0+p1*x)
+    {
+        Double_t p0   = TF1::GetParameter(0);
+        Double_t p1   = TF1::GetParameter(1);
+        fNormIntegral = (exp(p0)/p1)*(exp(-p1*fXmin)-exp(-p1*fXmax));   //ROOT::Math::exponential_cdf();
+        std::cout << " integral: " << fNormIntegral << std::endl;
+    }
+    else if (TF1::GetNumber() == 100)                                   // c0*exp(-0.5*((x-mean)/sigma)^2))
+    {
+        Double_t c0    = TF1::GetParameter(0);
+        Double_t mean  = TF1::GetParameter(1);
+        Double_t sigma = TF1::GetParameter(2);
+        fNormIntegral  =  sqrt(2*M_PI*sigma)* (ROOT::Math::gaussian_cdf(fXmax, sigma, mean)-
+                                               ROOT::Math::gaussian_cdf(fXmin, sigma, mean));
+        std::cout << " integral: " << fNormIntegral << std::endl;
+    }
+   else fNormIntegral = TF1::Integral(fXmin,fXmax);                     // use setparameters and evalpar and therefore is slower
 }
+
 //______________________________________________________________________________
 Bool_t TF1::IsInside(const Double_t *x) const
 {
@@ -3169,7 +3307,6 @@ void TF1::SetNormalized(Bool_t flag)
     // Choose if the TF1 function has to be normalized or not
     
     fNormalized = flag;
-  //  std::cout << " TF1::SetNormalized " << std::endl;
     Update();
 }
 

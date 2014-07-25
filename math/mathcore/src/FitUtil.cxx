@@ -37,7 +37,8 @@
 #include <iostream>
 #endif
 
-//todo:
+// using parameter cache is not thread safe but needed for normalizing the functions
+#define USE_PARAMCACHE
 
 //  need to implement integral option
 
@@ -341,7 +342,15 @@ double FitUtil::EvaluateChi2(const IModelFunction & func, const BinData & data, 
 
    double chi2 = 0;
    nPoints = 0; // count the effective non-zero points
+<<<<<<< HEAD
 
+=======
+   
+   // set parameters of the function to cache integral value
+#ifdef USE_PARAMCACHE
+   (const_cast<IModelFunction &>(func)).SetParameters(p);
+#endif
+>>>>>>> Fix the handling of the parameters of the functions to be added in TFNormSum
    // do not cache parameter values (it is not thread safe)
    //func.SetParameters(p);
 
@@ -360,8 +369,16 @@ double FitUtil::EvaluateChi2(const IModelFunction & func, const BinData & data, 
    std::cout << "use all error=1 " << fitOpt.fErrors1 << std::endl;
 #endif
 
+<<<<<<< HEAD
 
    IntegralEvaluator<> igEval( func, p, useBinIntegral);
+=======
+#ifdef USE_PARAMCACHE
+   IntegralEvaluator<> igEval( func, 0, useBinIntegral); 
+#else
+   IntegralEvaluator<> igEval( func, p, useBinIntegral); 
+#endif
+>>>>>>> Fix the handling of the parameters of the functions to be added in TFNormSum
 
    double maxResValue = std::numeric_limits<double>::max() /n;
    double wrefVolume = 1.0;
@@ -371,9 +388,13 @@ double FitUtil::EvaluateChi2(const IModelFunction & func, const BinData & data, 
       xc.resize(data.NDim() );
    }
 
+<<<<<<< HEAD
 
    (const_cast<IModelFunction &>(func)).SetParameters(p);
     for (unsigned int i = 0; i < n; ++ i) {
+=======
+   for (unsigned int i = 0; i < n; ++ i) { 
+>>>>>>> Fix the handling of the parameters of the functions to be added in TFNormSum
 
 
 
@@ -398,7 +419,11 @@ double FitUtil::EvaluateChi2(const IModelFunction & func, const BinData & data, 
       const double * x = (useBinVolume) ? &xc.front() : x1;
 
       if (!useBinIntegral) {
+#ifdef USE_PARAMCACHE
          fval = func ( x );
+#else
+         fval = func ( x, p );
+#endif
       }
       else {
          // calculate integral normalized by bin volume
@@ -835,6 +860,7 @@ double FitUtil::EvaluatePdf(const IModelFunction & func, const UnBinData & data,
    // evaluate the pdf contribution to the generic logl function in case of bin data
    // return actually the log of the pdf and its derivatives
 
+
    //func.SetParameters(p);
 
 
@@ -892,8 +918,18 @@ double FitUtil::EvaluateLogL(const IModelFunction & func, const UnBinData & data
    double logl = 0;
    //unsigned int nRejected = 0;
 
+<<<<<<< HEAD
    // this is needed if function must be normalized
    bool normalizeFunc = false;
+=======
+   // set parameters of the function to cache integral value
+#ifdef USE_PARAMCACHE
+   (const_cast<IModelFunction &>(func)).SetParameters(p);
+#endif
+
+   // this is needed if function must be normalized 
+   bool normalizeFunc = false; 
+>>>>>>> Fix the handling of the parameters of the functions to be added in TFNormSum
    double norm = 1.0;
    if (normalizeFunc) {
       // compute integral of the function
@@ -910,7 +946,15 @@ double FitUtil::EvaluateLogL(const IModelFunction & func, const UnBinData & data
 
    for (unsigned int i = 0; i < n; ++ i) {
       const double * x = data.Coords(i);
+<<<<<<< HEAD
       double fval = func ( x, p );
+=======
+#ifdef USE_PARAMCACHE
+       double fval = func ( x );
+#else
+       double fval = func ( x, p );
+#endif
+>>>>>>> Fix the handling of the parameters of the functions to be added in TFNormSum
       if (normalizeFunc) fval = fval / norm;
 
 #ifdef DEBUG
@@ -1165,7 +1209,15 @@ double FitUtil::EvaluatePoissonLogL(const IModelFunction & func, const BinData &
    std::cout << "]  - data size = " << n << std::endl;
 #endif
 
+<<<<<<< HEAD
    double nloglike = 0;  // negative loglikelihood
+=======
+#ifdef USE_PARAMCACHE
+   (const_cast<IModelFunction &>(func)).SetParameters(p);
+#endif
+   
+   double nloglike = 0;  // negative loglikelihood 
+>>>>>>> Fix the handling of the parameters of the functions to be added in TFNormSum
    nPoints = 0;  // npoints
 
 
@@ -1182,7 +1234,15 @@ double FitUtil::EvaluatePoissonLogL(const IModelFunction & func, const BinData &
       xc.resize(data.NDim() );
    }
 
+<<<<<<< HEAD
    IntegralEvaluator<> igEval( func, p, fitOpt.fIntegral);
+=======
+#ifdef USE_PARAMCACHE
+   IntegralEvaluator<> igEval( func, 0, useBinIntegral); 
+#else
+   IntegralEvaluator<> igEval( func, p, useBinIntegral); 
+#endif
+>>>>>>> Fix the handling of the parameters of the functions to be added in TFNormSum
 
    // double nuTot = 0; // total number of expected events (needed for non-extended fits)
    // double wTot = 0; // sum of all weights
@@ -1210,7 +1270,11 @@ double FitUtil::EvaluatePoissonLogL(const IModelFunction & func, const BinData &
       const double * x = (useBinVolume) ? &xc.front() : x1;
 
       if (!useBinIntegral) {
+#ifdef USE_PARAMCACHE
+         fval = func ( x );
+#else
          fval = func ( x, p );
+#endif
       }
       else {
          // calculate integral (normalized by bin volume)

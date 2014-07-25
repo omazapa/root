@@ -74,10 +74,10 @@ protected:
    Double_t    *fGamma;      //!Array gamma.
    TObject     *fParent;     //!Parent object hooking this function (if one)
    TH1         *fHistogram;  //!Pointer to histogram used for visualisation
-   Double_t     fMaximum;    //Maximum value for plotting
-   Double_t     fMinimum;    //Minimum value for plotting
+   Double_t    fMaximum;     //Maximum value for plotting
+   Double_t    fMinimum;     //Minimum value for plotting
    TMethodCall *fMethodCall; //!Pointer to MethodCall in case of interpreted function
-   Bool_t       fNormalized; //Normalization option (false by default)
+   Bool_t      fNormalized;  //Normalization option (false by default)
    Double_t    fNormIntegral;//Integral of the function before being normalized
    ROOT::Math::ParamFunctor fFunctor;   //! Functor object to wrap any C++ callable object
 
@@ -89,10 +89,6 @@ protected:
    void IntegrateForNormalization();
    virtual Double_t GetMinMaxNDim(Double_t * x , Bool_t findmax, Double_t epsilon = 0, Int_t maxiter = 0) const;
    virtual void GetRange(Double_t * xmin, Double_t * xmax) const;
-<<<<<<< HEAD
-=======
-    
->>>>>>> Implémentation de la classe TF1NormSum
 
 public:
     // TF1 status bits
@@ -322,36 +318,40 @@ class TF1NormSum {
     
 protected:
     
-    TF1* ffunction1;
-    TF1* ffunction2;
-    Double_t fcoeff1;
-    Double_t fcoeff2;
-    Int_t fNpar1;
-    Int_t fNpar2;
-    Double_t  *fParams1;
-    Double_t  *fParams2;
+    unsigned int fNOfFunctions;             // Number of functions to add
+    std::vector < TF1*      > fFunctions;   // Vector of size fNOfFunctions containing TF1 functions
+    std::vector < Double_t  > fCoeffs;      // Vector of size fNOfFunctions containing coefficients in front of each function
+    std::vector < Int_t     > fNOfParams;   // Vector of size fNOfFunctions containing number of parameters for each function (does not contai the coefficients!)
+    std::vector < Int_t     > fNOfNonCstParams;
+    std::vector < Double_t* > fParams;      // Vector of size [fNOfFunctions][fNOfNonCstParams] containing an array of (non constant) parameters
+                                            // (non including coefficients) for each function
+    std::vector < Int_t     > fCstIndexes;
+
     
 public:
     
     // Constructor using 2 functions and, if different than 1, 2 coeffients for the sum c1*f1+c2*f2.
     // If it is not already modified by the SetParameters(const double* params),
     // the parameters are the internal paramters of the TF1 object
-    TF1NormSum(TF1* function1, TF1* function2, Double_t coeff1=1., Double_t coeff2=1.)
-    :ffunction1(function1),ffunction2(function2),fcoeff1(coeff1),fcoeff2(coeff2),fParams1(0),fParams2(0)
-    {
-        fNpar1   = ffunction1 -> GetNpar();
-        fNpar2   = ffunction2 -> GetNpar();
-        fParams1 = ffunction1 -> GetParameters();
-        fParams2 = ffunction1 -> GetParameters();
-        //if the function is not already normalized, it normalizes it
-        if (!ffunction1 -> IsNormalized())  ffunction1  -> SetNormalized(true);
-        if (!ffunction2 -> IsNormalized())  ffunction2  -> SetNormalized(true);
-    }
+    TF1NormSum(const std::vector <TF1*> &functions, const std::vector <Double_t> &coeffs);
+    
+    // Constructor using 2 functions and, if different than 1, 2 coeffients for the sum c1*f1+c2*f2.
+    // If it is not already modified by the SetParameters(const double* params),
+    // the parameters are the internal paramters of the TF1 object
+    TF1NormSum(TF1* function1, TF1* function2, Double_t coeff1 = 1., Double_t coeff2 = 1.);
+
     
     // Overload the parenthesis to add the functions
     double  operator()(double* x, double* p);
 
     virtual void SetParameters(const double* params);
+    
+    virtual void SetParameters(Double_t p0, Double_t p1, Double_t p2, Double_t p3, Double_t p4,
+                               Double_t p5, Double_t p6, Double_t p7, Double_t p8, Double_t p9, Double_t p10);
+    
+    Int_t GetNpar() const;
+    
+    virtual Double_t* GetParameters(Int_t FunctionNo) const;
 };
 
 inline Double_t TF1::operator()(Double_t x, Double_t y, Double_t z, Double_t t) const
