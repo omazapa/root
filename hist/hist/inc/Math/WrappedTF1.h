@@ -136,15 +136,9 @@ private:
    double DoEval (double x) const {
       // no need to call InitArg for interpreted functions (done in ctor)
       // use EvalPar since it is much more efficient than Eval
-<<<<<<< HEAD
-      fX[0] = x;
-      const double * p = (fParams.size() > 0) ? &fParams.front() : 0;
-      return fFunc->EvalPar(fX, p );
-=======
       fX[0] = x;  
       //const double * p = (fParams.size() > 0) ? &fParams.front() : 0;
       return fFunc->EvalPar(fX, 0 ); 
->>>>>>> Fix the handling of the parameters of the functions to be added in TFNormSum
    }
 
    /// return the function derivatives w.r.t. x
@@ -156,13 +150,8 @@ private:
    bool fLinear;                 // flag for linear functions
    bool fPolynomial;             // flag for polynomial functions
    TF1 * fFunc;                  // pointer to ROOT function
-<<<<<<< HEAD
    mutable double fX[1];         //! cached vector for x value (needed for TF1::EvalPar signature)
-   std::vector<double> fParams;  //  cached vector with parameter values
-=======
-   mutable double fX[1];         //! cached vector for x value (needed for TF1::EvalPar signature) 
    //std::vector<double> fParams;  //  cached vector with parameter values
->>>>>>> Fix the handling of the parameters of the functions to be added in TFNormSum
 
    static double fgEps;          // epsilon used in derivative calculation h ~ eps |x|
 };
