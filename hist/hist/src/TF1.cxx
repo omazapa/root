@@ -243,20 +243,24 @@ void TF1NormSum::SetParameters(const double* params)//params should have the siz
     Double_t FixedValue = 1.;
     for (unsigned int n=0; n<fNOfFunctions; n++)
     {
+        
         temptotal[n] = std::vector < Double_t > (fNOfParams[n]);        // temptotal is used for the TF1::SetParameters, so doesn't contains coefficients, but does contain cst parameters
         temp[n]      = std::vector < Double_t > (fNOfNonCstParams[n]);  // temp is used for the class member fParams, so does not contain the cst parameters
-        if (n>0)    offset = fNOfNonCstParams[n-1];                     // offset to go along the list of parameters
+        if (n>0)    offset += fNOfNonCstParams[n-1];                     // offset to go along the list of parameters
         int k = 0;                                                      // incrementer for temp
-        
+        //std::cout << " offset " << offset << std::endl;
         for (int i=0; i<fNOfParams[n]; i++)
         {
             if (i == fCstIndexes[n])
             {
-                temptotal[n][i] = 1. ;                                  // this is the constant parameter, that is not in the entered params array
+                temptotal[n][i] = 1. ;
+                //std::cout << " params " << k+fNOfFunctions+offset << " : " << params[k+fNOfFunctions+offset] << std::endl;
+                // this is the constant parameter, that is not in the entered params array
                 continue;
             }
             temp[n][k]      = params[k+fNOfFunctions+offset];
             temptotal[n][i] = params[k+fNOfFunctions+offset];
+            //std::cout << " params " << k+fNOfFunctions+offset << " : " << params[k+fNOfFunctions+offset] << std::endl;
             k++;
         }
         fParams[n]    =  temp[n].data();                                // fParams doesn't take the coefficients, and neither the cst parameters
@@ -265,6 +269,8 @@ void TF1NormSum::SetParameters(const double* params)//params should have the siz
         FixedValue = 1.;
         if (fFunctions[n]->GetNumber() == 200)  FixedValue = 0.;        // if this is an exponential
         fFunctions[n] -> FixParameter(fCstIndexes[n],FixedValue);
+       // fFunctions[n]->Print();
+        //std::cout << "coeff " << n << " : " << fCoeffs[n] << std::endl;
     }
 }
 // Initialize array of all parameters.
@@ -2838,16 +2844,15 @@ void TF1::IntegrateForNormalization()
         Double_t p0   = TF1::GetParameter(0);
         Double_t p1   = TF1::GetParameter(1);
         fNormIntegral = (exp(p0)/p1)*(exp(-p1*fXmin)-exp(-p1*fXmax));   //ROOT::Math::exponential_cdf();
-        std::cout << " integral: " << fNormIntegral << std::endl;
+        //std::cout << " integral: " << fNormIntegral << std::endl;
     }
     else if (TF1::GetNumber() == 100)                                   // c0*exp(-0.5*((x-mean)/sigma)^2))
     {
-        Double_t c0    = TF1::GetParameter(0);
         Double_t mean  = TF1::GetParameter(1);
         Double_t sigma = TF1::GetParameter(2);
         fNormIntegral  =  sqrt(2*M_PI*sigma)* (ROOT::Math::gaussian_cdf(fXmax, sigma, mean)-
                                                ROOT::Math::gaussian_cdf(fXmin, sigma, mean));
-        std::cout << " integral: " << fNormIntegral << std::endl;
+       //std::cout << " integral: " << fNormIntegral << std::endl;
     }
    else fNormIntegral = TF1::Integral(fXmin,fXmax);                     // use setparameters and evalpar and therefore is slower
 }
@@ -3413,7 +3418,7 @@ void TF1::SetRange(Double_t xmin, Double_t xmax)
 
    fXmin = xmin;
    fXmax = xmax;
-   Update();
+    Update();
 }
 
 
