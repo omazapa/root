@@ -209,8 +209,8 @@ TF1NormSum::TF1NormSum(const TString &formula)
    Int_t noffunctions     = arrayplus -> GetEntries();
    Int_t nofobj           = arrayall  -> GetEntries();
    Int_t nofcoeffs        = nofobj - noffunctions;
-   std::vector < TF1*     > functions(noffunctions);
-   std::vector < Double_t > coeffs(noffunctions);
+   fFunctions = std::vector < TF1*     > (noffunctions);
+   fCoeffs    = std::vector < Double_t > (noffunctions);
   
   
    if (nofcoeffs == 0)
@@ -221,12 +221,13 @@ TF1NormSum::TF1NormSum(const TString &formula)
          funcstringplus[i] = ((TObjString*)((*arrayplus)[i])) -> GetString();
          funcstringplus[i].ReplaceAll(" ","");
          std::cout << "function "<<i<<" : "<<funcstringplus[i] << " ----------------------------------" << std::endl;
-         functions[i] =  (TF1*)gROOT -> GetListOfFunctions() -> FindObject(funcstringplus[i]);
-         if (!functions[i]) Error("TF1NormSum","Function %s does not exist.",funcstringplus[i].Data());
-         functions[i] -> Print();
-         coeffs[i]    =  1.;
+         fFunctions[i] =  (TF1*)gROOT -> GetListOfFunctions() -> FindObject(funcstringplus[i]);
+         if (!fFunctions[i]) Error("TF1NormSum","Function %s does not exist.",funcstringplus[i].Data());
+         fFunctions[i] -> Print();
+         fCoeffs[i]    =  1.;
       }
    }
+   /*
    else if (nofcoeffs == noffunctions)
    {
       std::vector < TString  > funcstringall(nofobj);
@@ -251,32 +252,115 @@ TF1NormSum::TF1NormSum(const TString &formula)
       }
    }
    else
-   {
+   {std::cout << " to do "<< std::endl;}
+*/
+   /*
+      std::vector < TString  > funcstringall(nofobj);
+      for (int i=0; i<nofobj; i++)
+      {
+         funcstringall[i] = ((TObjString*)((*arrayall)[i])) -> GetString();
+         funcstringall[i].ReplaceAll(" ","");
+         
+      }
+      std::vector < TString  > funcstringplus(noffunctions);
+      std::vector < Int_t  > indexsizeplus(noffunctions);
+      for (int i=0; i<noffunctions; i++)
+      {
+         funcstringplus[i] = ((TObjString*)((*arrayplus)[i])) -> GetString();
+         funcstringplus[i].ReplaceAll(" ","");
+         indexsizeplus[i] = (funcstringplus[i].Tokenize("*"))->GetEntries();
+      }
       TObjArray *arraytimes = formula.Tokenize("*") ;
       std::vector < TString  > funcstringtimes(nofcoeffs+1);
-
+      std::vector < Int_t  > indexsizetimes(nofcoeffs+1);
       for (int i=0; i<nofcoeffs+1; i++)
       {
-         funcstringtimes[i] = ((TObjString*)((*arraytimes)[i])) -> GetString();
+         funcstringtimes[i] = ((TObjString*)((*arraytimes)[i])) -> GetString();//cast to string
          funcstringtimes[i].ReplaceAll(" ","");
+         indexsizetimes[i] = (funcstringtimes[i].Tokenize("+"))->GetEntries();
       }
-/*
-         if (funcstringall[i]=funcstringplus[i])
+      std::vector<bool>isacoeff(nofobj);
+      //uses the fact that the last item of funcstringtimes[i].Tokenize("+") is always a coeff.
+      Int_t j=0;
+      Int_t k=1;
+      for (int i=0; i<nofcoeffs+1; i++)
+      {
+         while (k < indexsizetimes[i])
+         {
+            isacoeff[k+j-1]=0;
+            k++;
+         }
+         j=j+indexsizetimes[i];
+         if (j==nofobj)    isacoeff[j-1]=0;    //the last one is never a coeff
+         else              isacoeff[j-1]=1;
+         k=1;
+        
+      }
+   
+   
+      for (int i=0; i<noffunctions; i++)
+      {
+         if (isacoeff[i]==0)
          {
             coeffs[i]=1.;
-            functions[i](TF1*)gROOT -> GetListOfFunctions() -> FindObject(funcstringall[i]);
+            functions[i] = (TF1*)(gROOT -> GetListOfFunctions() -> FindObject(funcstringall[i]));
+            if (!functions[i])   Error("TF1NormSum","Function %s does not exist",funcstringall[i+odd].Data());
          }
-         if (funcstringall[i+offset]=funcstringtimes[i+offset])
+         else
          {
-            coeffs[i]=funcstringall[i].Atof();
-            functions[i](TF1*)gROOT -> GetListOfFunctions() -> FindObject(funcstringall[i+1]);
-            offset++;
-         }*/
-         std::cout <<"to do " << std::endl;
+            coeff[i] = funcstringall[i].Atof();
+            functions[]
+         }
+         std::cout << "isacoeff " << i << " = " << isacoeff[i]<< std::endl;
+      
+      }
+      
+      */
+      
+      /*
+      Int_t k = 0;
+      Int_t indexplus  = 0;
+      Int_t indextimes = 0;
+      for (int i=0; i<noffunctions; i++)
+      {
+         if (funcstringall[k]=funcstringplus[k])
+         {
+            coeffs[i]    = 1.;
+            functions[i] = (TF1*)gROOT -> GetListOfFunctions() -> FindObject(funcstringall[k]);
+            k++;
+            indextimes++;
+            indexplus++;
+         }
+         else if (funcstringall[k]=funcstringtimes[k])
+         {
+            coeffs[i]=funcstringall[k].Atof();
+            functions[i](TF1*)gROOT -> GetListOfFunctions() -> FindObject(funcstringall[k+1]);
+            k=k+2;
+            indextimes++;
+            indexplus++;
+         }
+  
+         else
+         {
+      
+            String resultplus;
+            set_intersection (funcstringall.begin(), funcstringall.end(),
+                              funcstringplus.begin(), funcstringplus.end(),
+                              back_inserter(resultplus));}
+      }
+   }*/
+   InitializeDataMembers(fFunctions, fCoeffs);
+   for (auto f : fFunctions)
+   {
+      f->Print();
    }
+   for (auto c : fCoeffs)
+   {
+      std::cout << "coeff " << c << std::endl;
+   }
+
    
-   InitializeDataMembers(functions, coeffs);
-   std::cout << " nof func: " << fNOfFunctions << " nof params" << GetNpar() <<  std::endl;
+  // std::cout << " nof func: " << fNOfFunctions << " nof params" << GetNpar() <<  std::endl;
 
 }
 
