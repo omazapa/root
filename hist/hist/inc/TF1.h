@@ -334,6 +334,7 @@ public:
 
    TF1NormSum(const std::vector <TF1*> &functions, const std::vector <Double_t> &coeffs);
    TF1NormSum(TF1* function1, TF1* function2, Double_t coeff1 = 1., Double_t coeff2 = 1.);
+   TF1NormSum(TF1* function1, TF1* function2, TF1* function3, Double_t coeff1 = 1., Double_t coeff2 = 1., Double_t coeff3 = 1.);
    TF1NormSum(const TString &formula);
    
    

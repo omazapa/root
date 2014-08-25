@@ -188,11 +188,25 @@ TF1NormSum::TF1NormSum(TF1* function1, TF1* function2, Double_t coeff1, Double_t
 {
    // TF1NormSum constructor taking 2 functions, and 2 coefficients (if not equal to 1)
 
-   std::vector <TF1*> functions;
-   std::vector <Double_t> coeffs;
+   std::vector <TF1*     > functions(2);
+   std::vector <Double_t > coeffs(2);
    
    functions       = {function1, function2};
-   coeffs          = {coeff1, coeff2};
+   coeffs          = {coeff1,    coeff2};
+   
+   InitializeDataMembers(functions, coeffs);
+}
+
+//______________________________________________________________________________
+TF1NormSum::TF1NormSum(TF1* function1, TF1* function2, TF1* function3, Double_t coeff1, Double_t coeff2, Double_t coeff3)
+{
+   // TF1NormSum constructor taking 3 functions, and 3 coefficients (if not equal to 1)
+   
+   std::vector <TF1*    > functions(3);
+   std::vector <Double_t> coeffs(3);
+   
+   functions       = {function1, function2, function3};
+   coeffs          = {coeff1,    coeff2,    coeff3};
    
    InitializeDataMembers(functions, coeffs);
 }
