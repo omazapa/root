@@ -25,12 +25,11 @@
 #include <algorithm>
 #include <cstring>
 #include <cstddef>
+#include <initializer_list>
 #include "memoryfwd.h"
 #include "macros.h"
 
-namespace ROOT {
-namespace Vc
-{
+Vc_NAMESPACE_BEGIN(Common)
 
 /**
  * Allocates memory on the Heap with alignment and padding suitable for vectorized access.
@@ -117,14 +116,14 @@ template<typename V, size_t Size> struct _MemorySizeCalculation
  * \param Size1 Number of rows
  * \param Size2 Number of columns
  */
-template<typename V, size_t Size1, size_t Size2> class Memory : public VectorAlignedBaseT<V>, public MemoryBase<V, Memory<V, Size1, Size2>, 2, Memory<V, Size2> >
+template<typename V, size_t Size1, size_t Size2, bool InitPadding> class Memory : public VectorAlignedBaseT<V>, public MemoryBase<V, Memory<V, Size1, Size2, InitPadding>, 2, Memory<V, Size2, 0, false> >
 {
     public:
         typedef typename V::EntryType EntryType;
     private:
-        typedef MemoryBase<V, Memory<V, Size1, Size2>, 2, Memory<V, Size2> > Base;
-            friend class MemoryBase<V, Memory<V, Size1, Size2>, 2, Memory<V, Size2> >;
-            friend class MemoryDimensionBase<V, Memory<V, Size1, Size2>, 2, Memory<V, Size2> >;
+        typedef MemoryBase<V, Memory<V, Size1, Size2, InitPadding>, 2, Memory<V, Size2, 0, false> > Base;
+            friend class MemoryBase<V, Memory<V, Size1, Size2, InitPadding>, 2, Memory<V, Size2, 0, false> >;
+            friend class MemoryDimensionBase<V, Memory<V, Size1, Size2, InitPadding>, 2, Memory<V, Size2, 0, false> >;
             enum InternalConstants {
                 PaddedSize2 = _MemorySizeCalculation<V, Size2>::PaddedSize
             };
@@ -133,10 +132,10 @@ template<typename V, size_t Size1, size_t Size2> class Memory : public VectorAli
 #elif defined(VC_CLANG)
             __attribute__((aligned(__alignof(VectorAlignedBaseT<V>))))
 #elif defined(VC_MSVC)
-        VectorAlignedBaseT<V> _force_alignment;
+	    VectorAlignedBaseT<V> _force_alignment;
             // __declspec(align(#)) accepts only numbers not __alignof nor just VectorAlignment
-            // by putting VectorAlignedBaseT<V> here _force_alignment is aligned correctly.
-           // the downside is that there's a lot of padding before m_mem (32 Bytes with SSE) :(
+	    // by putting VectorAlignedBaseT<V> here _force_alignment is aligned correctly.
+	    // the downside is that there's a lot of padding before m_mem (32 Bytes with SSE) :(
 #endif
             EntryType m_mem[Size1][PaddedSize2];
         public:
@@ -146,12 +145,22 @@ template<typename V, size_t Size1, size_t Size2> class Memory : public VectorAli
                 VectorsCount = PaddedSize2 / V::Size
             };
 
+            Memory()
+            {
+                if (InitPadding) {
+                    if (Size1 > 32)
+                    for (size_t i = 0; i < Size1; ++i) {
+                        V::Zero().store(&m_mem[i][PaddedSize2 - V::Size], Vc::Streaming);
+                    }
+                }
+            }
+
             /**
              * \return the number of rows in the array.
              *
              * \note This function can be eliminated by an optimizing compiler.
              */
-            _VC_CONSTEXPR size_t rowsCount() const { return RowCount; }
+            static constexpr size_t rowsCount() { return RowCount; }
             /**
              * \return the number of scalar entries in the whole array.
              *
@@ -160,13 +169,13 @@ template<typename V, size_t Size1, size_t Size2> class Memory : public VectorAli
              *
              * \note This function can be optimized into a compile-time constant.
              */
-            _VC_CONSTEXPR size_t entriesCount() const { return Size1 * Size2; }
+            static constexpr size_t entriesCount() { return Size1 * Size2; }
             /**
              * \return the number of vectors in the whole array.
              *
              * \note This function can be optimized into a compile-time constant.
              */
-            _VC_CONSTEXPR size_t vectorsCount() const { return VectorsCount * Size1; }
+            static constexpr size_t vectorsCount() { return VectorsCount * Size1; }
 
             /**
              * Copies the data from a different object.
@@ -180,12 +189,12 @@ template<typename V, size_t Size1, size_t Size2> class Memory : public VectorAli
             template<typename Parent, typename RM>
             Vc_ALWAYS_INLINE Memory &operator=(const MemoryBase<V, Parent, 2, RM> &rhs) {
                 assert(vectorsCount() == rhs.vectorsCount());
-                Internal::copyVectors(*this, rhs);
+                Internal2::copyVectors(*this, rhs);
                 return *this;
             }
 
             Vc_ALWAYS_INLINE Memory &operator=(const Memory &rhs) {
-                Internal::copyVectors(*this, rhs);
+                Internal2::copyVectors(*this, rhs);
                 return *this;
             }
 
@@ -251,14 +260,14 @@ template<typename V, size_t Size1, size_t Size2> class Memory : public VectorAli
      * \ingroup Utilities
      * \headerfile memory.h <Vc/Memory>
      */
-    template<typename V, size_t Size> class Memory<V, Size, 0u> : public VectorAlignedBaseT<V>, public MemoryBase<V, Memory<V, Size, 0u>, 1, void>
+    template<typename V, size_t Size, bool InitPadding> class Memory<V, Size, 0u, InitPadding> : public VectorAlignedBaseT<V>, public MemoryBase<V, Memory<V, Size, 0u, InitPadding>, 1, void>
     {
         public:
             typedef typename V::EntryType EntryType;
         private:
-            typedef MemoryBase<V, Memory<V, Size, 0u>, 1, void> Base;
-            friend class MemoryBase<V, Memory<V, Size, 0u>, 1, void>;
-            friend class MemoryDimensionBase<V, Memory<V, Size, 0u>, 1, void>;
+            typedef MemoryBase<V, Memory<V, Size, 0u, InitPadding>, 1, void> Base;
+            friend class MemoryBase<V, Memory<V, Size, 0u, InitPadding>, 1, void>;
+            friend class MemoryDimensionBase<V, Memory<V, Size, 0u, InitPadding>, 1, void>;
             enum InternalConstants {
                 Alignment = V::Size,
                 AlignmentMask = Alignment - 1,
@@ -284,6 +293,20 @@ template<typename V, size_t Size1, size_t Size2> class Memory : public VectorAli
                 VectorsCount = PaddedSize / V::Size
             };
 
+            Memory()
+            {
+                if (InitPadding) {
+                    Base::lastVector() = V::Zero();
+                }
+            }
+
+            Memory(std::initializer_list<EntryType> init)
+            {
+                VC_ASSERT(init.size() <= Size);
+                Base::lastVector() = V::Zero();
+                std::copy(init.begin(), init.end(), &m_mem[0]);
+            }
+
             /**
              * Wrap existing data with the Memory convenience class.
              *
@@ -306,13 +329,13 @@ template<typename V, size_t Size1, size_t Size2> class Memory : public VectorAli
              * (not too early/not leaked). This function simply adds convenience functions to \em
              * access the memory.
              */
-            static Vc_ALWAYS_INLINE Vc_CONST Memory<V, Size, 0u> &fromRawData(EntryType *ptr)
+            static Vc_ALWAYS_INLINE Vc_CONST Memory<V, Size, 0u, false> &fromRawData(EntryType *ptr)
             {
                 // DANGER! This placement new has to use the right address. If the compiler decides
                 // RowMemory requires padding before the actual data then the address has to be adjusted
                 // accordingly
                 char *addr = reinterpret_cast<char *>(ptr);
-                typedef Memory<V, Size, 0u> MM;
+                typedef Memory<V, Size, 0u, false> MM;
                 addr -= VC_OFFSETOF(MM, m_mem);
                 return *new(addr) MM;
             }
@@ -322,42 +345,36 @@ template<typename V, size_t Size1, size_t Size2> class Memory : public VectorAli
              *
              * \note This function can be optimized into a compile-time constant.
              */
-            _VC_CONSTEXPR size_t entriesCount() const { return EntriesCount; }
+            static constexpr size_t entriesCount() { return EntriesCount; }
 
             /**
              * \return the number of vectors in the whole array.
              *
              * \note This function can be optimized into a compile-time constant.
              */
-            _VC_CONSTEXPR size_t vectorsCount() const { return VectorsCount; }
-
-#ifdef VC_CXX11
-            Vc_ALWAYS_INLINE Memory() = default;
-#else
-            Vc_ALWAYS_INLINE Memory() {}
-#endif
+            static constexpr size_t vectorsCount() { return VectorsCount; }
 
             inline Memory(const Memory &rhs)
             {
-                Internal::copyVectors(*this, rhs);
+                Internal2::copyVectors(*this, rhs);
             }
 
             template <size_t S> inline Memory(const Memory<V, S> &rhs)
             {
                 assert(vectorsCount() == rhs.vectorsCount());
-                Internal::copyVectors(*this, rhs);
+                Internal2::copyVectors(*this, rhs);
             }
 
             inline Memory &operator=(const Memory &rhs)
             {
-                Internal::copyVectors(*this, rhs);
+                Internal2::copyVectors(*this, rhs);
                 return *this;
             }
 
             template <size_t S> inline Memory &operator=(const Memory<V, S> &rhs)
             {
                 assert(vectorsCount() == rhs.vectorsCount());
-                Internal::copyVectors(*this, rhs);
+                Internal2::copyVectors(*this, rhs);
                 return *this;
             }
 
@@ -417,7 +434,7 @@ template<typename V, size_t Size1, size_t Size2> class Memory : public VectorAli
      * \ingroup Utilities
      * \headerfile memory.h <Vc/Memory>
      */
-    template<typename V> class Memory<V, 0u, 0u> : public MemoryBase<V, Memory<V, 0u, 0u>, 1, void>
+    template<typename V> class Memory<V, 0u, 0u, true> : public MemoryBase<V, Memory<V, 0u, 0u, true>, 1, void>
     {
         public:
             typedef typename V::EntryType EntryType;
@@ -450,9 +467,10 @@ template<typename V, size_t Size1, size_t Size2> class Memory : public VectorAli
         Vc_ALWAYS_INLINE Memory(size_t size)
             : m_entriesCount(size),
             m_vectorsCount(calcPaddedEntriesCount(m_entriesCount)),
-            m_mem(Vc::malloc<EntryType, Vc::AlignOnVector>(m_vectorsCount))
+            m_mem(Common::malloc<EntryType, Vc::AlignOnVector>(m_vectorsCount))
         {
             m_vectorsCount /= V::Size;
+            Base::lastVector() = V::Zero();
         }
 
         /**
@@ -466,9 +484,9 @@ template<typename V, size_t Size1, size_t Size2> class Memory : public VectorAli
         Vc_ALWAYS_INLINE Memory(const MemoryBase<V, Parent, 1, RM> &rhs)
             : m_entriesCount(rhs.entriesCount()),
             m_vectorsCount(rhs.vectorsCount()),
-            m_mem(Vc::malloc<EntryType, Vc::AlignOnVector>(m_vectorsCount * V::Size))
+            m_mem(Common::malloc<EntryType, Vc::AlignOnVector>(m_vectorsCount * V::Size))
         {
-            Internal::copyVectors(*this, rhs);
+            Internal2::copyVectors(*this, rhs);
         }
 
         /**
@@ -481,9 +499,9 @@ template<typename V, size_t Size1, size_t Size2> class Memory : public VectorAli
         Vc_ALWAYS_INLINE Memory(const Memory &rhs)
             : m_entriesCount(rhs.entriesCount()),
             m_vectorsCount(rhs.vectorsCount()),
-            m_mem(Vc::malloc<EntryType, Vc::AlignOnVector>(m_vectorsCount * V::Size))
+            m_mem(Common::malloc<EntryType, Vc::AlignOnVector>(m_vectorsCount * V::Size))
         {
-            Internal::copyVectors(*this, rhs);
+            Internal2::copyVectors(*this, rhs);
         }
 
         /**
@@ -491,7 +509,7 @@ template<typename V, size_t Size1, size_t Size2> class Memory : public VectorAli
          */
         Vc_ALWAYS_INLINE ~Memory()
         {
-            Vc::free(m_mem);
+            Common::free(m_mem);
         }
 
         /**
@@ -527,13 +545,13 @@ template<typename V, size_t Size1, size_t Size2> class Memory : public VectorAli
         template<typename Parent, typename RM>
         Vc_ALWAYS_INLINE Memory &operator=(const MemoryBase<V, Parent, 1, RM> &rhs) {
             assert(vectorsCount() == rhs.vectorsCount());
-            Internal::copyVectors(*this, rhs);
+            Internal2::copyVectors(*this, rhs);
             return *this;
         }
 
         Vc_ALWAYS_INLINE Memory &operator=(const Memory &rhs) {
             assert(vectorsCount() == rhs.vectorsCount());
-            Internal::copyVectors(*this, rhs);
+            Internal2::copyVectors(*this, rhs);
             return *this;
         }
 
@@ -628,9 +646,18 @@ Vc_ALWAYS_INLINE void prefetchFar(const void *addr)
 {
     Internal::Helper::prefetchFar(addr);
 }
+Vc_NAMESPACE_END
 
-} // namespace Vc
-} // namespace ROOT
+Vc_PUBLIC_NAMESPACE_BEGIN
+using Common::malloc;
+using Common::free;
+using Common::Memory;
+using Common::prefetchForOneRead;
+using Common::prefetchForModify;
+using Common::prefetchClose;
+using Common::prefetchMid;
+using Common::prefetchFar;
+Vc_NAMESPACE_END
 
 namespace std
 {

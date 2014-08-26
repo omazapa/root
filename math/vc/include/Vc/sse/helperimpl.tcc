@@ -22,14 +22,10 @@
 
 #include <cstdio>
 
-namespace ROOT {
-namespace Vc
-{
-namespace Internal
-{
+Vc_NAMESPACE_BEGIN(Internal)
 
 template<size_t X>
-static _VC_CONSTEXPR size_t nextMultipleOf(size_t value)
+static constexpr size_t nextMultipleOf(size_t value)
 {
     return (value % X) > 0 ? value + X - (value % X) : value;
 }
@@ -59,8 +55,6 @@ Vc_ALWAYS_INLINE void HelperImpl<SSE2Impl>::free(void *p)
     _mm_free(p);
 }
 
-} // namespace Internal
-} // namespace Vc
-} // namespace ROOT
+Vc_NAMESPACE_END
 
 #endif // VC_SSE_HELPERIMPL_TCC

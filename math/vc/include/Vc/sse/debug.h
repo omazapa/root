@@ -26,11 +26,7 @@
 #include <iomanip>
 #endif
 
-namespace ROOT {
-namespace Vc
-{
-namespace SSE
-{
+Vc_NAMESPACE_BEGIN(Vc_IMPL_NAMESPACE)
 
 #ifdef NDEBUG
 class DebugStream
@@ -81,10 +77,8 @@ class DebugStream
 };
 #endif
 
-#define VC_DEBUG ::ROOT::Vc::SSE::DebugStream(__PRETTY_FUNCTION__, __FILE__, __LINE__)
+#define VC_DEBUG ::Vc::SSE::DebugStream(__PRETTY_FUNCTION__, __FILE__, __LINE__)
 
-} // namespace SSE
-} // namespace Vc
-} // namespace ROOT
+Vc_IMPL_NAMESPACE_END
 
 #endif // VC_SSE_DEBUG_H

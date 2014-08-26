@@ -22,27 +22,20 @@
 
 #include "macros.h"
 
-namespace ROOT {
-namespace Vc
-{
-namespace Internal
-{
+Vc_NAMESPACE_BEGIN(Internal)
 
-template<> struct HelperImpl<Vc::AVXImpl>
+template<> struct HelperImpl<VC_IMPL>
 {
-    typedef AVX::Vector<float> float_v;
-    typedef AVX::Vector<sfloat> sfloat_v;
-    typedef AVX::Vector<double> double_v;
-    typedef AVX::Vector<int> int_v;
-    typedef AVX::Vector<unsigned int> uint_v;
-    typedef AVX::Vector<short> short_v;
-    typedef AVX::Vector<unsigned short> ushort_v;
+    typedef Vc_IMPL_NAMESPACE::float_v float_v;
+    typedef Vc_IMPL_NAMESPACE::double_v double_v;
+    typedef Vc_IMPL_NAMESPACE::int_v int_v;
+    typedef Vc_IMPL_NAMESPACE::uint_v uint_v;
+    typedef Vc_IMPL_NAMESPACE::short_v short_v;
+    typedef Vc_IMPL_NAMESPACE::ushort_v ushort_v;
 
     template<typename A> static void deinterleave(float_v &, float_v &, const float *, A);
     template<typename A> static void deinterleave(float_v &, float_v &, const short *, A);
     template<typename A> static void deinterleave(float_v &, float_v &, const unsigned short *, A);
-
-    template<typename A, typename MemT> static void deinterleave(sfloat_v &, sfloat_v &, const MemT *, A);
 
     template<typename A> static void deinterleave(double_v &, double_v &, const double *, A);
 
@@ -92,9 +85,7 @@ template<> struct HelperImpl<Vc::AVXImpl>
     static Vc_ALWAYS_INLINE_L void free(void *p) Vc_ALWAYS_INLINE_R;
 };
 
-} // namespace Internal
-} // namespace Vc
-} // namespace ROOT
+Vc_NAMESPACE_END
 
 #include "deinterleave.tcc"
 #include "prefetches.tcc"

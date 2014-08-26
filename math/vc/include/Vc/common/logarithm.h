@@ -48,20 +48,10 @@
 #ifndef VC_COMMON_LOGARITHM_H
 #define VC_COMMON_LOGARITHM_H
 
+#include "const.h"
 #include "macros.h"
-namespace ROOT {
-namespace Vc
-{
-namespace Common
-{
-#ifdef VC__USE_NAMESPACE
-using Vc::VC__USE_NAMESPACE::Const;
-using Vc::VC__USE_NAMESPACE::Vector;
-namespace Internal
-{
-    using namespace Vc::VC__USE_NAMESPACE::Internal;
-} // namespace Internal
-#endif
+Vc_NAMESPACE_BEGIN(Vc_IMPL_NAMESPACE)
+
 enum LogarithmBase {
     BaseE, Base10, Base2
 };
@@ -129,7 +119,7 @@ struct LogImpl
         const V x4 = x2 * x2; // 5  → 9
         const V x5 = x2 * x3; // 8  → 12
         const V x6 = x3 * x3; // 9  → 13
-        const V x7 = x4 * x3; //
+        const V x7 = x4 * x3; // 
         const V x8 = x4 * x4;
         const V x9 = x5 * x4;
         const V x10 = x5 * x5;
@@ -224,7 +214,7 @@ struct LogImpl
         const M infinityMask = x == V::Zero();
         const M denormal = x <= C::min();
 
-        x(denormal) *= V(Vc_buildDouble(1, 0, 54)); // 2²⁵
+        x(denormal) *= V(Vc::Internal::doubleConstant<1, 0, 54>()); // 2²⁵
         V exponent = Internal::exponent(x.data()); // = ⎣log₂(x)⎦
         exponent(denormal) -= 54;
 
@@ -260,18 +250,9 @@ template<typename T> static Vc_ALWAYS_INLINE Vc_CONST Vector<T> log10(VC_ALIGNED
 template<typename T> static Vc_ALWAYS_INLINE Vc_CONST Vector<T> log2(VC_ALIGNED_PARAMETER(Vector<T>) x) {
     return LogImpl<Base2>::calc(x);
 }
-} // namespace Common
-#ifdef VC__USE_NAMESPACE
-namespace VC__USE_NAMESPACE
-{
-    using Vc::Common::log;
-    using Vc::Common::log10;
-    using Vc::Common::log2;
-} // namespace VC__USE_NAMESPACE
-#undef VC__USE_NAMESPACE
-#endif
-} // namespace Vc
-} // namespace ROOT
+
+Vc_NAMESPACE_END
+
 #include "undomacros.h"
 
 #endif // VC_COMMON_LOGARITHM_H

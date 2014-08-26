@@ -22,11 +22,11 @@
 
 #include "macros.h"
 
-namespace ROOT {
-namespace Vc
+Vc_NAMESPACE_BEGIN(Vc_IMPL_NAMESPACE)
+template <typename T> Vc_ALWAYS_INLINE Vector<T> copysign(Vector<T> a, Vector<T> b)
 {
-namespace Scalar
-{
+    return a.copySign(b);
+}
 
 #define VC_MINMAX(V) \
 static Vc_ALWAYS_INLINE V min(const V &x, const V &y) { return V(std::min(x.data(), y.data())); } \
@@ -58,11 +58,11 @@ template<typename T> static Vc_ALWAYS_INLINE void sincos(const Vector<T> &x, Vec
 {
 #if (defined(VC_CLANG) && VC_HAS_BUILTIN(__builtin_sincosf)) || (!defined(VC_CLANG) && defined(__GNUC__) && !defined(_WIN32))
     __builtin_sincosf(x.data(), &sin->data(), &cos->data());
-#elif defined(_GNU_SOURCE)
-    sincosf(x.data(), &sin->data(), &cos->data());
-#else
+#elif defined(_WIN32)
     sin->data() = std::sin(x.data());
     cos->data() = std::cos(x.data());
+#else
+    sincosf(x.data(), &sin->data(), &cos->data());
 #endif
 }
 
@@ -70,11 +70,11 @@ template<> Vc_ALWAYS_INLINE void sincos(const Vector<double> &x, Vector<double> 
 {
 #if (defined(VC_CLANG) && VC_HAS_BUILTIN(__builtin_sincos)) || (!defined(VC_CLANG) && defined(__GNUC__) && !defined(_WIN32))
     __builtin_sincos(x.data(), &sin->data(), &cos->data());
-#elif defined(_GNU_SOURCE)
-    ::sincos(x.data(), &sin->data(), &cos->data());
-#else
+#elif defined(_WIN32)
     sin->data() = std::sin(x.data());
     cos->data() = std::cos(x.data());
+#else
+    ::sincos(x.data(), &sin->data(), &cos->data());
 #endif
 }
 
@@ -103,23 +103,10 @@ template<typename T> static Vc_ALWAYS_INLINE Vector<T> log10(const Vector<T> &x)
     return Vector<T>(std::log10(x.data()));
 }
 
-#if (defined(_XOPEN_SOURCE) && _XOPEN_SOURCE >= 600) || defined(_ISOC99_SOURCE) || (defined(_POSIX_C_SOURCE) && _POSIX_C_SOURCE >= 200112L)
-static Vc_ALWAYS_INLINE double_v log2(double_v::AsArg x) { return double_v(::log2 (x.data())); }
-static Vc_ALWAYS_INLINE sfloat_v log2(sfloat_v::AsArg x) { return sfloat_v(::log2f(x.data())); }
-static Vc_ALWAYS_INLINE  float_v log2( float_v::AsArg x) { return  float_v(::log2f(x.data())); }
-#else
-namespace {
-template<typename T> static _VC_CONSTEXPR T c_ln2() { return Vc_buildFloat(1, 0x317218, -1); } // .693147182464599609375
-template<> _VC_CONSTEXPR double c_ln2() { return Vc_buildDouble(1, 0x62E42FEFA39EFull, -1); } // .69314718055994528622676398299518041312694549560546875
+template<typename T> static Vc_ALWAYS_INLINE Vector<T> log2(const Vector<T> &x)
+{
+    return Vector<T>(std::log2(x.data()));
 }
-#define VC_LOG2(V) \
-static Vc_ALWAYS_INLINE V log2(const V &x) \
-{ \
-    return V(std::log(x.data()) / c_ln2<V::EntryType>()); \
-}
-VC_ALL_FLOAT_VECTOR_TYPES(VC_LOG2)
-#undef VC_LOG2
-#endif
 
 template<typename T> static Vc_ALWAYS_INLINE Vector<T> exp (const Vector<T> &x)
 {
@@ -138,11 +125,7 @@ template<typename T> static Vc_ALWAYS_INLINE Vector<T> atan2(const Vector<T> &x,
 
 template<typename T> static Vc_ALWAYS_INLINE Vector<T> trunc(const Vector<T> &x)
 {
-#if __cplusplus >= 201103 /*C++11*/
     return std::trunc(x.data());
-#else
-    return x.data() > 0 ? std::floor(x.data()) : std::ceil(x.data());
-#endif
 }
 
 template<typename T> static Vc_ALWAYS_INLINE Vector<T> floor(const Vector<T> &x)
@@ -174,11 +157,6 @@ template<> Vc_ALWAYS_INLINE Vector<float>  round(const Vector<float>  &x)
     return float_v(std::floor(x.data() + 0.5f) - (_realIsEvenHalf(x.data()) ? 1.f : 0.f));
 }
 
-template<> Vc_ALWAYS_INLINE Vector<sfloat> round(const Vector<sfloat> &x)
-{
-    return sfloat_v(std::floor(x.data() + 0.5f) - (_realIsEvenHalf(x.data()) ? 1.f : 0.f));
-}
-
 template<> Vc_ALWAYS_INLINE Vector<double> round(const Vector<double> &x)
 {
     return double_v(std::floor(x.data() + 0.5 ) - (_realIsEvenHalf(x.data()) ? 1.  : 0. ));
@@ -208,6 +186,11 @@ template<typename T> static Vc_ALWAYS_INLINE typename Vector<T>::Mask isfinite(c
             );
 }
 
+template<typename T> Vc_ALWAYS_INLINE typename Vector<T>::Mask isinf(const Vector<T> &x)
+{
+    return typename Vector<T>::Mask(std::isinf(x.data()));
+}
+
 template<typename T> static Vc_ALWAYS_INLINE typename Vector<T>::Mask isnan(const Vector<T> &x)
 {
     return typename Vector<T>::Mask(
@@ -227,12 +210,6 @@ Vc_ALWAYS_INLINE Vector<float> frexp(Vector<float> x, Vector<int> *e) {
 Vc_ALWAYS_INLINE Vector<double> frexp(Vector<double> x, Vector<int> *e) {
     return double_v(::frexp(x.data(), &e->data()));
 }
-Vc_ALWAYS_INLINE sfloat_v frexp(sfloat_v x, short_v *e) {
-    int ee;
-    const float r = ::frexpf(x.data(), &ee);
-    e->data() = ee;
-    return sfloat_v(r);
-}
 
 Vc_ALWAYS_INLINE Vector<float> ldexp(Vector<float> x, Vector<int> e) {
     return float_v(::ldexpf(x.data(), e.data()));
@@ -240,13 +217,8 @@ Vc_ALWAYS_INLINE Vector<float> ldexp(Vector<float> x, Vector<int> e) {
 Vc_ALWAYS_INLINE Vector<double> ldexp(Vector<double> x, Vector<int> e) {
     return double_v(::ldexp(x.data(), e.data()));
 }
-Vc_ALWAYS_INLINE sfloat_v ldexp(sfloat_v x, short_v e) {
-    return sfloat_v(::ldexpf(x.data(), e.data()));
-}
 
-} // namespace Scalar
-} // namespace Vc
-} // namespace ROOT
+Vc_IMPL_NAMESPACE_END
 
 #include "undomacros.h"
 

@@ -1,6 +1,6 @@
 /*  This file is part of the Vc library.
 
-    Copyright (C) 2009-2012 Matthias Kretz <kretz@kde.org>
+    Copyright (C) 2009-2013 Matthias Kretz <kretz@kde.org>
 
     Vc is free software: you can redistribute it and/or modify
     it under the terms of the GNU Lesser General Public License as
@@ -20,11 +20,9 @@
 #ifndef VC_SCALAR_WRITEMASKEDVECTOR_H
 #define VC_SCALAR_WRITEMASKEDVECTOR_H
 
-namespace ROOT {
-namespace Vc
-{
-namespace Scalar
-{
+#include "macros.h"
+
+Vc_NAMESPACE_BEGIN(Vc_IMPL_NAMESPACE)
 
 template<typename T> class WriteMaskedVector
 {
@@ -59,10 +57,8 @@ template<typename T> class WriteMaskedVector
             return *vec;
         }
 
+#ifdef VC_NO_MOVE_CTOR
         template<typename F> Vc_ALWAYS_INLINE void call(const F &f) const {
-            vec->call(f, mask);
-        }
-        template<typename F> Vc_ALWAYS_INLINE void call(F &f) const {
             vec->call(f, mask);
         }
         template<typename F> Vc_ALWAYS_INLINE Vector<T> apply(const F &f) const {
@@ -72,7 +68,11 @@ template<typename T> class WriteMaskedVector
                 return *vec;
             }
         }
-        template<typename F> Vc_ALWAYS_INLINE Vector<T> apply(F &f) const {
+#endif
+        template<typename F> Vc_ALWAYS_INLINE void call(F VC_RR_ f) const {
+            vec->call(VC_FORWARD_(F)(f), mask);
+        }
+        template<typename F> Vc_ALWAYS_INLINE Vector<T> apply(F VC_RR_ f) const {
             if (mask) {
                 return Vector<T>(f(vec->m_data));
             } else {
@@ -85,7 +85,8 @@ template<typename T> class WriteMaskedVector
         Mask mask;
 };
 
-} // namespace Scalar
-} // namespace Vc
-} // namespace ROOT
+Vc_NAMESPACE_END
+
+#include "undomacros.h"
+
 #endif // VC_SCALAR_WRITEMASKEDVECTOR_H

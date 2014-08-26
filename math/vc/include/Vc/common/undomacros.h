@@ -21,8 +21,6 @@
 #define VC_COMMON_UNDOMACROS_H
 #undef VC_COMMON_MACROS_H
 
-#undef Vc_ALIGNOF
-
 #undef Vc_INTRINSIC
 #undef Vc_INTRINSIC_L
 #undef Vc_INTRINSIC_R
@@ -40,10 +38,7 @@
 #undef VC_IS_LIKELY
 #undef VC_RESTRICT
 #undef VC_DEPRECATED
-#undef _VC_CONSTEXPR
-#undef _VC_CONSTEXPR_L
-#undef _VC_CONSTEXPR_R
-#undef _VC_NOEXCEPT
+#undef Vc_WARN_UNUSED_RESULT
 
 #undef ALIGN
 #undef STRUCT_ALIGN1
@@ -65,9 +60,6 @@
 #endif
 
 #undef VC_HAS_BUILTIN
-
-#undef Vc_buildDouble
-#undef Vc_buildFloat
 
 #undef _VC_APPLY_IMPL_1
 #undef _VC_APPLY_IMPL_2
@@ -101,10 +93,12 @@
 #undef VC_EXACT_TYPE
 #undef VC_ALIGNED_PARAMETER
 #undef VC_OFFSETOF
+#undef Vc_NOEXCEPT
+#undef VC_RR_
+#undef VC_FORWARD_
 
-#ifdef Vc_POP_GCC_DIAGNOSTIC__
+#if defined(VC_GCC) && !defined(__OPTIMIZE__)
 #pragma GCC diagnostic pop
-#undef Vc_POP_GCC_DIAGNOSTIC__
 #endif
 
 #endif // VC_COMMON_UNDOMACROS_H

@@ -17,27 +17,9 @@
 
 */
 
-namespace ROOT {
-namespace Vc
-{
-ALIGN(64) extern unsigned int RandomState[16];
-
-namespace Scalar
-{
-
-// conversion/casts {{{1
-template<> template<> Vc_INTRINSIC short_v &Vector<short>::operator=(const ushort_v &x) {
-    data() = static_cast<short>(x.data()); return *this;
-}
-template<> template<> Vc_INTRINSIC ushort_v &Vector<unsigned short>::operator=(const short_v &x) {
-    data() = static_cast<unsigned short>(x.data()); return *this;
-}
-template<> template<> Vc_INTRINSIC int_v &Vector<int>::operator=(const uint_v &x) {
-    data() = static_cast<int>(x.data()); return *this;
-}
-template<> template<> Vc_INTRINSIC uint_v &Vector<unsigned int>::operator=(const int_v &x) {
-    data() = static_cast<unsigned int>(x.data()); return *this;
-}
+#include "../common/data.h"
+#include "macros.h"
+Vc_NAMESPACE_BEGIN(Vc_IMPL_NAMESPACE)
 
 // copySign ///////////////////////////////////////////////////////////////////////// {{{1
 template<> Vc_INTRINSIC Vector<float> Vector<float>::copySign(Vector<float> reference) const
@@ -50,10 +32,6 @@ template<> Vc_INTRINSIC Vector<float> Vector<float>::copySign(Vector<float> refe
     sign.f = reference.data();
     value.i = (sign.i & 0x80000000u) | (value.i & 0x7fffffffu);
     return float_v(value.f);
-}
-template<> Vc_INTRINSIC sfloat_v Vector<sfloat>::copySign(sfloat_v reference) const
-{
-    return sfloat_v(float_v(m_data).copySign(float_v(reference.data())).data());
 }
 template<> Vc_INTRINSIC Vector<double> Vector<double>::copySign(Vector<double> reference) const
 {
@@ -80,14 +58,11 @@ template<> Vc_ALWAYS_INLINE Vc_PURE VecT VecT::operator op(const VecT &x) const 
     return VecT(ret op##= x); \
 }
 #define VC_CAST_OPERATOR_FORWARD_FLOAT(op)  VC_CAST_OPERATOR_FORWARD(op, unsigned int, Vector<float>)
-#define VC_CAST_OPERATOR_FORWARD_SFLOAT(op) VC_CAST_OPERATOR_FORWARD(op, unsigned int, Vector<sfloat>)
 #define VC_CAST_OPERATOR_FORWARD_DOUBLE(op) VC_CAST_OPERATOR_FORWARD(op, unsigned long long, Vector<double>)
 VC_ALL_BINARY(VC_CAST_OPERATOR_FORWARD_FLOAT)
-VC_ALL_BINARY(VC_CAST_OPERATOR_FORWARD_SFLOAT)
 VC_ALL_BINARY(VC_CAST_OPERATOR_FORWARD_DOUBLE)
 #undef VC_CAST_OPERATOR_FORWARD
 #undef VC_CAST_OPERATOR_FORWARD_FLOAT
-#undef VC_CAST_OPERATOR_FORWARD_SFLOAT
 #undef VC_CAST_OPERATOR_FORWARD_DOUBLE
 // }}}1
 // operators {{{1
@@ -100,10 +75,6 @@ template<> Vc_INTRINSIC Vector<float> Vector<float>::exponent() const
     union { float f; int i; } value;
     value.f = m_data;
     return float_v(static_cast<float>((value.i >> 23) - 0x7f));
-}
-template<> Vc_INTRINSIC sfloat_v Vector<sfloat>::exponent() const
-{
-    return sfloat_v(float_v(m_data).exponent().data());
 }
 template<> Vc_INTRINSIC Vector<double> Vector<double>::exponent() const
 {
@@ -153,10 +124,6 @@ template<> Vc_ALWAYS_INLINE void float_v::fusedMultiplyAdd(const float_v &f, con
 {
     data() = _fusedMultiplyAdd(data(), f.data(), s.data());
 }
-template<> Vc_ALWAYS_INLINE void sfloat_v::fusedMultiplyAdd(const sfloat_v &f, const sfloat_v &s)
-{
-    data() = _fusedMultiplyAdd(data(), f.data(), s.data());
-}
 template<> Vc_ALWAYS_INLINE void double_v::fusedMultiplyAdd(const double_v &f, const double_v &s)
 {
     data() = _fusedMultiplyAdd(data(), f.data(), s.data());
@@ -165,10 +132,10 @@ template<> Vc_ALWAYS_INLINE void double_v::fusedMultiplyAdd(const double_v &f, c
 static Vc_ALWAYS_INLINE void _doRandomStep(Vector<unsigned int> &state0,
         Vector<unsigned int> &state1)
 {
-    state0.load(&Vc::RandomState[0]);
-    state1.load(&Vc::RandomState[uint_v::Size]);
-    (state1 * 0xdeece66du + 11).store(&Vc::RandomState[uint_v::Size]);
-    uint_v((state0 * 0xdeece66du + 11).data() ^ (state1.data() >> 16)).store(&Vc::RandomState[0]);
+    state0.load(&Common::RandomState[0]);
+    state1.load(&Common::RandomState[uint_v::Size]);
+    (state1 * 0xdeece66du + 11).store(&Common::RandomState[uint_v::Size]);
+    uint_v((state0 * 0xdeece66du + 11).data() ^ (state1.data() >> 16)).store(&Common::RandomState[0]);
 }
 
 template<typename T> Vc_INTRINSIC Vector<T> Vector<T>::Random()
@@ -185,16 +152,12 @@ template<> Vc_INTRINSIC Vector<float> Vector<float>::Random()
     x.i = (state0.data() & 0x0fffffffu) | 0x3f800000u;
     return float_v(x.f - 1.f);
 }
-template<> Vc_INTRINSIC sfloat_v Vector<sfloat>::Random()
-{
-    return sfloat_v(Vector<float>::Random().data());
-}
 template<> Vc_INTRINSIC Vector<double> Vector<double>::Random()
 {
     typedef unsigned long long uint64 Vc_MAY_ALIAS;
-    uint64 state0 = *reinterpret_cast<const uint64 *>(&Vc::RandomState[8]);
+    uint64 state0 = *reinterpret_cast<const uint64 *>(&Common::RandomState[8]);
     state0 = (state0 * 0x5deece66dull + 11) & 0x000fffffffffffffull;
-    *reinterpret_cast<uint64 *>(&Vc::RandomState[8]) = state0;
+    *reinterpret_cast<uint64 *>(&Common::RandomState[8]) = state0;
     union { unsigned long long i; double f; } x;
     x.i = state0 | 0x3ff0000000000000ull;
     return double_v(x.f - 1.);
@@ -238,7 +201,6 @@ template<> Vc_INTRINSIC void double_v::setQnan(Mask m)
     }
 }
 // }}}1
-} // namespace Scalar
-} // namespace Vc
-} // namespace ROOT
+Vc_IMPL_NAMESPACE_END
+#include "undomacros.h"
 // vim: foldmethod=marker

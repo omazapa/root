@@ -34,14 +34,10 @@
 
 #include "../common/types.h"
 
-namespace ROOT {
-namespace Vc
-{
-namespace AVX
-{
+Vc_NAMESPACE_BEGIN(Vc_IMPL_NAMESPACE)
     template<typename T> class Vector;
 
-    template<unsigned int VectorSize, size_t RegisterWidth> class Mask;
+    template<typename T> class Mask;
 
     template<typename T> struct VectorHelper {};
     template<typename T> struct GatherHelper;
@@ -49,24 +45,24 @@ namespace AVX
 
     template<typename T> struct IndexTypeHelper;
     template<> struct IndexTypeHelper<         char > { typedef unsigned char  Type; };
+    template<> struct IndexTypeHelper<  signed char > { typedef unsigned char  Type; };
     template<> struct IndexTypeHelper<unsigned char > { typedef unsigned char  Type; };
     template<> struct IndexTypeHelper<         short> { typedef unsigned short Type; };
     template<> struct IndexTypeHelper<unsigned short> { typedef unsigned short Type; };
-    template<> struct IndexTypeHelper<         int  > { typedef unsigned int   Type; };
-    template<> struct IndexTypeHelper<unsigned int  > { typedef unsigned int   Type; };
-    template<> struct IndexTypeHelper<         float> { typedef unsigned int   Type; };
-    template<> struct IndexTypeHelper<        sfloat> { typedef unsigned short Type; };
-    template<> struct IndexTypeHelper<        double> { typedef unsigned int   Type; }; // _M128I based int32 would be nice
+    template<> struct IndexTypeHelper<         int  > { typedef          int   Type; };
+    template<> struct IndexTypeHelper<unsigned int  > { typedef          int   Type; };
+    template<> struct IndexTypeHelper<         float> { typedef          int   Type; };
+    template<> struct IndexTypeHelper<        double> { typedef          int   Type; }; // _M128I based int32 would be nice
 
     template<typename T> struct VectorTypeHelper;
     template<> struct VectorTypeHelper<         char > { typedef m128i Type; };
+    template<> struct VectorTypeHelper<  signed char > { typedef m128i Type; };
     template<> struct VectorTypeHelper<unsigned char > { typedef m128i Type; };
     template<> struct VectorTypeHelper<         short> { typedef m128i Type; };
     template<> struct VectorTypeHelper<unsigned short> { typedef m128i Type; };
     template<> struct VectorTypeHelper<         int  > { typedef m256i Type; };
     template<> struct VectorTypeHelper<unsigned int  > { typedef m256i Type; };
     template<> struct VectorTypeHelper<         float> { typedef m256  Type; };
-    template<> struct VectorTypeHelper<        sfloat> { typedef m256  Type; };
     template<> struct VectorTypeHelper<        double> { typedef m256d Type; };
 
     template<typename T> struct SseVectorType;
@@ -76,6 +72,15 @@ namespace AVX
     template<> struct SseVectorType<m128 > { typedef m128  Type; };
     template<> struct SseVectorType<m128i> { typedef m128i Type; };
     template<> struct SseVectorType<m128d> { typedef m128d Type; };
+
+    template<typename T, size_t = sizeof(T)> struct IntegerVectorType { typedef m256i Type; };
+    template<typename T> struct IntegerVectorType<T, 16> { typedef m128i Type; };
+
+    template<typename T, size_t = sizeof(T)> struct DoubleVectorType { typedef m256d Type; };
+    template<typename T> struct DoubleVectorType<T, 16> { typedef m128d Type; };
+
+    template<typename T, size_t = sizeof(T)> struct FloatVectorType { typedef m256 Type; };
+    template<typename T> struct FloatVectorType<T, 16> { typedef m128 Type; };
 
     template<typename T> struct HasVectorDivisionHelper { enum { Value = 1 }; };
     //template<> struct HasVectorDivisionHelper<unsigned int> { enum { Value = 0 }; };
@@ -103,9 +108,7 @@ namespace AVX
             FREE_STORE_OPERATORS_ALIGNED(sizeof(V))
     } STRUCT_ALIGN2(sizeof(V));
 #endif
-} // namespace AVX
-} // namespace Vc
-} // namespace ROOT
+Vc_IMPL_NAMESPACE_END
 #include "undomacros.h"
 
 #endif // AVX_TYPES_H

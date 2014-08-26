@@ -25,14 +25,10 @@
 #include <malloc.h>
 #endif
 
-namespace ROOT {
-namespace Vc
-{
-namespace Internal
-{
+Vc_NAMESPACE_BEGIN(Internal)
 
 template<size_t X>
-static _VC_CONSTEXPR size_t nextMultipleOf(size_t value)
+static constexpr size_t nextMultipleOf(size_t value)
 {
     return (value % X) > 0 ? value + X - (value % X) : value;
 }
@@ -79,8 +75,6 @@ Vc_ALWAYS_INLINE void HelperImpl<ScalarImpl>::free(void *p)
     std::free(p);
 }
 
-} // namespace Internal
-} // namespace Vc
-} // namespace ROOT
+Vc_NAMESPACE_END
 
 #endif // VC_SCALAR_HELPERIMPL_TCC

@@ -22,9 +22,7 @@
 
 #include "macros.h"
 
-namespace ROOT {
-namespace Vc
-{
+Vc_PUBLIC_NAMESPACE_BEGIN
 
 /**
  * \ingroup Vectors
@@ -53,8 +51,6 @@ namespace Vc
 =========|=======|========|========|=======|======|=====
  float_v |   X   |        |    X   |   X   |      |
 ---------|-------|--------|--------|-------|------|-----
-sfloat_v |   X   |        |    X   |   X   |      |
----------|-------|--------|--------|-------|------|-----
 double_v |       |    X   |        |       |      |
 ---------|-------|--------|--------|-------|------|-----
    int_v |       |        |        |   X   |      |  X
@@ -79,8 +75,7 @@ template<typename V, typename M> Vc_ALWAYS_INLINE void deinterleave(V *a, V *b,
     Internal::Helper::deinterleave(*a, *b, memory, Aligned);
 }
 
-} // namespace Vc
-} // namespace ROOT
+Vc_NAMESPACE_END
 
 #include "undomacros.h"
 
