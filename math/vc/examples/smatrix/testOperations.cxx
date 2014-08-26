@@ -8,9 +8,10 @@
 #include "Math/SVector.h"
 #include "Math/SMatrix.h"
 
-
+#ifdef USE_TMATRIX
 #include "TMatrixD.h"
 #include "TVectorD.h"
+#endif
 
 #include "TRandom3.h"
 #include "TH1D.h"
