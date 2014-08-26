@@ -12,8 +12,10 @@
 #include "Math/SVector.h"
 #include "Math/SMatrix.h"
 
+#ifdef USE_TMATRIX
 #include "TMatrixD.h"
 #include "TVectorD.h"
+#endif
 
 #include "TRandom3.h"
 
@@ -89,8 +91,8 @@ int test_smatrix_kalman() {
    // need to write explicitly the dimensions
 
 
-   typedef SMatrix<Stype, NDIM1, NDIM1>  MnMatrixNN;
-   typedef SMatrix<Stype, NDIM2, NDIM2>  MnMatrixMM;
+   //typedef SMatrix<Stype, NDIM1, NDIM1>  MnMatrixNN;
+   //typedef SMatrix<Stype, NDIM2, NDIM2>  MnMatrixMM;
    typedef SMatrix<Stype, NDIM1, NDIM2>  MnMatrixNM;
    typedef SMatrix<Stype, NDIM2 , NDIM1> MnMatrixMN;
    typedef SMatrix<Stype, NDIM1 >        MnSymMatrixNN;
@@ -227,16 +229,16 @@ int test_smatrix_sym_kalman() {
    // need to write explicitly the dimensions
 
 
-   typedef SMatrix<Stype, NDIM1, NDIM1>  MnMatrixNN;
-   typedef SMatrix<Stype, NDIM2, NDIM2>  MnMatrixMM;
+   //typedef SMatrix<Stype, NDIM1, NDIM1>  MnMatrixNN;
+   //typedef SMatrix<Stype, NDIM2, NDIM2>  MnMatrixMM;
    typedef SMatrix<Stype, NDIM1, NDIM2>  MnMatrixNM;
    typedef SMatrix<Stype, NDIM2 , NDIM1> MnMatrixMN;
    typedef SMatrix<Stype, NDIM1, NDIM1, MatRepSym<Stype, NDIM1> >        MnSymMatrixNN;
    typedef SMatrix<Stype, NDIM2, NDIM2, MatRepSym<Stype, NDIM2> >        MnSymMatrixMM;
    typedef SVector<Stype, NDIM1>         MnVectorN;
    typedef SVector<Stype, NDIM2>         MnVectorM;
-   typedef SVector<Stype, NDIM1*(NDIM1+1)/2>   MnVectorN2;
-   typedef SVector<Stype, NDIM2*(NDIM2+1)/2>   MnVectorM2;
+   //typedef SVector<Stype, NDIM1*(NDIM1+1)/2>   MnVectorN2;
+   //typedef SVector<Stype, NDIM2*(NDIM2+1)/2>   MnVectorM2;
 
 
 

@@ -281,8 +281,8 @@ void testATBA_S(const A * a, const B * b, double & time, C * result) {
   test::Timer t(time,"At*M*A");
   for (int l = 0; l < NLOOP; l++) {
      for (int k = 0; k < NLIST; k++) {
-        C tmp = b[k] * Transpose(a[k]);
-        result[k] = a[k] * tmp;
+        C mtmp = b[k] * Transpose(a[k]);
+        result[k] = a[k] * mtmp;
      }
      tmp += SumOfElements(result[NLIST-1]);
   }
