@@ -92,7 +92,7 @@ typedef ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<Double_type> > VecType;
 #endif
 
 //#define VLISTSIZE 8
-#define VLISTSIZE 100
+#define VLISTSIZE 128
 
 #ifdef USE_VC
 const int N = VLISTSIZE/Vc::double_v::Size;
