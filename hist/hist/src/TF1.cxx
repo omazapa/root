@@ -153,11 +153,11 @@ void TF1NormSum::InitializeDataMembers(const std::vector <TF1*> &functions, cons
    {
       //normalize the functions if it is not already done
       if (!fFunctions[n] -> IsNormalized())  fFunctions[n]  -> SetNormalized(true);
-      
       fNOfParams[n]       = fFunctions[n] -> GetNpar();
       fNOfNonCstParams[n] = fNOfParams[n];
       fCstIndexes[n]      = fFunctions[n] -> GetParNumber("Constant");//return -1 if there is no constant parameter
-      std::cout << "nofparam of function " << n <<" : " << fNOfParams[n] << std::endl;
+      std::cout << " cst index of function " << n << " : " << fCstIndexes[n] << std::endl;
+      //std::cout << "nofparam of function " << n <<" : " << fNOfParams[n] << std::endl;
       if (fCstIndexes[n]!= -1)                                        //if there exists a constant parameter
       {
          fFunctions[n] -> FixParameter(fCstIndexes[n], 1.);          //fixes the parameters called "Constant" to 1
@@ -188,8 +188,8 @@ TF1NormSum::TF1NormSum(TF1* function1, TF1* function2, Double_t coeff1, Double_t
 {
    // TF1NormSum constructor taking 2 functions, and 2 coefficients (if not equal to 1)
 
-   std::vector <TF1*     > functions(2);
-   std::vector <Double_t > coeffs(2);
+   std::vector < TF1*     > functions(2);
+   std::vector < Double_t > coeffs(2);
    
    functions       = {function1, function2};
    coeffs          = {coeff1,    coeff2};
@@ -202,8 +202,8 @@ TF1NormSum::TF1NormSum(TF1* function1, TF1* function2, TF1* function3, Double_t 
 {
    // TF1NormSum constructor taking 3 functions, and 3 coefficients (if not equal to 1)
    
-   std::vector <TF1*    > functions(3);
-   std::vector <Double_t> coeffs(3);
+   std::vector < TF1*     > functions(3);
+   std::vector < Double_t > coeffs(3);
    
    functions       = {function1, function2, function3};
    coeffs          = {coeff1,    coeff2,    coeff3};
@@ -226,12 +226,11 @@ TF1NormSum::TF1NormSum(const TString &formula)
    Int_t nofobj           = arrayall  -> GetEntries();
    Int_t nofcoeffs        = nofobj - noffunctions;
    
-   fFunctions = std::vector < TF1*     > (noffunctions);
-   fCoeffs    = std::vector < Double_t > (noffunctions);
-
+   std::vector < TF1*     > functions(noffunctions);
+   std::vector < Double_t > coeffs(noffunctions);
    std::vector < TString  > funcstringall(nofobj);
    std::vector < Int_t    > indexsizetimes(nofcoeffs+1);
-   std::vector < bool     > isacoeff(nofobj);//1 is it is a coeff, 0 if it is a functions
+   std::vector < Bool_t   > isacoeff(nofobj);//1 is it is a coeff, 0 if it is a functions
 
    for (int i=0; i<nofobj; i++)
    {
@@ -244,7 +243,7 @@ TF1NormSum::TF1NormSum(const TString &formula)
    Int_t k = 1;
    for (int i=0; i<nofcoeffs+1; i++)
    {
-      indexsizetimes[i] = ((((TObjString*)(*arraytimes)[i])-> GetString()).Tokenize("+")) -> GetEntries();
+      indexsizetimes[i] = ( ( ( (TObjString*)(*arraytimes)[i] ) -> GetString() ).Tokenize("+") ) -> GetEntries();
       while (k < indexsizetimes[i])
       {
          isacoeff[k+j-1] = 0;
@@ -260,35 +259,42 @@ TF1NormSum::TF1NormSum(const TString &formula)
    {
       if (isacoeff[k]==0)
       {
-         fCoeffs[i]    = 1.;
-         fFunctions[i] = (TF1*)(gROOT -> GetListOfFunctions() -> FindObject(funcstringall[k]));
-         if (!fFunctions[i])   Error("TF1NormSum", "Function %s does not exist", funcstringall[k].Data());
+         coeffs[i]    = 1.;
+         functions[i] = (TF1*)(gROOT -> GetListOfFunctions() -> FindObject(funcstringall[k]));
+         if (!functions[i])   Error("TF1NormSum", "Function %s does not exist", funcstringall[k].Data());
+         TF1 * f  = (TF1*)(gROOT -> GetListOfFunctions() -> FindObject(funcstringall[k]));
+         if (!f)   Error("TF1NormSum", "Function %s does not exist", funcstringall[k].Data());
+         functions[i] = (TF1*) f->Clone(TString::Format("function_%s_%d",funcstringall[k].Data(), i) );
          k++;
       }
       else
       {
-         fCoeffs[i]    = funcstringall[k].Atof();
-         fFunctions[i] = (TF1*)(gROOT -> GetListOfFunctions() -> FindObject(funcstringall[k+1]));
-         if (!fFunctions[i])   Error("TF1NormSum", "Function %s does not exist", funcstringall[k+1].Data());
+         coeffs[i]    = funcstringall[k].Atof();
+         functions[i] = (TF1*)(gROOT -> GetListOfFunctions() -> FindObject(funcstringall[k+1]));
+         if (!functions[i])   Error("TF1NormSum", "Function %s does not exist", funcstringall[k+1].Data());
+         TF1 * f  = (TF1*)(gROOT -> GetListOfFunctions() -> FindObject(funcstringall[k+1]));
+         if (!f)   Error("TF1NormSum", "Function %s does not exist", funcstringall[k+1].Data());
+         functions[i] = (TF1*) f->Clone(TString::Format("function_%s_%d",funcstringall[k+1].Data(), i) );
          k=k+2;
       }
    }
-   InitializeDataMembers(fFunctions, fCoeffs);
-   for (auto f : fFunctions)
+   InitializeDataMembers(functions, coeffs);
+   
+   /*for (auto f : functions)
    {
       f->Print();
    }
-   for (auto c : fCoeffs)
+   for (auto c : coeffs)
    {
       std::cout << "coeff " << c << std::endl;
-   }
+   }*/
 }
 
 //_________________________________________________________________
 double TF1NormSum::operator()(double* x, double* p)
 {
    // Overload the parenthesis to add the functions
-   if (p!=0)   TF1NormSum::SetParameters(p);                                              // first refresh the parameters
+   if (p!=0)   TF1NormSum::SetParameters(p);                           // first refresh the parameters
 
    Double_t sum = 0.;
    for (unsigned int n=0; n<fNOfFunctions; n++)
@@ -308,38 +314,41 @@ void TF1NormSum::SetParameters(const double* params)//params should have the siz
    {
       fCoeffs[n] = params[n];
    }
-   std::vector <std::vector <Double_t> >temp(fNOfFunctions);
-   std::vector <std::vector <Double_t> >temptotal(fNOfFunctions);
-   int offset = 0;
-   Double_t FixedValue = 1.;
+   std::vector <std::vector <Double_t> > noncstparams(fNOfFunctions);
+   std::vector <std::vector <Double_t> > totalparams (fNOfFunctions);
+   Int_t    offset     = 0;
+   Double_t fixedvalue = 1.;
+   Int_t k = 0;
    for (unsigned int n=0; n<fNOfFunctions; n++)
    {
-      temptotal[n] = std::vector < Double_t > (fNOfParams[n]);          // temptotal is used for the TF1::SetParameters, so doesn't contains coefficients, but does contain cst parameters
-      temp[n]      = std::vector < Double_t > (fNOfNonCstParams[n]);    // temp is used for the class member fParams, so does not contain the cst parameters
+      totalparams[n]  = std::vector < Double_t > (fNOfParams[n]);       // temptotal is used for the TF1::SetParameters, so doesn't contains coefficients, but does contain cst parameters
+      noncstparams[n] = std::vector < Double_t > (fNOfNonCstParams[n]); // temp is used for the class member fParams, so does not contain the cst parameters
       if (n>0)    offset += fNOfNonCstParams[n-1];                      // offset to go along the list of parameters
-      int k = 0;                                                        // incrementer for temp
-      //std::cout << " offset " << offset << std::endl;
+      
+      k = 0;                                                            // incrementer for temp
       for (int i=0; i<fNOfParams[n]; i++)
       {
          if (i == fCstIndexes[n])
          {
-            temptotal[n][i] = 1. ;
-            //std::cout << " params " << k+fNOfFunctions+offset << " : " << params[k+fNOfFunctions+offset] << std::endl;
-            continue;
+            totalparams[n][i] = 1. ;
+            std::cout << " constant param of function " << n << " no " <<  i << " = " << totalparams[n][i] << std::endl;
          }
-         temp[n][k]      = params[k+fNOfFunctions+offset];
-         temptotal[n][i] = params[k+fNOfFunctions+offset];
-         //std::cout << " params " << k+fNOfFunctions+offset << " : " << params[k+fNOfFunctions+offset] << std::endl;
-         k++;
+         else
+         {
+            noncstparams[n][k] = params[k+fNOfFunctions+offset];
+            totalparams[n][i]  = params[k+fNOfFunctions+offset];
+            std::cout << " params " << k+fNOfFunctions+offset << " = " << params[k+fNOfFunctions+offset] << std::endl;
+            k++;
+         }
       }
-      fParams[n]    =  temp[n].data();                                  // fParams doesn't take the coefficients, and neither the cst parameters
-      fFunctions[n] -> SetParameters(temptotal[n].data());
+      fParams[n]    =  noncstparams[n].data();                          // fParams doesn't take the coefficients, and neither the cst parameters
+      fFunctions[n] -> SetParameters(totalparams[n].data());
       
-      FixedValue = 1.;
-      if (fFunctions[n]->GetNumber() == 200)  FixedValue = 0.;          // if this is an exponential
-      fFunctions[n] -> FixParameter(fCstIndexes[n],FixedValue);
+      fixedvalue = 1.;
+      if (fFunctions[n] -> GetNumber() == 200)  fixedvalue = 0.;        // if this is an exponential, the fixed value is zero
+      fFunctions[n] -> FixParameter(fCstIndexes[n], fixedvalue);
       // fFunctions[n]->Print();
-      // std::cout << "coeff " << n << " : " << fCoeffs[n] << std::endl;
+      //std::cout << "coeff " << n << " : " << fCoeffs[n] << std::endl;
    }
 }
 
