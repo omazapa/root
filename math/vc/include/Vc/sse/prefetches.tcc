@@ -20,7 +20,11 @@
 #ifndef VC_SSE_PREFETCHES_TCC
 #define VC_SSE_PREFETCHES_TCC
 
-Vc_NAMESPACE_BEGIN(Internal)
+namespace ROOT {
+namespace Vc
+{
+namespace Internal
+{
 
 Vc_ALWAYS_INLINE void HelperImpl<Vc::SSE2Impl>::prefetchForOneRead(const void *addr)
 {
@@ -40,13 +44,15 @@ Vc_ALWAYS_INLINE void HelperImpl<Vc::SSE2Impl>::prefetchFar(const void *addr)
 }
 Vc_ALWAYS_INLINE void HelperImpl<Vc::SSE2Impl>::prefetchForModify(const void *addr)
 {
-#ifdef __3dNOW__
+#if defined(__3dNOW__) && (!defined(VC_CLANG) || VC_CLANG >= 0x30200)
     _m_prefetchw(const_cast<void *>(addr));
 #else
     _mm_prefetch(static_cast<char *>(const_cast<void *>(addr)), _MM_HINT_T0);
 #endif
 }
 
-Vc_NAMESPACE_END
+} // namespace Internal
+} // namespace Vc
+} // namespace ROOT
 
 #endif // VC_SSE_PREFETCHES_TCC

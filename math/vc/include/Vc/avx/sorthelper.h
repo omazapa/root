@@ -22,7 +22,11 @@
 
 #include "types.h"
 
-Vc_NAMESPACE_BEGIN(Vc_IMPL_NAMESPACE)
+namespace ROOT {
+namespace Vc
+{
+namespace AVX
+{
 template<typename T> struct SortHelper
 {
     typedef typename VectorTypeHelper<T>::Type VectorType;
@@ -34,6 +38,8 @@ template<typename T> struct SortHelper
     static VectorType sort(VTArg);
     static void sort(VectorType &, VectorType &);
 };
-Vc_IMPL_NAMESPACE_END
+} // namespace AVX
+} // namespace Vc
+} // namespace ROOT
 
 #endif // VC_AVX_SORTHELPER_H

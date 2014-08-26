@@ -37,10 +37,6 @@ extern "C" {
 
 #include "../common/fix_clang_emmintrin.h"
 
-#if defined(__GNUC__) && !defined(VC_IMPL_SSE2)
-#error "SSE Vector class needs at least SSE2"
-#endif
-
 #include "const_data.h"
 #include <cstdlib>
 #include "macros.h"
@@ -51,17 +47,11 @@ extern "C" {
 }
 #endif
 
-// XOP / FMA4
-#if defined(VC_IMPL_XOP) || defined(VC_IMPL_FMA4)
-extern "C" {
-#include <x86intrin.h>
-}
-#endif
-
-
-Vc_NAMESPACE_BEGIN(SseIntrinsics)
-    using SSE::c_general;
-
+namespace ROOT {
+namespace Vc
+{
+namespace SSE
+{
     enum VectorAlignmentEnum { VectorAlignment = 16 };
 
 #if defined(VC_GCC) && VC_GCC < 0x40600 && !defined(VC_DONT_FIX_SSE_SHIFT)
@@ -84,9 +74,14 @@ Vc_NAMESPACE_BEGIN(SseIntrinsics)
     static Vc_INTRINSIC Vc_CONST __m128  _mm_sub_ps(__m128  a, __m128  b) { return static_cast<__m128 >(static_cast<__v4sf>(a) - static_cast<__v4sf>(b)); }
 #endif
 
-    static Vc_INTRINSIC Vc_CONST __m128i _mm_setallone_si128() { return _mm_load_si128(reinterpret_cast<const __m128i *>(Common::AllBitsSet)); }
-    static Vc_INTRINSIC Vc_CONST __m128d _mm_setallone_pd() { return _mm_load_pd(reinterpret_cast<const double *>(Common::AllBitsSet)); }
-    static Vc_INTRINSIC Vc_CONST __m128  _mm_setallone_ps() { return _mm_load_ps(reinterpret_cast<const float *>(Common::AllBitsSet)); }
+#if defined(VC_GNU_ASM) && !defined(NVALGRIND)
+    static Vc_INTRINSIC __m128i Vc_CONST _mm_setallone() { __m128i r; __asm__("pcmpeqb %0,%0":"=x"(r)); return r; }
+#else
+    static Vc_INTRINSIC __m128i Vc_CONST _mm_setallone() { __m128i r = _mm_setzero_si128(); return _mm_cmpeq_epi8(r, r); }
+#endif
+    static Vc_INTRINSIC __m128i Vc_CONST _mm_setallone_si128() { return _mm_setallone(); }
+    static Vc_INTRINSIC __m128d Vc_CONST _mm_setallone_pd() { return _mm_castsi128_pd(_mm_setallone()); }
+    static Vc_INTRINSIC __m128  Vc_CONST _mm_setallone_ps() { return _mm_castsi128_ps(_mm_setallone()); }
 
     static Vc_INTRINSIC __m128i Vc_CONST _mm_setone_epi8 ()  { return _mm_set1_epi8(1); }
     static Vc_INTRINSIC __m128i Vc_CONST _mm_setone_epu8 ()  { return _mm_setone_epi8(); }
@@ -111,12 +106,6 @@ Vc_NAMESPACE_BEGIN(SseIntrinsics)
     //X                 _mm_xor_si128(a, _mm_setmin_epi8 ()), _mm_xor_si128(b, _mm_setmin_epi8 ())); }
     //X         static Vc_INTRINSIC __m128i Vc_CONST _mm_cmpgt_epu8 (__m128i a, __m128i b) { return _mm_cmpgt_epi8 (
     //X                 _mm_xor_si128(a, _mm_setmin_epi8 ()), _mm_xor_si128(b, _mm_setmin_epi8 ())); }
-#if defined(VC_IMPL_XOP) && !defined(VC_CLANG)
-    static Vc_INTRINSIC __m128i Vc_CONST _mm_cmplt_epu16(__m128i a, __m128i b) { return _mm_comlt_epu16(a, b); }
-    static Vc_INTRINSIC __m128i Vc_CONST _mm_cmpgt_epu16(__m128i a, __m128i b) { return _mm_comgt_epu16(a, b); }
-    static Vc_INTRINSIC __m128i Vc_CONST _mm_cmplt_epu32(__m128i a, __m128i b) { return _mm_comlt_epu32(a, b); }
-    static Vc_INTRINSIC __m128i Vc_CONST _mm_cmpgt_epu32(__m128i a, __m128i b) { return _mm_comgt_epu32(a, b); }
-#else
     static Vc_INTRINSIC __m128i Vc_CONST _mm_cmplt_epu16(__m128i a, __m128i b) { return _mm_cmplt_epi16(
             _mm_xor_si128(a, _mm_setmin_epi16()), _mm_xor_si128(b, _mm_setmin_epi16())); }
     static Vc_INTRINSIC __m128i Vc_CONST _mm_cmpgt_epu16(__m128i a, __m128i b) { return _mm_cmpgt_epi16(
@@ -125,24 +114,31 @@ Vc_NAMESPACE_BEGIN(SseIntrinsics)
             _mm_xor_si128(a, _mm_setmin_epi32()), _mm_xor_si128(b, _mm_setmin_epi32())); }
     static Vc_INTRINSIC __m128i Vc_CONST _mm_cmpgt_epu32(__m128i a, __m128i b) { return _mm_cmpgt_epi32(
             _mm_xor_si128(a, _mm_setmin_epi32()), _mm_xor_si128(b, _mm_setmin_epi32())); }
-#endif
-Vc_NAMESPACE_END
+} // namespace SSE
+} // namespace Vc
+} // namespace ROOT
 
 // SSE3
 #ifdef VC_IMPL_SSE3
 extern "C" {
 #include <pmmintrin.h>
 }
-#elif defined _PMMINTRIN_H_INCLUDED
-#error "SSE3 was disabled but something includes <pmmintrin.h>. Please fix your code."
 #endif
 // SSSE3
 #ifdef VC_IMPL_SSSE3
 extern "C" {
 #include <tmmintrin.h>
 }
+#define mm_abs_epi8  _mm_abs_epi8
+#define mm_abs_epi16 _mm_abs_epi16
+#define mm_abs_epi32 _mm_abs_epi32
+#define mm_alignr_epi8 _mm_alignr_epi8
+namespace ROOT {
+namespace Vc
+{
+namespace SSE
+{
 
-Vc_NAMESPACE_BEGIN(SseIntrinsics)
     // not overriding _mm_set1_epi8 because this one should only be used for non-constants
     static Vc_INTRINSIC __m128i Vc_CONST set1_epi8(int a) {
 #if defined(VC_GCC) && VC_GCC < 0x40500
@@ -152,14 +148,17 @@ Vc_NAMESPACE_BEGIN(SseIntrinsics)
         return _mm_set1_epi8(a);
 #endif
     }
-Vc_NAMESPACE_END
 
-#elif defined _TMMINTRIN_H_INCLUDED
-#error "SSSE3 was disabled but something includes <tmmintrin.h>. Please fix your code."
+} // namespace SSE
+} // namespace Vc
+} // namespace ROOT
 #else
-
-Vc_NAMESPACE_BEGIN(SseIntrinsics)
-    static Vc_INTRINSIC __m128i Vc_CONST _mm_abs_epi8 (__m128i a) {
+namespace ROOT {
+namespace Vc
+{
+namespace SSE
+{
+    static Vc_INTRINSIC __m128i Vc_CONST mm_abs_epi8 (__m128i a) {
         __m128i negative = _mm_cmplt_epi8 (a, _mm_setzero_si128());
         return _mm_add_epi8 (_mm_xor_si128(a, negative), _mm_and_si128(negative,  _mm_setone_epi8()));
     }
@@ -173,18 +172,18 @@ Vc_NAMESPACE_BEGIN(SseIntrinsics)
     //   a xor -1 -> -a - 1
     //   -1 >> 31 -> 1
     //   -a - 1 + 1 -> -a
-    static Vc_INTRINSIC __m128i Vc_CONST _mm_abs_epi16(__m128i a) {
+    static Vc_INTRINSIC __m128i Vc_CONST mm_abs_epi16(__m128i a) {
         __m128i negative = _mm_cmplt_epi16(a, _mm_setzero_si128());
         return _mm_add_epi16(_mm_xor_si128(a, negative), _mm_srli_epi16(negative, 15));
     }
-    static Vc_INTRINSIC __m128i Vc_CONST _mm_abs_epi32(__m128i a) {
+    static Vc_INTRINSIC __m128i Vc_CONST mm_abs_epi32(__m128i a) {
         __m128i negative = _mm_cmplt_epi32(a, _mm_setzero_si128());
         return _mm_add_epi32(_mm_xor_si128(a, negative), _mm_srli_epi32(negative, 31));
     }
     static Vc_INTRINSIC __m128i Vc_CONST set1_epi8(int a) {
         return _mm_set1_epi8(a);
     }
-    static Vc_INTRINSIC __m128i Vc_CONST _mm_alignr_epi8(__m128i a, __m128i b, const int s) {
+    static Vc_INTRINSIC __m128i Vc_CONST mm_alignr_epi8(__m128i a, __m128i b, const int s) {
         switch (s) {
             case  0: return b;
             case  1: return _mm_or_si128(_mm_slli_si128(a, 15), _mm_srli_si128(b,  1));
@@ -221,7 +220,10 @@ Vc_NAMESPACE_BEGIN(SseIntrinsics)
         }
         return _mm_setzero_si128();
     }
-Vc_NAMESPACE_END
+
+} // namespace SSE
+} // namespace Vc
+} // namespace ROOT
 
 #endif
 
@@ -230,37 +232,60 @@ Vc_NAMESPACE_END
 extern "C" {
 #include <smmintrin.h>
 }
-#else
-#ifdef _SMMINTRIN_H_INCLUDED
-#error "SSE4.1 was disabled but something includes <smmintrin.h>. Please fix your code."
-#endif
+namespace ROOT {
+namespace Vc
+{
+namespace SSE
+{
+#define mm_blendv_pd _mm_blendv_pd
+#define mm_blendv_ps _mm_blendv_ps
+#define mm_blendv_epi8 _mm_blendv_epi8
+#define mm_blend_epi16 _mm_blend_epi16
+#define mm_blend_ps _mm_blend_ps
+#define mm_blend_pd _mm_blend_pd
 
-Vc_NAMESPACE_BEGIN(SseIntrinsics)
-    Vc_INTRINSIC __m128i _mm_cmpeq_epi64(__m128i a, __m128i b) {
-        auto tmp = _mm_cmpeq_epi32(a, b);
-        return _mm_and_si128(tmp, _mm_shuffle_epi32(tmp, 1*1 + 0*4 + 3*16 + 2*64));
-    }
-    Vc_INTRINSIC int _mm_extract_epi32(__m128i v, const int index) {
-#ifdef VC_CLANG
-        typedef int int32v4 __attribute__((__vector_size__(16)));
-        return static_cast<int32v4>(v)[index];
+#define mm_min_epi32 _mm_min_epi32
+#define mm_max_epi32 _mm_max_epi32
+#define mm_min_epu32 _mm_min_epu32
+#define mm_max_epu32 _mm_max_epu32
+//#define mm_min_epi16 _mm_min_epi16
+//#define mm_max_epi16 _mm_max_epi16
+#define mm_min_epu16 _mm_min_epu16
+#define mm_max_epu16 _mm_max_epu16
+#define mm_min_epi8  _mm_min_epi8
+#define mm_max_epi8  _mm_max_epi8
+
+#define mm_cvtepu16_epi32 _mm_cvtepu16_epi32
+#define mm_cvtepu8_epi16 _mm_cvtepu8_epi16
+#define mm_cvtepi8_epi16 _mm_cvtepi8_epi16
+#define mm_cvtepu16_epi32 _mm_cvtepu16_epi32
+#define mm_cvtepi16_epi32 _mm_cvtepi16_epi32
+#define mm_cvtepu8_epi32 _mm_cvtepu8_epi32
+#define mm_cvtepi8_epi32 _mm_cvtepi8_epi32
+#define mm_stream_load_si128 _mm_stream_load_si128
+// TODO
+} // namespace SSE
+} // namespace Vc
+} // namespace ROOT
 #else
-        return _mm_cvtsi128_si32(_mm_srli_si128(v, index * 4));
-#endif
-    }
-    static Vc_INTRINSIC __m128d _mm_blendv_pd(__m128d a, __m128d b, __m128d c) {
+namespace ROOT {
+namespace Vc
+{
+namespace SSE
+{
+    static Vc_INTRINSIC __m128d mm_blendv_pd(__m128d a, __m128d b, __m128d c) {
         return _mm_or_pd(_mm_andnot_pd(c, a), _mm_and_pd(c, b));
     }
-    static Vc_INTRINSIC __m128  _mm_blendv_ps(__m128  a, __m128  b, __m128  c) {
+    static Vc_INTRINSIC __m128  mm_blendv_ps(__m128  a, __m128  b, __m128  c) {
         return _mm_or_ps(_mm_andnot_ps(c, a), _mm_and_ps(c, b));
     }
-    static Vc_INTRINSIC __m128i _mm_blendv_epi8(__m128i a, __m128i b, __m128i c) {
+    static Vc_INTRINSIC __m128i mm_blendv_epi8(__m128i a, __m128i b, __m128i c) {
         return _mm_or_si128(_mm_andnot_si128(c, a), _mm_and_si128(c, b));
     }
 
     // only use the following blend functions with immediates as mask and, of course, compiling
     // with optimization
-    static Vc_INTRINSIC __m128d _mm_blend_pd(__m128d a, __m128d b, const int mask) {
+    static Vc_INTRINSIC __m128d mm_blend_pd(__m128d a, __m128d b, const int mask) {
         switch (mask) {
         case 0x0:
             return a;
@@ -275,7 +300,7 @@ Vc_NAMESPACE_BEGIN(SseIntrinsics)
             return a; // should never be reached, but MSVC needs it else it warns about 'not all control paths return a value'
         }
     }
-    static Vc_INTRINSIC __m128  _mm_blend_ps(__m128  a, __m128  b, const int mask) {
+    static Vc_INTRINSIC __m128  mm_blend_ps(__m128  a, __m128  b, const int mask) {
         __m128i c;
         switch (mask) {
         case 0x0:
@@ -332,7 +357,7 @@ Vc_NAMESPACE_BEGIN(SseIntrinsics)
         __m128 _c = _mm_castsi128_ps(c);
         return _mm_or_ps(_mm_andnot_ps(_c, a), _mm_and_ps(_c, b));
     }
-    static Vc_INTRINSIC __m128i _mm_blend_epi16(__m128i a, __m128i b, const int mask) {
+    static Vc_INTRINSIC __m128i mm_blend_epi16(__m128i a, __m128i b, const int mask) {
         __m128i c;
         switch (mask) {
         case 0x00:
@@ -392,65 +417,63 @@ Vc_NAMESPACE_BEGIN(SseIntrinsics)
         return _mm_or_si128(_mm_andnot_si128(c, a), _mm_and_si128(c, b));
     }
 
-    static Vc_INTRINSIC __m128i Vc_CONST _mm_max_epi8 (__m128i a, __m128i b) {
-        return _mm_blendv_epi8(b, a, _mm_cmpgt_epi8 (a, b));
+    static Vc_INTRINSIC __m128i Vc_CONST mm_max_epi8 (__m128i a, __m128i b) {
+        return mm_blendv_epi8(b, a, _mm_cmpgt_epi8 (a, b));
     }
-    static Vc_INTRINSIC __m128i Vc_CONST _mm_max_epi32(__m128i a, __m128i b) {
-        return _mm_blendv_epi8(b, a, _mm_cmpgt_epi32(a, b));
+    static Vc_INTRINSIC __m128i Vc_CONST mm_max_epi32(__m128i a, __m128i b) {
+        return mm_blendv_epi8(b, a, _mm_cmpgt_epi32(a, b));
     }
-//X         static Vc_INTRINSIC __m128i Vc_CONST _mm_max_epu8 (__m128i a, __m128i b) {
-//X             return _mm_blendv_epi8(b, a, _mm_cmpgt_epu8 (a, b));
+//X         static Vc_INTRINSIC __m128i Vc_CONST mm_max_epu8 (__m128i a, __m128i b) {
+//X             return mm_blendv_epi8(b, a, _mm_cmpgt_epu8 (a, b));
 //X         }
-    static Vc_INTRINSIC __m128i Vc_CONST _mm_max_epu16(__m128i a, __m128i b) {
-        return _mm_blendv_epi8(b, a, _mm_cmpgt_epu16(a, b));
+    static Vc_INTRINSIC __m128i Vc_CONST mm_max_epu16(__m128i a, __m128i b) {
+        return mm_blendv_epi8(b, a, _mm_cmpgt_epu16(a, b));
     }
-    static Vc_INTRINSIC __m128i Vc_CONST _mm_max_epu32(__m128i a, __m128i b) {
-        return _mm_blendv_epi8(b, a, _mm_cmpgt_epu32(a, b));
+    static Vc_INTRINSIC __m128i Vc_CONST mm_max_epu32(__m128i a, __m128i b) {
+        return mm_blendv_epi8(b, a, _mm_cmpgt_epu32(a, b));
     }
-//X         static Vc_INTRINSIC __m128i Vc_CONST _mm_min_epu8 (__m128i a, __m128i b) {
-//X             return _mm_blendv_epi8(a, b, _mm_cmpgt_epu8 (a, b));
+//X         static Vc_INTRINSIC __m128i Vc_CONST mm_min_epu8 (__m128i a, __m128i b) {
+//X             return mm_blendv_epi8(a, b, _mm_cmpgt_epu8 (a, b));
 //X         }
-    static Vc_INTRINSIC __m128i Vc_CONST _mm_min_epu16(__m128i a, __m128i b) {
-        return _mm_blendv_epi8(a, b, _mm_cmpgt_epu16(a, b));
+    static Vc_INTRINSIC __m128i Vc_CONST mm_min_epu16(__m128i a, __m128i b) {
+        return mm_blendv_epi8(a, b, _mm_cmpgt_epu16(a, b));
     }
-    static Vc_INTRINSIC __m128i Vc_CONST _mm_min_epu32(__m128i a, __m128i b) {
-        return _mm_blendv_epi8(a, b, _mm_cmpgt_epu32(a, b));
+    static Vc_INTRINSIC __m128i Vc_CONST mm_min_epu32(__m128i a, __m128i b) {
+        return mm_blendv_epi8(a, b, _mm_cmpgt_epu32(a, b));
     }
-    static Vc_INTRINSIC __m128i Vc_CONST _mm_min_epi8 (__m128i a, __m128i b) {
-        return _mm_blendv_epi8(a, b, _mm_cmpgt_epi8 (a, b));
+    static Vc_INTRINSIC __m128i Vc_CONST mm_min_epi8 (__m128i a, __m128i b) {
+        return mm_blendv_epi8(a, b, _mm_cmpgt_epi8 (a, b));
     }
-    static Vc_INTRINSIC __m128i Vc_CONST _mm_min_epi32(__m128i a, __m128i b) {
-        return _mm_blendv_epi8(a, b, _mm_cmpgt_epi32(a, b));
+    static Vc_INTRINSIC __m128i Vc_CONST mm_min_epi32(__m128i a, __m128i b) {
+        return mm_blendv_epi8(a, b, _mm_cmpgt_epi32(a, b));
     }
-    static Vc_INTRINSIC Vc_CONST __m128i _mm_cvtepu8_epi16(__m128i epu8) {
+    static Vc_INTRINSIC Vc_CONST __m128i mm_cvtepu8_epi16(__m128i epu8) {
         return _mm_unpacklo_epi8(epu8, _mm_setzero_si128());
     }
-    static Vc_INTRINSIC Vc_CONST __m128i _mm_cvtepi8_epi16(__m128i epi8) {
+    static Vc_INTRINSIC Vc_CONST __m128i mm_cvtepi8_epi16(__m128i epi8) {
         return _mm_unpacklo_epi8(epi8, _mm_cmplt_epi8(epi8, _mm_setzero_si128()));
     }
-    static Vc_INTRINSIC Vc_CONST __m128i _mm_cvtepu16_epi32(__m128i epu16) {
+    static Vc_INTRINSIC Vc_CONST __m128i mm_cvtepu16_epi32(__m128i epu16) {
         return _mm_unpacklo_epi16(epu16, _mm_setzero_si128());
     }
-    static Vc_INTRINSIC Vc_CONST __m128i _mm_cvtepi16_epi32(__m128i epu16) {
+    static Vc_INTRINSIC Vc_CONST __m128i mm_cvtepi16_epi32(__m128i epu16) {
         return _mm_unpacklo_epi16(epu16, _mm_cmplt_epi16(epu16, _mm_setzero_si128()));
     }
-    static Vc_INTRINSIC Vc_CONST __m128i _mm_cvtepu8_epi32(__m128i epu8) {
-        return _mm_cvtepu16_epi32(_mm_cvtepu8_epi16(epu8));
+    static Vc_INTRINSIC Vc_CONST __m128i mm_cvtepu8_epi32(__m128i epu8) {
+        return mm_cvtepu16_epi32(mm_cvtepu8_epi16(epu8));
     }
-    static Vc_INTRINSIC Vc_CONST __m128i _mm_cvtepi8_epi32(__m128i epi8) {
+    static Vc_INTRINSIC Vc_CONST __m128i mm_cvtepi8_epi32(__m128i epi8) {
         const __m128i neg = _mm_cmplt_epi8(epi8, _mm_setzero_si128());
         const __m128i epi16 = _mm_unpacklo_epi8(epi8, neg);
         return _mm_unpacklo_epi16(epi16, _mm_unpacklo_epi8(neg, neg));
     }
-    static Vc_INTRINSIC Vc_PURE __m128i _mm_stream_load_si128(__m128i *mem) {
+    static Vc_INTRINSIC Vc_PURE __m128i mm_stream_load_si128(__m128i *mem) {
         return _mm_load_si128(mem);
     }
-Vc_NAMESPACE_END
 
-#endif
-
-#ifdef VC_IMPL_POPCNT
-#include <popcntintrin.h>
+} // namespace SSE
+} // namespace Vc
+} // namespace ROOT
 #endif
 
 #ifdef VC_IMPL_POPCNT
@@ -462,11 +485,13 @@ Vc_NAMESPACE_END
 extern "C" {
 #include <nmmintrin.h>
 }
-#elif defined _NMMINTRIN_H_INCLUDED
-#error "SSE4.2 was disabled but something includes <nmmintrin.h>. Please fix your code."
 #endif
 
-Vc_NAMESPACE_BEGIN(SseIntrinsics)
+namespace ROOT {
+namespace Vc
+{
+namespace SSE
+{
     static Vc_INTRINSIC Vc_CONST float extract_float_imm(const __m128 v, const size_t i) {
         float f;
         switch (i) {
@@ -560,18 +585,16 @@ Vc_NAMESPACE_BEGIN(SseIntrinsics)
     static Vc_INTRINSIC Vc_PURE __m128i _mm_stream_load(const unsigned char *mem) {
         return _mm_stream_load(reinterpret_cast<const int *>(mem));
     }
+} // namespace SSE
+} // namespace Vc
+} // namespace ROOT
 
-#ifndef __x86_64__
-    Vc_INTRINSIC Vc_PURE __m128i _mm_cvtsi64_si128(int64_t x) {
-        return _mm_castpd_si128(_mm_load_sd(reinterpret_cast<const double *>(&x)));
-    }
+// XOP / FMA4
+#if defined(VC_IMPL_XOP) || defined(VC_IMPL_FMA4)
+extern "C" {
+#include <x86intrin.h>
+}
 #endif
-
-Vc_NAMESPACE_END
-
-Vc_NAMESPACE_BEGIN(SSE)
-    using namespace SseIntrinsics;
-Vc_NAMESPACE_END
 
 #include "undomacros.h"
 #include "shuffle.h"

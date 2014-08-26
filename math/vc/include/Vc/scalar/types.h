@@ -30,9 +30,15 @@
 
 #include "../common/types.h"
 
-Vc_NAMESPACE_BEGIN(Vc_IMPL_NAMESPACE)
+namespace ROOT {
+namespace Vc
+{
+    namespace Scalar
+    {
         template<typename V = float> class VectorAlignedBaseT {};
         template<typename T> class Vector;
-Vc_IMPL_NAMESPACE_END
+    } // namespace Scalar
+} // namespace Vc
+} // namespace ROOT
 
 #endif // VC_SCALAR_TYPES_H

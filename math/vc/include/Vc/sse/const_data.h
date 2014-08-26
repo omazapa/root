@@ -20,10 +20,13 @@
 #ifndef VC_SSE_CONST_DATA_H
 #define VC_SSE_CONST_DATA_H
 
-#include "../common/data.h"
 #include "macros.h"
 
-Vc_NAMESPACE_BEGIN(SSE)
+namespace ROOT {
+namespace Vc
+{
+namespace SSE
+{
 
 ALIGN(16) extern const unsigned int   _IndexesFromZero4[4];
 ALIGN(16) extern const unsigned short _IndexesFromZero8[8];
@@ -65,7 +68,9 @@ template<> struct c_log<double>
     ALIGN(64) static const unsigned long long data[];
 };
 
-Vc_NAMESPACE_END
+} // namespace SSE
+} // namespace Vc
+} // namespace ROOT
 
 #include "undomacros.h"
 

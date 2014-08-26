@@ -22,7 +22,11 @@
 
 #include "macros.h"
 
-Vc_NAMESPACE_BEGIN(Common)
+namespace ROOT {
+namespace Vc
+{
+namespace Common
+{
 
 template<class StorageType> class AliasingEntryHelper
 {
@@ -33,10 +37,7 @@ template<class StorageType> class AliasingEntryHelper
         const int m_index;
     public:
         Vc_ALWAYS_INLINE AliasingEntryHelper(StorageType *d, int index) : m_storage(d), m_index(index) {}
-        Vc_ALWAYS_INLINE AliasingEntryHelper(const AliasingEntryHelper &) = default;
-#ifndef VC_NO_MOVE_CTOR
-        Vc_ALWAYS_INLINE AliasingEntryHelper(AliasingEntryHelper &&) = default;
-#endif
+        Vc_ALWAYS_INLINE AliasingEntryHelper(const AliasingEntryHelper &rhs) : m_storage(rhs.m_storage), m_index(rhs.m_index) {}
         Vc_ALWAYS_INLINE AliasingEntryHelper &operator=(const AliasingEntryHelper &rhs) {
             m_storage->assign(m_index, rhs);
             return *this;
@@ -53,6 +54,11 @@ template<class StorageType> class AliasingEntryHelper
         Vc_ALWAYS_INLINE AliasingEntryHelper &operator %=(T x) { m_storage->assign(m_index, m_storage->m(m_index) % x); return *this; }
         Vc_ALWAYS_INLINE AliasingEntryHelper &operator<<=(T x) { m_storage->assign(m_index, m_storage->m(m_index)<< x); return *this; }
         Vc_ALWAYS_INLINE AliasingEntryHelper &operator>>=(T x) { m_storage->assign(m_index, m_storage->m(m_index)>> x); return *this; }
+
+        Vc_ALWAYS_INLINE AliasingEntryHelper &operator++() { m_storage->assign(m_index, m_storage->m(m_index) + T(1)); return *this; }
+        Vc_ALWAYS_INLINE T operator++(int) { T r = m_storage->m(m_index); m_storage->assign(m_index, m_storage->m(m_index) + T(1)); return r; }
+        Vc_ALWAYS_INLINE AliasingEntryHelper &operator--() { m_storage->assign(m_index, m_storage->m(m_index) - T(1)); return *this; }
+        Vc_ALWAYS_INLINE T operator--(int) { T r = m_storage->m(m_index); m_storage->assign(m_index, m_storage->m(m_index) - T(1)); return r; }
 #define m_data m_storage->read(m_index)
 #else
         typedef T A Vc_MAY_ALIAS;
@@ -78,6 +84,11 @@ template<class StorageType> class AliasingEntryHelper
         Vc_ALWAYS_INLINE AliasingEntryHelper &operator%=(T x) { m_data %= x; return *this; }
         Vc_ALWAYS_INLINE AliasingEntryHelper &operator<<=(T x) { m_data <<= x; return *this; }
         Vc_ALWAYS_INLINE AliasingEntryHelper &operator>>=(T x) { m_data >>= x; return *this; }
+
+        Vc_ALWAYS_INLINE AliasingEntryHelper &operator++() { ++m_data; return *this; }
+        Vc_ALWAYS_INLINE T operator++(int) { T r = m_data; ++m_data; return r; }
+        Vc_ALWAYS_INLINE AliasingEntryHelper &operator--() { --m_data; return *this; }
+        Vc_ALWAYS_INLINE T operator--(int) { T r = m_data; --m_data; return r; }
 #endif
 
         Vc_ALWAYS_INLINE Vc_PURE operator const T() const { return m_data; }
@@ -106,7 +117,9 @@ template<class StorageType> class AliasingEntryHelper
 #endif
 };
 
-Vc_NAMESPACE_END
+} // namespace Common
+} // namespace Vc
+} // namespace ROOT
 
 #include "undomacros.h"
 

@@ -24,9 +24,12 @@
 #include <Vc/global.h>
 
 #if defined(VC_GCC) && !defined(__OPTIMIZE__)
+#  if VC_GCC >= 0x40500
+#    pragma GCC diagnostic push
+#    define Vc_POP_GCC_DIAGNOSTIC__ 1
+#  endif
 // GCC uses lots of old-style-casts in macros that disguise as intrinsics
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wold-style-cast"
+#  pragma GCC diagnostic ignored "-Wold-style-cast"
 #endif
 
 #ifdef VC_MSVC
@@ -39,6 +42,12 @@
 # define STRUCT_ALIGN1(n)
 # define STRUCT_ALIGN2(n) ALIGN(n)
 # define ALIGNED_TYPEDEF(n, _type_, _newType_) typedef _type_ _newType_ ALIGN(n)
+#endif
+
+#ifdef VC_CXX11
+#define Vc_ALIGNOF(_TYPE_) alignof(_TYPE_)
+#else
+#define Vc_ALIGNOF(_TYPE_) __alignof(_TYPE_)
 #endif
 
 #ifdef VC_CLANG
@@ -60,10 +69,22 @@
 #  define VC_IS_LIKELY(x) __builtin_expect(x, 1)
 #  define VC_RESTRICT __restrict__
 #  define VC_DEPRECATED(msg)
-#  define Vc_WARN_UNUSED_RESULT __attribute__((__warn_unused_result__))
 #elif defined(__GNUC__)
-#  define Vc_MAY_ALIAS __attribute__((__may_alias__))
-#  define Vc_INTRINSIC_R __attribute__((__flatten__, __always_inline__, __artificial__))
+#  if (defined(VC_GCC) && VC_GCC < 0x40300) || defined(VC_OPEN64)
+// GCC 4.1 and 4.2 ICE on may_alias. Since Open64 uses the GCC 4.2 frontend it has the same problem.
+#    define Vc_MAY_ALIAS
+#  else
+#    define Vc_MAY_ALIAS __attribute__((__may_alias__))
+#  endif
+#  if (defined(VC_GCC) && VC_GCC < 0x40300)
+// GCC 4.1 fails with "sorry unimplemented: inlining failed"
+#    define Vc_INTRINSIC_R __attribute__((__flatten__))
+#  elif defined(VC_OPEN64)
+// the GCC 4.2 frontend doesn't know the __artificial__ attribute
+#    define Vc_INTRINSIC_R __attribute__((__flatten__, __always_inline__))
+#  else
+#    define Vc_INTRINSIC_R __attribute__((__flatten__, __always_inline__, __artificial__))
+#  endif
 #  define Vc_INTRINSIC_L inline
 #  define Vc_INTRINSIC Vc_INTRINSIC_L Vc_INTRINSIC_R
 #  define Vc_FLATTEN __attribute__((__flatten__))
@@ -86,7 +107,6 @@
 #  define VC_IS_LIKELY(x) __builtin_expect(x, 1)
 #  define VC_RESTRICT __restrict__
 #  define VC_DEPRECATED(msg) __attribute__((__deprecated__(msg)))
-#  define Vc_WARN_UNUSED_RESULT __attribute__((__warn_unused_result__))
 #else
 #  define Vc_FLATTEN
 #  ifdef Vc_PURE
@@ -124,7 +144,22 @@
 #  define VC_IS_LIKELY(x) x
 #  define VC_RESTRICT __restrict
 #  define VC_DEPRECATED(msg) __declspec(deprecated(msg))
-#  define Vc_WARN_UNUSED_RESULT
+#endif
+
+#if __cplusplus >= 201103 /*C++11*/
+#define _VC_CONSTEXPR constexpr
+#define _VC_CONSTEXPR_L _VC_CONSTEXPR
+#define _VC_CONSTEXPR_R
+#else
+#define _VC_CONSTEXPR Vc_INTRINSIC Vc_CONST
+#define _VC_CONSTEXPR_L Vc_INTRINSIC_L Vc_CONST_L
+#define _VC_CONSTEXPR_R Vc_INTRINSIC_R Vc_CONST_R
+#endif
+
+#ifdef VC_CXX11
+# define _VC_NOEXCEPT noexcept
+#else
+# define _VC_NOEXCEPT throw()
 #endif
 
 #define FREE_STORE_OPERATORS_ALIGNED(alignment) \
@@ -146,22 +181,22 @@
 #endif
 
 #define unrolled_loop16(_it_, _start_, _end_, _code_) \
-if (_start_ +  0 < _end_) { enum { _it_ = (_start_ +  0) < _end_ ? (_start_ +  0) : _start_ }; _code_ } \
-if (_start_ +  1 < _end_) { enum { _it_ = (_start_ +  1) < _end_ ? (_start_ +  1) : _start_ }; _code_ } \
-if (_start_ +  2 < _end_) { enum { _it_ = (_start_ +  2) < _end_ ? (_start_ +  2) : _start_ }; _code_ } \
-if (_start_ +  3 < _end_) { enum { _it_ = (_start_ +  3) < _end_ ? (_start_ +  3) : _start_ }; _code_ } \
-if (_start_ +  4 < _end_) { enum { _it_ = (_start_ +  4) < _end_ ? (_start_ +  4) : _start_ }; _code_ } \
-if (_start_ +  5 < _end_) { enum { _it_ = (_start_ +  5) < _end_ ? (_start_ +  5) : _start_ }; _code_ } \
-if (_start_ +  6 < _end_) { enum { _it_ = (_start_ +  6) < _end_ ? (_start_ +  6) : _start_ }; _code_ } \
-if (_start_ +  7 < _end_) { enum { _it_ = (_start_ +  7) < _end_ ? (_start_ +  7) : _start_ }; _code_ } \
-if (_start_ +  8 < _end_) { enum { _it_ = (_start_ +  8) < _end_ ? (_start_ +  8) : _start_ }; _code_ } \
-if (_start_ +  9 < _end_) { enum { _it_ = (_start_ +  9) < _end_ ? (_start_ +  9) : _start_ }; _code_ } \
-if (_start_ + 10 < _end_) { enum { _it_ = (_start_ + 10) < _end_ ? (_start_ + 10) : _start_ }; _code_ } \
-if (_start_ + 11 < _end_) { enum { _it_ = (_start_ + 11) < _end_ ? (_start_ + 11) : _start_ }; _code_ } \
-if (_start_ + 12 < _end_) { enum { _it_ = (_start_ + 12) < _end_ ? (_start_ + 12) : _start_ }; _code_ } \
-if (_start_ + 13 < _end_) { enum { _it_ = (_start_ + 13) < _end_ ? (_start_ + 13) : _start_ }; _code_ } \
-if (_start_ + 14 < _end_) { enum { _it_ = (_start_ + 14) < _end_ ? (_start_ + 14) : _start_ }; _code_ } \
-if (_start_ + 15 < _end_) { enum { _it_ = (_start_ + 15) < _end_ ? (_start_ + 15) : _start_ }; _code_ } \
+if (_start_ +  0 < _end_) { enum JustSomeName__ { _it_ = (_start_ +  0) < _end_ ? (_start_ +  0) : _start_ }; _code_ } \
+if (_start_ +  1 < _end_) { enum JustSomeName__ { _it_ = (_start_ +  1) < _end_ ? (_start_ +  1) : _start_ }; _code_ } \
+if (_start_ +  2 < _end_) { enum JustSomeName__ { _it_ = (_start_ +  2) < _end_ ? (_start_ +  2) : _start_ }; _code_ } \
+if (_start_ +  3 < _end_) { enum JustSomeName__ { _it_ = (_start_ +  3) < _end_ ? (_start_ +  3) : _start_ }; _code_ } \
+if (_start_ +  4 < _end_) { enum JustSomeName__ { _it_ = (_start_ +  4) < _end_ ? (_start_ +  4) : _start_ }; _code_ } \
+if (_start_ +  5 < _end_) { enum JustSomeName__ { _it_ = (_start_ +  5) < _end_ ? (_start_ +  5) : _start_ }; _code_ } \
+if (_start_ +  6 < _end_) { enum JustSomeName__ { _it_ = (_start_ +  6) < _end_ ? (_start_ +  6) : _start_ }; _code_ } \
+if (_start_ +  7 < _end_) { enum JustSomeName__ { _it_ = (_start_ +  7) < _end_ ? (_start_ +  7) : _start_ }; _code_ } \
+if (_start_ +  8 < _end_) { enum JustSomeName__ { _it_ = (_start_ +  8) < _end_ ? (_start_ +  8) : _start_ }; _code_ } \
+if (_start_ +  9 < _end_) { enum JustSomeName__ { _it_ = (_start_ +  9) < _end_ ? (_start_ +  9) : _start_ }; _code_ } \
+if (_start_ + 10 < _end_) { enum JustSomeName__ { _it_ = (_start_ + 10) < _end_ ? (_start_ + 10) : _start_ }; _code_ } \
+if (_start_ + 11 < _end_) { enum JustSomeName__ { _it_ = (_start_ + 11) < _end_ ? (_start_ + 11) : _start_ }; _code_ } \
+if (_start_ + 12 < _end_) { enum JustSomeName__ { _it_ = (_start_ + 12) < _end_ ? (_start_ + 12) : _start_ }; _code_ } \
+if (_start_ + 13 < _end_) { enum JustSomeName__ { _it_ = (_start_ + 13) < _end_ ? (_start_ + 13) : _start_ }; _code_ } \
+if (_start_ + 14 < _end_) { enum JustSomeName__ { _it_ = (_start_ + 14) < _end_ ? (_start_ + 14) : _start_ }; _code_ } \
+if (_start_ + 15 < _end_) { enum JustSomeName__ { _it_ = (_start_ + 15) < _end_ ? (_start_ + 15) : _start_ }; _code_ } \
 do {} while ( false )
 
 #define for_all_vector_entries(_it_, _code_) \
@@ -190,39 +225,83 @@ do {} while ( false )
 #define _VC_CAT_HELPER(a, b, c, d) a##b##c##d
 #define _VC_CAT(a, b, c, d) _VC_CAT_HELPER(a, b, c, d)
 
-    template<int e, int center> struct exponentToMultiplier { enum {
+#if __cplusplus >= 201103 /*C++11*/ || (defined(VC_MSVC) && VC_MSVC >= 160000000)
+#define VC_STATIC_ASSERT_NC(cond, msg) \
+    static_assert(cond, #msg)
+#define VC_STATIC_ASSERT(cond, msg) VC_STATIC_ASSERT_NC(cond, msg)
+#else // C++98
+namespace ROOT {
+namespace Vc {
+    namespace {
+        template<bool> struct STATIC_ASSERT_FAILURE;
+        template<> struct STATIC_ASSERT_FAILURE<true> {};
+}}
+} // namespace ROOT
+
+#define VC_STATIC_ASSERT_NC(cond, msg) \
+    typedef STATIC_ASSERT_FAILURE<cond> _VC_CAT(static_assert_failed_on_line_,__LINE__,_,msg); \
+    enum { \
+        _VC_CAT(static_assert_failed__on_line_,__LINE__,_,msg) = sizeof(_VC_CAT(static_assert_failed_on_line_,__LINE__,_,msg)) \
+    }
+#define VC_STATIC_ASSERT(cond, msg) VC_STATIC_ASSERT_NC(cond, msg)
+#endif // C++11/98
+
+    template<int e, int center> struct exponentToMultiplier { enum Values__ {
         X = exponentToMultiplier<e - 1, center>::X * ((e - center < 31) ? 2 : 1),
         Value = (X == 0 ? 1 : X)
     }; };
-    template<int center> struct exponentToMultiplier<center,center> { enum { X = 1, Value = X }; };
-    template<int center> struct exponentToMultiplier<   -1, center> { enum { X = 0, Value = 1 }; };
-    template<int center> struct exponentToMultiplier< -128, center> { enum { X = 0, Value = 1 }; };
-    template<int center> struct exponentToMultiplier< -256, center> { enum { X = 0, Value = 1 }; };
-    template<int center> struct exponentToMultiplier< -384, center> { enum { X = 0, Value = 1 }; };
-    template<int center> struct exponentToMultiplier< -512, center> { enum { X = 0, Value = 1 }; };
-    template<int center> struct exponentToMultiplier< -640, center> { enum { X = 0, Value = 1 }; };
-    template<int center> struct exponentToMultiplier< -768, center> { enum { X = 0, Value = 1 }; };
-    template<int center> struct exponentToMultiplier< -896, center> { enum { X = 0, Value = 1 }; };
-    template<int center> struct exponentToMultiplier<-1024, center> { enum { X = 0, Value = 1 }; };
+    template<int center> struct exponentToMultiplier<center,center> { enum Values__ { X = 1, Value = X }; };
+    template<int center> struct exponentToMultiplier<   -1, center> { enum Values__ { X = 0, Value = 1 }; };
+    template<int center> struct exponentToMultiplier< -128, center> { enum Values__ { X = 0, Value = 1 }; };
+    template<int center> struct exponentToMultiplier< -256, center> { enum Values__ { X = 0, Value = 1 }; };
+    template<int center> struct exponentToMultiplier< -384, center> { enum Values__ { X = 0, Value = 1 }; };
+    template<int center> struct exponentToMultiplier< -512, center> { enum Values__ { X = 0, Value = 1 }; };
+    template<int center> struct exponentToMultiplier< -640, center> { enum Values__ { X = 0, Value = 1 }; };
+    template<int center> struct exponentToMultiplier< -768, center> { enum Values__ { X = 0, Value = 1 }; };
+    template<int center> struct exponentToMultiplier< -896, center> { enum Values__ { X = 0, Value = 1 }; };
+    template<int center> struct exponentToMultiplier<-1024, center> { enum Values__ { X = 0, Value = 1 }; };
 
-    template<int e, int center> struct exponentToDivisor { enum {
+    template<int e, int center> struct exponentToDivisor { enum Values__ {
         X = exponentToDivisor<e + 1, center>::X * ((center - e < 31) ? 2 : 1),
         Value = (X == 0 ? 1 : X)
     }; };
-    template<int center> struct exponentToDivisor<center, center> { enum { X = 1, Value = X }; };
-    template<int center> struct exponentToDivisor<     1, center> { enum { X = 0, Value = 1 }; };
-    template<int center> struct exponentToDivisor<   128, center> { enum { X = 0, Value = 1 }; };
-    template<int center> struct exponentToDivisor<   256, center> { enum { X = 0, Value = 1 }; };
-    template<int center> struct exponentToDivisor<   384, center> { enum { X = 0, Value = 1 }; };
-    template<int center> struct exponentToDivisor<   512, center> { enum { X = 0, Value = 1 }; };
-    template<int center> struct exponentToDivisor<   640, center> { enum { X = 0, Value = 1 }; };
-    template<int center> struct exponentToDivisor<   768, center> { enum { X = 0, Value = 1 }; };
-    template<int center> struct exponentToDivisor<   896, center> { enum { X = 0, Value = 1 }; };
-    template<int center> struct exponentToDivisor<  1024, center> { enum { X = 0, Value = 1 }; };
+    template<int center> struct exponentToDivisor<center, center> { enum Values__ { X = 1, Value = X }; };
+    template<int center> struct exponentToDivisor<     1, center> { enum Values__ { X = 0, Value = 1 }; };
+    template<int center> struct exponentToDivisor<   128, center> { enum Values__ { X = 0, Value = 1 }; };
+    template<int center> struct exponentToDivisor<   256, center> { enum Values__ { X = 0, Value = 1 }; };
+    template<int center> struct exponentToDivisor<   384, center> { enum Values__ { X = 0, Value = 1 }; };
+    template<int center> struct exponentToDivisor<   512, center> { enum Values__ { X = 0, Value = 1 }; };
+    template<int center> struct exponentToDivisor<   640, center> { enum Values__ { X = 0, Value = 1 }; };
+    template<int center> struct exponentToDivisor<   768, center> { enum Values__ { X = 0, Value = 1 }; };
+    template<int center> struct exponentToDivisor<   896, center> { enum Values__ { X = 0, Value = 1 }; };
+    template<int center> struct exponentToDivisor<  1024, center> { enum Values__ { X = 0, Value = 1 }; };
 #endif // VC_COMMON_MACROS_H_ONCE
 
 #define _CAT_IMPL(a, b) a##b
 #define CAT(a, b) _CAT_IMPL(a, b)
+
+#define Vc_buildDouble(sign, mantissa, exponent) \
+    ((static_cast<double>((mantissa & 0x000fffffffffffffull) | 0x0010000000000000ull) / 0x0010000000000000ull) \
+    * exponentToMultiplier<exponent,  0>::Value \
+    * exponentToMultiplier<exponent, 30>::Value \
+    * exponentToMultiplier<exponent, 60>::Value \
+    * exponentToMultiplier<exponent, 90>::Value \
+    / exponentToDivisor<exponent,   0>::Value \
+    / exponentToDivisor<exponent, -30>::Value \
+    / exponentToDivisor<exponent, -60>::Value \
+    / exponentToDivisor<exponent, -90>::Value \
+    * static_cast<double>(sign))
+#define Vc_buildFloat(sign, mantissa, exponent) \
+    ((static_cast<float>((mantissa & 0x007fffffu) | 0x00800000) / 0x00800000) \
+    * exponentToMultiplier<exponent,  0>::Value \
+    * exponentToMultiplier<exponent, 30>::Value \
+    * exponentToMultiplier<exponent, 60>::Value \
+    * exponentToMultiplier<exponent, 90>::Value \
+    / exponentToDivisor<exponent,   0>::Value \
+    / exponentToDivisor<exponent, -30>::Value \
+    / exponentToDivisor<exponent, -60>::Value \
+    / exponentToDivisor<exponent, -90>::Value \
+    * static_cast<float>(sign))
 
 #define _VC_APPLY_IMPL_1(macro, a, b, c, d, e) macro(a)
 #define _VC_APPLY_IMPL_2(macro, a, b, c, d, e) macro(a, b)
@@ -232,7 +311,8 @@ do {} while ( false )
 
 #define VC_LIST_FLOAT_VECTOR_TYPES(size, macro, a, b, c, d) \
     size(macro, double_v, a, b, c, d) \
-    size(macro,  float_v, a, b, c, d)
+    size(macro,  float_v, a, b, c, d) \
+    size(macro, sfloat_v, a, b, c, d)
 #define VC_LIST_INT_VECTOR_TYPES(size, macro, a, b, c, d) \
     size(macro,    int_v, a, b, c, d) \
     size(macro,   uint_v, a, b, c, d) \
@@ -280,7 +360,7 @@ do {} while ( false )
 #define VC_ALL_VECTOR_TYPES(macro) VC_APPLY_0(VC_LIST_VECTOR_TYPES, macro)
 
 #define VC_EXACT_TYPE(_test, _reference, _type) \
-    typename std::enable_if<std::is_same<_test, _reference>::value, _type>::type
+    typename EnableIf<IsEqualType<_test, _reference>::Value, _type>::Value
 
 #ifdef VC_PASSING_VECTOR_BY_VALUE_IS_BROKEN
 #define VC_ALIGNED_PARAMETER(_Type) const _Type &
@@ -300,34 +380,5 @@ do {} while ( false )
 #define VC_OFFSETOF(Type, member) offsetof(Type, member)
 #endif
 
-#if defined(Vc__NO_NOEXCEPT)
-#define Vc_NOEXCEPT throw()
-#else
-#define Vc_NOEXCEPT noexcept
-#endif
-
-// ref-ref:
-#ifdef VC_NO_MOVE_CTOR
-#define VC_RR_ &
-#define VC_FORWARD_(T)
-#else
-#define VC_RR_ &&
-#define VC_FORWARD_(T) std::forward<T>
-#endif
-
-#ifdef VC_NO_ALWAYS_INLINE
-#undef Vc_ALWAYS_INLINE
-#undef Vc_ALWAYS_INLINE_L
-#undef Vc_ALWAYS_INLINE_R
-#define Vc_ALWAYS_INLINE inline
-#define Vc_ALWAYS_INLINE_L inline
-#define Vc_ALWAYS_INLINE_R
-#undef Vc_INTRINSIC
-#undef Vc_INTRINSIC_L
-#undef Vc_INTRINSIC_R
-#define Vc_INTRINSIC inline
-#define Vc_INTRINSIC_L inline
-#define Vc_INTRINSIC_R
-#endif
 
 #endif // VC_COMMON_MACROS_H

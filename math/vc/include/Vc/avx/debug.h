@@ -21,12 +21,16 @@
 #define VC_AVX_DEBUG_H
 
 #ifndef NDEBUG
-#include "vector.h"
+#include "vectorbase.h"
 #include <iostream>
 #include <iomanip>
 #endif
 
-Vc_NAMESPACE_BEGIN(Vc_IMPL_NAMESPACE)
+namespace ROOT {
+namespace Vc
+{
+namespace AVX
+{
 
 #ifdef NDEBUG
 class DebugStream
@@ -41,7 +45,7 @@ class DebugStream
     private:
         template<typename T, typename V> static void printVector(V _x)
         {
-            enum { Size = sizeof(V) / sizeof(T) };
+            enum JustSomeName__ { Size = sizeof(V) / sizeof(T) };
             union { V v; T m[Size]; } x = { _x };
             std::cerr << '[' << std::setprecision(24) << x.m[0];
             for (int i = 1; i < Size; ++i) {
@@ -89,8 +93,10 @@ class DebugStream
 };
 #endif
 
-#define VC_DEBUG ::Vc::Vc_IMPL_NAMESPACE::DebugStream(__PRETTY_FUNCTION__, __FILE__, __LINE__)
+#define VC_DEBUG ::ROOT::Vc::AVX::DebugStream(__PRETTY_FUNCTION__, __FILE__, __LINE__)
 
-Vc_IMPL_NAMESPACE_END
+} // namespace AVX
+} // namespace Vc
+} // namespace ROOT
 
 #endif // VC_AVX_DEBUG_H

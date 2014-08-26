@@ -20,12 +20,14 @@
 #ifndef VC_VERSION_H
 #define VC_VERSION_H
 
-#define VC_VERSION_STRING "0.99.71-dev"
-#define VC_VERSION_NUMBER 0x00638f
+#define VC_VERSION_STRING "0.7.4-dev"
+#define VC_VERSION_NUMBER 0x000709
 #define VC_VERSION_CHECK(major, minor, patch) ((major << 16) | (minor << 8) | (patch << 1))
-#define VC_LIBRARY_ABI_VERSION 4
+#define VC_LIBRARY_ABI_VERSION 3
 
-Vc_PUBLIC_NAMESPACE_BEGIN
+namespace ROOT {
+namespace Vc
+{
     static inline const char *versionString() {
         return VC_VERSION_STRING;
     }
@@ -33,10 +35,8 @@ Vc_PUBLIC_NAMESPACE_BEGIN
     static inline unsigned int versionNumber() {
         return VC_VERSION_NUMBER;
     }
-Vc_NAMESPACE_END
 
 #if !defined(VC_NO_VERSION_CHECK) && !defined(VC_COMPILE_LIB)
-Vc_NAMESPACE_BEGIN(Common)
     void checkLibraryAbi(unsigned int compileTimeAbi, unsigned int versionNumber, const char *versionString);
     namespace {
         static struct runLibraryAbiCheck
@@ -46,7 +46,8 @@ Vc_NAMESPACE_BEGIN(Common)
             }
         } _runLibraryAbiCheck;
     }
-Vc_NAMESPACE_END
 #endif
+} // namespace Vc
+} // namespace ROOT
 
 #endif // VC_VERSION_H
