@@ -637,7 +637,7 @@ void TestVector<Vector>::Operations()
 #else
       int ncomb2 = ncomb/Vc::double_v::Size;
       if (ncomb%Vc::double_v::Size != 0) ncomb2 += 1;
-      Vector v1; Vector v2;
+      //   Vector v1; Vector v2;
       for (int i = 0; i< ncomb2; ++i) {
 
          typename Vector::Scalar cv[4];
