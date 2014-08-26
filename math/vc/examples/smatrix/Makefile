@@ -25,6 +25,8 @@ endif
 include $(ROOTSYS)/etc/Makefile.arch
 endif
 
+OPT3=1
+AUTOVEC=1
 #------------------------------------------------------------------------------
 
 # ifeq ($(PLATFORM),macosx) 
