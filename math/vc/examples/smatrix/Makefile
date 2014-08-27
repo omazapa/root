@@ -25,7 +25,7 @@ endif
 include $(ROOTSYS)/etc/Makefile.arch
 endif
 
-OPT3=1
+#OPT3=1
 AUTOVEC=1
 #------------------------------------------------------------------------------
 

@@ -92,7 +92,7 @@ typedef ROOT::Math::LorentzVector<ROOT::Math::PxPyPzE4D<Double_type> > VecType;
 #endif
 
 //#define VLISTSIZE 8
-#define VLISTSIZE 128
+#define VLISTSIZE 32
 
 #ifdef USE_VC
 const int N = VLISTSIZE/Vc::double_v::Size;
@@ -685,12 +685,12 @@ void TestVector<Vector>::Boost()
    Vector v2;
    w.Start();
    Double_type s(0.0);
-   for (int l = 0; l<NLOOP; ++l) {
+   for (int l = 0; l<NLOOP; ++l) { 
       for (int i = 0; i< N; ++i) {
          v1 = vlist[i];
          v2 = ROOT::Math::VectorUtil::boostX(v1,scale[i]);
          // s +=  Vc::atan2(v1.Y(),v1.X())  - Vc::atan2(v2.Y(),v2.X());
-         //s += VSUM(v2);
+         s += VSUM(v2);
       }
    }
 
@@ -839,24 +839,26 @@ template<class Vector>
 void TestVector<Vector>::PrintSummary()
 {
    std::cout << "\nResults for " << typeid(vlist[0]).name() << std::endl;
-   std::cout << " v3 = v1+v2"
-             << " v2 += v1  "
-             << " v3 = v1-v2"
-             << " v2 -= v1  "
-             << " v2 = a*v1 "
-             << " v1 *= a   "
-             << " v2 = v1/a "
-             << " v1 /= a   "
-             << " log       "
-             << " exp       "
-             << " sin       "
-             << " atan      "
-             << " atan2     "
+   std::cout << " v3 = v1+v2,"
+             << " v2 += v1,  "
+             << " v3 = v1-v2,"
+             << " v2 -= v1,  "
+             << " v2 = a*v1, "
+             << " v1 *= a,   "
+             << " v2 = v1/a, "
+             << "   v1 /= a, "
+             << "   Boost,   "
+             << "   log,     "
+             << "   exp,     "
+             << "   sin,     "
+             << "   atan,    "
+             << "   atan2    "
              << std::endl;
 
    // start from 3
-   for (int i = 3; i < fTest; ++i) {
-      std::cout << std::setw(8) << fTime[i] << "   ";
+   for (int i = 2; i < fTest; ++i) {
+      std::cout << std::setw(9) << fTime[i];
+      if (i < fTest-1) std::cout << " , ";
    }
    std::cout << std::endl << std::endl;
 }
@@ -875,7 +877,6 @@ int main() {
    t.Read();
 
    t.Operations();
-   t.Boost();
 
 
 #ifndef USE_POINT
@@ -890,6 +891,8 @@ int main() {
    t.Divide();
    t.Divide2();
 #endif
+
+   t.Boost();
 
 
    t.MathFunction_log();
