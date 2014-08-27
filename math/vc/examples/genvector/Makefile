@@ -21,9 +21,10 @@ SIMDCXXFLAGS   := -mavx -msse4.2 -msse4.1 -msse4a -mssse3 -msse3 -msse2
 #VCFLAGS        := -fabi-version=0  -Wno-unused-function
 #VCFLAGS        := -Wno-unused-function
 
-## VC options for Haswell
-VCFLAGS := -O3 -march=core-avx2 -msse2 -msse3 -mssse3 -msse4.1 -msse4.2 -mavx -msse2avx -mno-sse4a -mno-xop -mno-fma4  -Wabi -fabi-version=0 -ffp-contract=fast 
-
+## VC options for Haswell (pcphsfthtm)
+#VCFLAGS := -O3 -march=core-avx2 -msse2 -msse3 -mssse3 -msse4.1 -msse4.2 -mavx -msse2avx -mno-sse4a -mno-xop -mno-fma4  -Wabi -fabi-version=0 -ffp-contract=fast 
+## for Sandy-Bridge (vinavx0)
+VCFLAGS := -O3 -march=corei7-avx -msse2 -msse3 -mssse3 -msse4.1 -msse4.2 -mavx -msse2avx -mno-sse4a -mno-xop -mno-fma4  -Wabi -fabi-version=0 -ffp-contract=fast 
 
 CXXFLAGS+=  $(VCFLAGS) 
 
