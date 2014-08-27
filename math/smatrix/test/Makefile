@@ -134,8 +134,9 @@ TrackDict.$(SrcSuf): 	Track.h TrackDict.xml
 			genreflex Track.h --selection_file=TrackDict.xml -o TrackDict.cxx -I$(ROOTSYS)/include
 else
 TrackDict.$(SrcSuf): 	Track.h TrackLinkDef.h
-			@echo "Generating dictionary $@ using rootcling ..."
-			$(ROOTCLING) -f $@ -c $^	
+			@echo "Generating dictionary $@ ..."
+#			$(ROOTCLING) -f $@ -c $^	
+			$(ROOTCINT) -f $@ -c $^	
 endif
 
 

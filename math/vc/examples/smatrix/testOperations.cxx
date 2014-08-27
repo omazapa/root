@@ -56,7 +56,7 @@ int NLOOP;
 
 //#define DEBUG
 
-#define NLISTSIZE 64  // size of matrix/vector lists
+#define NLISTSIZE 128  // size of matrix/vector lists
 
 
 #ifdef USE_VC
