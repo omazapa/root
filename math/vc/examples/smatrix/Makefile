@@ -20,22 +20,26 @@ ifneq ($(MKARCH),)
 include $(MKARCH)
 else
 ifeq ($(ROOTSYS),)
-ROOTSYS = ..
+ROOTSYS = ../../../..
 endif
 include $(ROOTSYS)/etc/Makefile.arch
 endif
 
 #OPT3=1
 AUTOVEC=1
+NOAVX=1
 #------------------------------------------------------------------------------
 
 # ifeq ($(PLATFORM),macosx) 
 # #unroll loop better on gcc > 4
 #CXXFLAGS+= -O3 -g  
 # endif
-AVXCXXFLAG     := -mavx
-SIMDCXXFLAGS   := -mavx -msse4.2 -msse4.1 -msse4a -mssse3 -msse3 -msse2
+#AVXCXXFLAG     := -mavx
+#SIMDCXXFLAGS   := -mavx -msse4.2 -msse4.1 -msse4a -mssse3 -msse3 -msse2
 #VCFLAGS        := -fabi-version=0  -Wno-unused-function
+
+## VC options for Haswell
+VCFLAGS := -O3 -march=core-avx2 -msse2 -msse3 -mssse3 -msse4.1 -msse4.2 -mavx -msse2avx -mno-sse4a -mno-xop -mno-fma4  -Wabi -fabi-version=0 -ffp-contract=fast 
 
 CXXFLAGS+=  $(VCFLAGS) 
 
