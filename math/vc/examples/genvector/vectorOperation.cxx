@@ -139,8 +139,11 @@ public:
 
 private:
 
-   std::vector<Vector> vlist;
-   std::vector<Vector> vlist2;
+   // std::vector<Vector> vlist;
+   // std::vector<Vector> vlist2;
+   Vector vlist[N];
+   Vector vlist2[N];
+
    std::vector<Double_type> scale;
    std::vector <std::vector <double > >  vcoords;
    double fTime[50]; // timing results
@@ -178,8 +181,8 @@ void MakeVcVector( const Vector * vlist, Vector_V & vret ) {
 
 template<class Vector>
 TestVector<Vector>::TestVector() :
-   vlist(N),
-   vlist2(N),
+   // vlist(N),
+   // vlist2(N),
    scale(N),
 #ifdef USE_VC
    vcoords(N*Vc::double_v::Size),
