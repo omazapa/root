@@ -75,14 +75,14 @@ void fillTree(TTree & t2) {
    t2.ResetBranchAddresses() ;
 }
 
-void FillUnBinData(ROOT::Fit::UnBinData &d, TTree * tree ) { 
+void FillUnBinData(ROOT::Fit::UnBinData *d, TTree * tree ) { 
 
    // fill the unbin data set from a TTree
 
    // large tree 
    unsigned int n = tree->GetEntries(); 
    std::cout << "number of unbin data is " << n << " of dim " << N << std::endl;
-   d.Initialize(n,N);
+   d = new ROOT::Fit::UnBinData(n,N);
 
    double vx[N];
    for (int j = 0; j <N; ++j) { 
@@ -94,7 +94,7 @@ void FillUnBinData(ROOT::Fit::UnBinData &d, TTree * tree ) {
    std::vector<double>  m(N);
    for (int unsigned i = 0; i < n; ++i) {
       tree->GetEntry(i);
-      d.Add(vx);
+      d->Add(vx);
       for (int j = 0; j < N; ++j) 
          m[j] += vx[j];
    }
@@ -252,7 +252,7 @@ int  FitUsingRooFit(TTree & tree, RooAbsPdf & pdf, RooArgSet & xvars) {
 template <class MinType>
 int DoFit(TTree * tree, Func & func, bool debug = false, bool = false ) {  
 
-   ROOT::Fit::UnBinData d; 
+   ROOT::Fit::UnBinData * d = 0; 
    // need to have done Tree->Draw() before fit
    FillUnBinData(d,tree);
 
@@ -273,12 +273,13 @@ int DoFit(TTree * tree, Func & func, bool debug = false, bool = false ) {
    // need to fix param 0 , normalization in the unbinned fits
    //fitter.Config().ParSettings(0).Fix();
 
-   bool ret = fitter.Fit(d);
+   bool ret = fitter.Fit(*d);
    if (!ret) {
       std::cout << " Fit Failed " << std::endl;
       return -1; 
    }
    fitter.Result().Print(std::cout);    
+   delete d; 
    return 0; 
 
 }

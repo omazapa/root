@@ -83,13 +83,14 @@ ROOT::Fit::UnBinData * FillUnBinData(TTree * tree, bool copyData = true, unsigne
    ROOT::Fit::UnBinData * d = 0; 
    // for the large tree
    if (std::string(tree->GetName()) == "t2") { 
-      d = new ROOT::Fit::UnBinData();
+
       // large tree 
       unsigned int n = tree->GetEntries(); 
 #ifdef DEBUG
       std::cout << "number of unbin data is " << n << " of dim " << N << std::endl;
 #endif
-      d->Initialize(n,N);
+      d = new ROOT::Fit::UnBinData(n,N);
+      //d->Initialize(n,N);
       TBranch * bx = tree->GetBranch("x"); 
       double vx[N];
       bx->SetAddress(vx); 
@@ -112,12 +113,13 @@ ROOT::Fit::UnBinData * FillUnBinData(TTree * tree, bool copyData = true, unsigne
    }
    if (USE_BRANCH) 
    {
-      d = new ROOT::Fit::UnBinData();
+
       unsigned int n = tree->GetEntries(); 
       //std::cout << "number of unbin data is " << n << std::endl;
 
       if (dim == 2) { 
-         d->Initialize(n,2);
+         d = new ROOT::Fit::UnBinData(n,2);
+         //d->Initialize(n,2);
          TBranch * bx = tree->GetBranch("x"); 
          TBranch * by = tree->GetBranch("y"); 
          double v[2];
@@ -130,7 +132,8 @@ ROOT::Fit::UnBinData * FillUnBinData(TTree * tree, bool copyData = true, unsigne
          }
       }
       else if (dim == 1) { 
-         d->Initialize(n,1);
+         d = new ROOT::Fit::UnBinData(n,1);
+         //d->Initialize(n,1);
          TBranch * bx = tree->GetBranch("x"); 
          double v[1];
          bx->SetAddress(&v[0]); 
