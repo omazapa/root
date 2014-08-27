@@ -29,7 +29,7 @@ ifeq ($(NOAVX),)
 CXXFLAGS+= $(AVXCXXFLAG)
 LDFLAGS += $(AVXCXXFLAG)
 endif
-CXXFLAGS+= -O3
+#CXXFLAGS+= -O3
 #CXXFLAGS+= --fast-math
 #CXXFLAGS += -ftree-vectorize
 ifneq ($(AUTOVEC),)

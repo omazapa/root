@@ -57,7 +57,7 @@ int NLOOP;
 
 //#define DEBUG
 
-#define NLISTSIZE 64  // size of matrix/vector lists
+#define NLISTSIZE 128  // size of matrix/vector lists
 
 
 #ifdef USE_VC
@@ -76,6 +76,8 @@ Stype gResultSum;
 #include "matrix_util.h"
 #include <map>
 
+std::vector<double> timeResult;
+std::vector<std::string> nameResult; 
 
 
 template<unsigned int ND1, unsigned int ND2 >
@@ -102,7 +104,7 @@ int test_smatrix_op() {
   std::cout << "************************************************\n";
 
 
-  double t_veq, t_meq, t_vad, t_mad, t_dot, t_mv, t_gmv, t_mm, t_prd, t_inv, t_vsc, t_msc, t_ama, t_tra;
+  double t_veq = 0, t_meq=0, t_vad=0, t_mad=0, t_dot=0, t_mv=0, t_gmv=0, t_mm=0, t_prd=0, t_inv=0,  t_invf=0, t_vsc=0, t_msc=0, t_ama=0, t_tra=0;
   double totTime1, totTime2;
 
 
@@ -164,7 +166,7 @@ int test_smatrix_op() {
     //if (k == 0) C1.Print(std::cout);
 
     MnMatrixNN  C2[NLIST];  testInv_S(C1,t_inv,C2);
-    MnMatrixNN  C3[NLIST];  testInvFast_S(C2,t_inv,C3);
+    MnMatrixNN  C3[NLIST];  testInvFast_S(C2,t_invf,C3);
     //MnMatrixNN  C2 = C1;
 
     MnVectorN   v3[NLIST];  testVeq(v,t_veq,v3);
@@ -200,6 +202,18 @@ int test_smatrix_op() {
   std::cerr << "SMatrix:     r1[N] = " << r1[NLIST-1] << " r2[N] = " << r2[NLIST-1] << std::endl;
   std::cerr << "sum of results = " << gResultSum << std::endl;
 
+  std::cout << "Summary time for SMatrix\n"; 
+  std::cout << "V1+V2   ,      V1xV2  ,     VxM  ,  MxM  ,  vtMv    AtBA ,   Inv(A)" << std::endl;
+  std::cout << t_vad << " , " << t_dot << " , " <<  t_mv << " , " << t_mm << ", " << t_gmv << " , " << t_ama << " , " << t_inv << std::endl;
+
+  timeResult.push_back(t_vad); nameResult.push_back("v1+v2");
+  timeResult.push_back(t_dot); nameResult.push_back("v1xv2");
+  timeResult.push_back(t_mv); nameResult.push_back("VxM");
+  timeResult.push_back(t_mm); nameResult.push_back("MxM");
+  timeResult.push_back(t_gmv); nameResult.push_back("VtxMxV");
+  timeResult.push_back(t_ama); nameResult.push_back("AtxBxA");
+  timeResult.push_back(t_inv); nameResult.push_back("Inv(A)");
+
   return 0;
 }
 
@@ -226,7 +240,7 @@ int test_smatrix_sym_op() {
   std::cout << "************************************************\n";
 
 
-  double t_meq, t_mad, t_mv, t_gmv, t_mm, t_prd, t_inv, t_msc, t_ama = 0;
+  double t_meq=0, t_mad=0, t_mv=0, t_gmv=0, t_mm=0, t_prd=0, t_inv=0, t_invf=0, t_invc=0, t_msc=0, t_ama = 0;
   double totTime1, totTime2;
 
 
@@ -272,8 +286,8 @@ int test_smatrix_sym_op() {
     MnMatrixNN  C0[NLIST];     testMM(A,B,C,t_mm,C0);
     MnSymMatrixNN  C1[NLIST];  testATBA_S2(C0,B,t_ama,C1);
     MnSymMatrixNN  C2[NLIST];  testInv_S(A,t_inv,C2);
-    MnSymMatrixNN  C3[NLIST];  testInvFast_S(C2,t_inv,C3);
-    MnSymMatrixNN  C4[NLIST];  testInvChol_S(C3,t_inv,C4);
+    MnSymMatrixNN  C3[NLIST];  testInvFast_S(C2,t_invf,C3);
+    MnSymMatrixNN  C4[NLIST];  testInvChol_S(C3,t_invc,C4);
     //C2 = C1;
     MnSymMatrixNN  C5[NLIST];  testMeq(C4,t_meq,C5);
     MnSymMatrixNN  C6[NLIST];  testMad(A,C5,t_mad,C6);
@@ -306,6 +320,9 @@ int test_smatrix_sym_op() {
   std::cerr << "SMatrixSym:  r1[0] = " << r1[0]  << std::endl;
   std::cerr << "SMatrixSym:  r1[N] = " << r1[NLIST-1] << std::endl;
   std::cerr << "sum of results = " << gResultSum << std::endl;
+
+  timeResult.push_back(t_invc); nameResult.push_back("InvChol(A)");
+
 
   return 0;
 }
@@ -817,7 +834,21 @@ int testOperations() {
 #ifndef NDIM1
 #define NDIM1 5
 #endif
-   TEST(NDIM1)
+   TEST(NDIM1);
+
+   // print summary   
+   std::cout << "**********************************\nSUMMARY\n";
+   std::cout << "**********************************\n";
+   for (unsigned int i = 0; i < nameResult.size(); ++i) { 
+      std::cout << std::setw(10) << nameResult[i]; 
+      if (i <  nameResult.size()-1) std::cout << " , ";
+      else std::cout << std::endl;
+   }
+   for (unsigned int i = 0; i < timeResult.size(); ++i) { 
+      std::cout << std::setw(10) << timeResult[i]; 
+      if (i <  timeResult.size()-1) std::cout << " , ";
+      else std::cout << std::endl;
+   }
 
    return 0;
 }
