@@ -1,6 +1,6 @@
 // test performance of all vectors operations +,- and *
 
-
+#define NO_MATHFUNC
 
 #include <cassert>
 
@@ -130,6 +130,7 @@ public:
    void MathFunction_atan2();
 
    void Boost();
+   void InvMass();
 
    void Read();
 
@@ -702,6 +703,23 @@ void TestVector<Vector>::Boost()
    fTime[fTest++] = w.CpuTime()*TSCALE;
 }
 
+template<class Vector>
+void TestVector<Vector>::InvMass()
+{
+   // test invariant mass
+   TStopwatch w;
+   w.Start();
+   Double_type s(0.0);
+   for (int l = 0; l<NLOOP; ++l) {
+      for (int i = 0; i< N; ++i) {
+         s+= ROOT::Math::VectorUtil::InvariantMass(vlist[i], vlist2[i]);
+      }
+   }
+
+   std::cout << "Time for  InvMass    :\t" << w.RealTime() << "\t" << w.CpuTime() << std::endl;
+   PrintResult(s);
+   fTime[fTest++] = w.CpuTime()*TSCALE;
+}
 
 
 template<class Vector>
@@ -851,11 +869,16 @@ void TestVector<Vector>::PrintSummary()
              << " v2 = v1/a, "
              << "   v1 /= a, "
              << "   Boost,   "
+#ifndef NO_MATHFUNC
+             << "   InvMass, "
              << "   log,     "
              << "   exp,     "
              << "   sin,     "
              << "   atan,    "
              << "   atan2    "
+#else
+             << "   InvMass  "
+#endif
              << std::endl;
 
    // start from 3
@@ -896,15 +919,16 @@ int main() {
 #endif
 
    t.Boost();
+   t.InvMass();
 
-
+#ifndef NO_MATHFUNC
    t.MathFunction_log();
    t.MathFunction_exp();
    t.MathFunction_sin();
    t.MathFunction_atan();
    t.MathFunction_atan2();
 
-
+#endif
 
 
 
