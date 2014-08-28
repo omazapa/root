@@ -10,8 +10,8 @@
 #define ____TF1NormSum__
 
 #include <iostream>
-#include "RConfigure.h"
-#include "RTypes.h"
+#include "TF1.h"
+#include <memory>
 
 //class adding two functions: c1*f1+c2*f2
 class TF1NormSum {

@@ -25,7 +25,7 @@ protected:
    
 public:
    
-   TF1Convolution(TF1* f, TF1* g, Double_t xmin, Double_t xmax);
+  // TF1Convolution(TF1* f, TF1* g, Double_t xmin, Double_t xmax);
    
    
 

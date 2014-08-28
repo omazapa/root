@@ -5,44 +5,22 @@
 //  Created by Aurélie Flandi on 27.08.14.
 //
 //
-//#include "Riostream.h"
+#include "Riostream.h"
 #include "TROOT.h"
 #include "TMath.h"
-#include "TF1.h"
 #include "TF1NormSum.h"
-//#include "TH1.h"
-//#include "TGraph.h"
-//#include "TVirtualPad.h"
-//#include "TStyle.h"
-//#include "TRandom.h"
-//#include "TInterpreter.h"
-//#include "TPluginManager.h"
-//#include "TBrowser.h"
-//#include "TColor.h"
 #include "TClass.h"
-//#include "TMethodCall.h"
-//#include "TF1Helper.h"
 #include "Math/WrappedFunction.h"
 #include "Math/WrappedTF1.h"
-//#include "Math/BrentRootFinder.h"
 #include "Math/BrentMinimizer1D.h"
-//#include "Math/BrentMethods.h"
-//#include "Math/DistFunc.h"
-//#include "Math/Integrator.h"
-//#include "Math/IntegratorMultiDim.h"
-//#include "Math/IntegratorOptions.h"
-//#include "Math/GaussIntegrator.h"
-//#include "Math/GaussLegendreIntegrator.h"
-//#include "Math/AdaptiveIntegratorMultiDim.h"
-//#include "Math/RichardsonDerivator.h"
 #include "Math/Functor.h"
 #include "Math/Minimizer.h"
 #include "Math/MinimizerOptions.h"
-//#include "Math/Factory.h"
-//#include "Math/ChebyshevPol.h"
-//#include "Fit/FitResult.h"
+
 
 ClassImp(TF1NormSum)
+
+
 
 void TF1NormSum::InitializeDataMembers(const std::vector <std::shared_ptr < TF1 >> &functions, const std::vector <Double_t> &coeffs)
 {

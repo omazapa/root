@@ -23,10 +23,18 @@ public:
    }
    
 };
-
-TF1Convolution::TF1Convolution(TF1* function1,)
+/*
+TF1Convolution::TF1Convolution(TF1* function1, TF1* function2, Double_t xmin, Double_t xmax)
 {
 
    
 
 }
+Double_t TF1Convolution::MakeConvolution(Double_t x)
+{
+ 
+ ROOT::Math::IntegratorOneDim func(TF1Convolution_EvalWrapper(function1, function2, x), ROOT::Math::IntegratorOneDimOptions::DefaultIntegratorType(), epsabs, epsrel);
+ return func.Integral(xmin, xmax);
+ 
+}
+*/
