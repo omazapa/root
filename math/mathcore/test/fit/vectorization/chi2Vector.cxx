@@ -28,6 +28,8 @@
 #include "Fit/Fitter.h"
 #include "Math/DistFunc.h"
 
+#include "TStopwatch.h"
+
 //#ifndef __INTEL_COMPILER
 //#include "vdt/exp.h"
 //#endif
@@ -35,6 +37,9 @@
 #include <sys/times.h>
 #include <unistd.h>
 
+using namespace std; 
+
+//#undef ROOT_VECTORIZED_TF1
 
 // some helper functions: 
 void updatePercentView( int i, int iterations )
@@ -142,14 +147,19 @@ double makeFitPerfTest( int NBins, bool vectorized, unsigned long* pnCalls, doub
    ROOT::Fit::Fitter fitter; 
 
    struct timespec time1, time2;
-   clock_gettime( CLOCK_REALTIME, &time1 );
+   //clock_gettime( CLOCK_REALTIME, &time1 );
+   TStopwatch w; w.Start(); 
+
 
    fitter.Fit( d, f );
 
-   clock_gettime( CLOCK_REALTIME, &time2 );
+   w.Stop();
+   double testDurationReal = w.RealTime(); 
+   w.Clear();
+   //clock_gettime( CLOCK_REALTIME, &time2 );
 
-   double testDurationReal = (double)(time2.tv_sec - time1.tv_sec) + 
-      1e-9*(double)(time2.tv_nsec - time1.tv_nsec);
+//    double testDurationReal = (double)(time2.tv_sec - time1.tv_sec) + 
+//       1e-9*(double)(time2.tv_nsec - time1.tv_nsec);
 
    double chi2 = fitter.Result().Chi2(); 
 
@@ -197,9 +207,10 @@ void stressVector( std::ostream& out, int NBins, bool vectorized )
       updatePercentView( i, statRuns );
    }
 
-   struct timespec res; 
-   clock_getres( CLOCK_REALTIME, &res );
-   double clockError = (double)res.tv_sec + 1e-9*(double)res.tv_nsec;
+//    struct timespec res; 
+//    clock_getres( CLOCK_REALTIME, &res );
+//    double clockError = (double)res.tv_sec + 1e-9*(double)res.tv_nsec;
+   double clockError = 1.E-9; 
 
    double chi2 = chi2Sum / (double)statRuns;
    double averageCalls= callsSum / (double)statRuns;
