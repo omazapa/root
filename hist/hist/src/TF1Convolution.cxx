@@ -56,8 +56,8 @@ TF1Convolution::TF1Convolution(TF1* function1, TF1* function2)
    fFunction2 = f2;
    fXmin      = f1->GetXmin();
    fXmax      = f1->GetXmax();
-   if (fXmin!=f2->GetXmin())  Error("TF1Convolution","Lower bound of the two functions are not the same");
-   if (fXmax!=f2->GetXmax())  Error("TF1Convolution","Upper bound of the two functions are not the same");
+   //if (fXmin!=f2->GetXmin())  Error("TF1Convolution","Lower bound of the two functions are not the same");
+   //if (fXmax!=f2->GetXmax())  Error("TF1Convolution","Upper bound of the two functions are not the same");
    
 }
 
@@ -125,7 +125,6 @@ void TF1Convolution::SetParameters(Double_t* p)
       fFunction1 -> SetParameter(i,p[i]);
    }
    Int_t nofp2 = fFunction2 -> GetNpar();
-   std::cout << "npar 2 = " << nofp2 << std::endl;
    Int_t k = 0;
    for (int i=nofp1; i<nofp2+nofp1; i++)
    {
