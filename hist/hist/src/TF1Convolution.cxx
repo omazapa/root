@@ -120,14 +120,14 @@ Double_t TF1Convolution::operator()(Double_t* t, Double_t* p)//used in TF1 when 
 void TF1Convolution::SetParameters(Double_t* p)
 {
    Int_t nofp1 = fFunction1 -> GetNpar();
-   Int_t nofp2 = fFunction2 -> GetNpar();
-   
    for (int i=0; i<nofp1; i++)
    {
-      fFunction1->SetParameter(i,p[i]);
+      fFunction1 -> SetParameter(i,p[i]);
    }
-   Int_t k=0;
-   for (int i=nofp1; i<nofp2; i++)
+   Int_t nofp2 = fFunction2 -> GetNpar();
+   std::cout << "npar 2 = " << nofp2 << std::endl;
+   Int_t k = 0;
+   for (int i=nofp1; i<nofp2+nofp1; i++)
    {
       fFunction2->SetParameter(k,p[i]);
       k++;

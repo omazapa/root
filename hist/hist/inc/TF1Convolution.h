@@ -34,7 +34,7 @@ class TF1Convolution
    TF1Convolution(TF1* f, TF1* g);
    TF1Convolution(TF1* f, TF1* g, Double_t xmin, Double_t xmax);
    Double_t MakeConvolution(Double_t x);
-   Double_t operator()(Double_t* t, Double_t* p=0);
+   Double_t operator()(Double_t* t, Double_t* p);
    void SetParameters(Double_t* p);
    void SetParameters(Double_t p0, Double_t p1, Double_t p2=0., Double_t p3=0.,
                       Double_t p4=0., Double_t p5=0., Double_t p6=0., Double_t p7=0.);
