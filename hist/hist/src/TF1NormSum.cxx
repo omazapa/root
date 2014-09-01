@@ -18,7 +18,7 @@
 #include "Math/MinimizerOptions.h"
 
 
-ClassImp(TF1NormSum)
+//ClassImp(TF1NormSum)
 
 
 
@@ -207,6 +207,7 @@ double TF1NormSum::operator()(double* x, double* p)
       sum += fCoeffs[n]*(fFunctions[n] -> EvalPar(x,0));
    }
    return sum;
+   std::cout <<"appelé"<<std::endl;
 }
 
 //_________________________________________________________________

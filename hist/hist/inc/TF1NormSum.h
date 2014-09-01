@@ -43,12 +43,12 @@ public:
    
    virtual void      SetParameters(const double* params);
    
-   virtual void      SetParameters(Double_t p0, Double_t p1, Double_t p2, Double_t p3, Double_t p4,
-                                   Double_t p5, Double_t p6, Double_t p7, Double_t p8, Double_t p9, Double_t p10);
+   virtual void      SetParameters(Double_t p0, Double_t p1, Double_t p2=0., Double_t p3=0., Double_t p4=0.,
+                                   Double_t p5=0., Double_t p6=0., Double_t p7=0., Double_t p8=0., Double_t p9=0., Double_t p10=0.);
    
    Int_t             GetNpar() const;
    
-   ClassDef(TF1NormSum,1)
+   //ClassDef(TF1NormSum,1)
    
 };
 #endif /* defined(____TF1NormSum__) */
