@@ -54,8 +54,8 @@ TF1Convolution::TF1Convolution(TF1* function1, TF1* function2)
    
    fFunction1  = f1;
    fFunction2  = f2;
-   fXmin       = f1->GetXmin();
-   fXmax       = f1->GetXmax();
+   fXmin       = fFunction1->GetXmin();
+   fXmax       = fFunction1->GetXmax();
    fNofParams1 = f1->GetNpar();
    fNofParams2 = f2->GetNpar();
    fParams1    = std::vector<Double_t>(fNofParams1);
@@ -92,7 +92,6 @@ TF1Convolution::TF1Convolution(TF1* function1, TF1* function2, Double_t xmin, Do
 */
 Double_t TF1Convolution::MakeConvolution(Double_t t)
 {
-   
    TF1Convolution_EvalWrapper fconv((TF1*)fFunction1->Clone(), (TF1*)fFunction2->Clone(), t);
    Double_t result = 0;
    
@@ -100,7 +99,7 @@ Double_t TF1Convolution::MakeConvolution(Double_t t)
    {
       ROOT::Math::GaussIntegrator integrator(1e-9, 1e-9);
       integrator.SetFunction(ROOT::Math::Functor1D(fconv));
-      if (fXmin != - TMath::Infinity() && fXmax != TMath::Infinity() )
+      if      (fXmin != - TMath::Infinity() && fXmax != TMath::Infinity() )
          result =  integrator.Integral(fXmin, fXmax);
       else if (fXmin == - TMath::Infinity() && fXmax != TMath::Infinity() )
          result = integrator.IntegralLow(fXmax);
@@ -122,7 +121,6 @@ Double_t TF1Convolution::MakeConvolution(Double_t t)
          result = integrator.Integral();
       //error = iod.Error();
    }
-
    return result;
 }
 
@@ -131,7 +129,6 @@ Double_t TF1Convolution::operator()(Double_t* t, Double_t* p)//used in TF1 when 
    if (p!=0)   TF1Convolution::SetParameters(p);                           // first refresh the parameters
    
    return MakeConvolution(t[0]);
-   
 }
 
 void TF1Convolution::SetParameters(Double_t* p)
