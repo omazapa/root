@@ -52,15 +52,32 @@ TF1Convolution::TF1Convolution(TF1* function1, TF1* function2)
    std::shared_ptr < TF1 > f1((TF1*)function1->Clone());
    std::shared_ptr < TF1 > f2((TF1*)function2->Clone());
    
-   fFunction1 = f1;
-   fFunction2 = f2;
-   fXmin      = f1->GetXmin();
-   fXmax      = f1->GetXmax();
-   //if (fXmin!=f2->GetXmin())  Error("TF1Convolution","Lower bound of the two functions are not the same");
-   //if (fXmax!=f2->GetXmax())  Error("TF1Convolution","Upper bound of the two functions are not the same");
+   fFunction1  = f1;
+   fFunction2  = f2;
+   fXmin       = f1->GetXmin();
+   fXmax       = f1->GetXmax();
+   fNofParams1 = f1->GetNpar();
+   fNofParams2 = f2->GetNpar();
+   fParams1    = std::vector<Double_t>(fNofParams1);
+   fParams2    = std::vector<Double_t>(fNofParams2);
    
+   for (int i=0; i<fNofParams1; i++)
+   {
+      fParams1[i] = fFunction1->GetParameter(i);
+   }
+   for (int i=0; i<fNofParams2; i++)
+   {
+      fParams2[i] = fFunction2->GetParameter(i);
+   }
+   Int_t indexcst = fFunction1-> GetParNumber("Constant");
+   if (indexcst!=-1)
+   {
+      fFunction1->FixParameter(indexcst,1.);
+      fNofParams1=fNofParams1-1;
+      fParams1.erase(fParams1.begin()+indexcst);
+   }
 }
-
+/*
 TF1Convolution::TF1Convolution(TF1* function1, TF1* function2, Double_t xmin, Double_t xmax)
 {
    std::shared_ptr < TF1 > f1((TF1*)function1->Clone());
@@ -72,7 +89,7 @@ TF1Convolution::TF1Convolution(TF1* function1, TF1* function2, Double_t xmin, Do
    fXmax      = xmax;
 
 }
-
+*/
 Double_t TF1Convolution::MakeConvolution(Double_t t)
 {
    
@@ -119,14 +136,12 @@ Double_t TF1Convolution::operator()(Double_t* t, Double_t* p)//used in TF1 when 
 
 void TF1Convolution::SetParameters(Double_t* p)
 {
-   Int_t nofp1 = fFunction1 -> GetNpar();
-   for (int i=0; i<nofp1; i++)
+   for (int i=0; i<fNofParams1; i++)
    {
       fFunction1 -> SetParameter(i,p[i]);
    }
-   Int_t nofp2 = fFunction2 -> GetNpar();
    Int_t k = 0;
-   for (int i=nofp1; i<nofp2+nofp1; i++)
+   for (int i=fNofParams1; i<fNofParams1+fNofParams2; i++)
    {
       fFunction2->SetParameter(k,p[i]);
       k++;

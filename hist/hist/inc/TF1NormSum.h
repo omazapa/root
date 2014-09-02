@@ -41,9 +41,9 @@ public:
    
    double  operator()(double* x, double* p);
    
-   virtual void      SetParameters(const double* params);
+   void      SetParameters(const double* params);
    
-   virtual void      SetParameters(Double_t p0, Double_t p1, Double_t p2=0., Double_t p3=0., Double_t p4=0.,
+   void      SetParameters(Double_t p0, Double_t p1, Double_t p2=0., Double_t p3=0., Double_t p4=0.,
                                    Double_t p5=0., Double_t p6=0., Double_t p7=0., Double_t p8=0., Double_t p9=0., Double_t p10=0.);
    
    Int_t             GetNpar() const;
