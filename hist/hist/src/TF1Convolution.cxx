@@ -20,7 +20,7 @@
 
 //ClassImp(TF1Convolution)
 
-
+//________________________________________________________________________
 // class wrapping evaluation of TF1(t) * TF1(x-t)
 class TF1Convolution_EvalWrapper
 {
@@ -46,9 +46,10 @@ public:
    
 };
 
-
-TF1Convolution::TF1Convolution(TF1* function1, TF1* function2)
+//________________________________________________________________________
+void TF1Convolution::InitializeDataMembers(TF1* function1, TF1* function2)
 {
+   
    std::shared_ptr < TF1 > f1((TF1*)function1->Clone());
    std::shared_ptr < TF1 > f2((TF1*)function2->Clone());
    
@@ -68,37 +69,50 @@ TF1Convolution::TF1Convolution(TF1* function1, TF1* function2)
    {
       fParams1[i] = fFunction1 -> GetParameter(i);
       //std::cout << "In constructor: fParams1["<<i<<"] = "<<fParams1[i]<<std::endl;
-
+      
    }
    for (int i=0; i<fNofParams2; i++)
    {
       fParams2[i] = fFunction2 -> GetParameter(i);
       //std::cout << "In consructor: fParams2["<<i<<"] = "<<fParams2[i]<<std::endl;
-
+      
    }
-
-  // std::cout <<"index constant: "<<fCstIndex<<std::endl;
+   
+   // std::cout <<"index constant: "<<fCstIndex<<std::endl;
    if (fCstIndex!=-1)
    {
       fFunction2  -> FixParameter(fCstIndex,1.);
       fNofParams2 =  fNofParams2-1;
       fParams2.erase(fParams2.begin()+fCstIndex);
-     // std::cout<<"after: NofParams2 = "<<fNofParams2<<std::endl;
+      // std::cout<<"after: NofParams2 = "<<fNofParams2<<std::endl;
    }
 }
-/*
+//________________________________________________________________________
+TF1Convolution::TF1Convolution(TF1* function1, TF1* function2)
+{
+   InitializeDataMembers(function1,function2);
+}
+
+//________________________________________________________________________
 TF1Convolution::TF1Convolution(TF1* function1, TF1* function2, Double_t xmin, Double_t xmax)
 {
-   std::shared_ptr < TF1 > f1((TF1*)function1->Clone());
-   std::shared_ptr < TF1 > f2((TF1*)function2->Clone());
-   
-   fFunction1 = f1;
-   fFunction2 = f2;
+   InitializeDataMembers(function1, function2);
    fXmin      = xmin;
    fXmax      = xmax;
-
 }
-*/
+
+TF1Convolution::TF1Convolution(TString formula1, TString formula2)
+{
+   TF1::InitStandardFunctions();
+   (TString)formula1.ReplaceAll(" ","");
+   (TString)formula2.ReplaceAll(" ","");
+   //((TObjString*)((*arrayall)[i])) -> GetString();
+   TF1* f1 = (TF1*)(gROOT -> GetListOfFunctions() -> FindObject(formula1));
+   TF1* f2 = (TF1*)(gROOT -> GetListOfFunctions() -> FindObject(formula2));
+   InitializeDataMembers(f1, f2);
+}
+
+//________________________________________________________________________
 Double_t TF1Convolution::MakeConvolution(Double_t t)
 {
    TF1Convolution_EvalWrapper fconv((TF1*)fFunction1->Clone(), (TF1*)fFunction2->Clone(), t);
@@ -133,6 +147,7 @@ Double_t TF1Convolution::MakeConvolution(Double_t t)
    return result;
 }
 
+//________________________________________________________________________
 Double_t TF1Convolution::operator()(Double_t* t, Double_t* p)//used in TF1 when doing the fit, will be valuated at each point
 {
    if (p!=0)   TF1Convolution::SetParameters(p);                           // first refresh the parameters
@@ -140,6 +155,7 @@ Double_t TF1Convolution::operator()(Double_t* t, Double_t* p)//used in TF1 when 
    return MakeConvolution(t[0]);
 }
 
+//________________________________________________________________________
 void TF1Convolution::SetParameters(Double_t* p)
 {
    for (int i=0; i<fNofParams1; i++)
@@ -168,6 +184,7 @@ void TF1Convolution::SetParameters(Double_t* p)
    }
 }
 
+//________________________________________________________________________
 void TF1Convolution::SetParameters(Double_t p0, Double_t p1, Double_t p2, Double_t p3,
                                    Double_t p4, Double_t p5, Double_t p6, Double_t p7)
 {

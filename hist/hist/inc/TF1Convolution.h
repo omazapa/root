@@ -29,7 +29,9 @@ class TF1Convolution
    public:
    
    TF1Convolution(TF1* f, TF1* g);
- //  TF1Convolution(TF1* f, TF1* g, Double_t xmin, Double_t xmax);
+   TF1Convolution(TF1* f, TF1* g, Double_t xmin, Double_t xmax);
+   TF1Convolution(TString formula1, TString formula2);
+   void InitializeDataMembers(TF1* f, TF1* g);
    Double_t operator()(Double_t* t, Double_t* p);
    void     SetParameters(Double_t* p);
    void     SetParameters(Double_t p0, Double_t p1, Double_t p2=0., Double_t p3=0.,
