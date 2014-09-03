@@ -23,6 +23,7 @@ class TF1Convolution
    Double_t fXmax;
    Int_t fNofParams1;
    Int_t fNofParams2;
+   Int_t fCstIndex;
    Double_t MakeConvolution(Double_t x);
    
    public:

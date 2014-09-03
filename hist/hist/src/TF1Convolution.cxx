@@ -60,21 +60,30 @@ TF1Convolution::TF1Convolution(TF1* function1, TF1* function2)
    fNofParams2 = f2->GetNpar();
    fParams1    = std::vector<Double_t>(fNofParams1);
    fParams2    = std::vector<Double_t>(fNofParams2);
+   fCstIndex   = fFunction2-> GetParNumber("Constant");
+   
+   //std::cout<<"before: NofParams2 = "<<fNofParams2<<std::endl;
    
    for (int i=0; i<fNofParams1; i++)
    {
-      fParams1[i] = fFunction1->GetParameter(i);
+      fParams1[i] = fFunction1 -> GetParameter(i);
+      //std::cout << "In constructor: fParams1["<<i<<"] = "<<fParams1[i]<<std::endl;
+
    }
    for (int i=0; i<fNofParams2; i++)
    {
-      fParams2[i] = fFunction2->GetParameter(i);
+      fParams2[i] = fFunction2 -> GetParameter(i);
+      //std::cout << "In consructor: fParams2["<<i<<"] = "<<fParams2[i]<<std::endl;
+
    }
-   Int_t indexcst = fFunction1-> GetParNumber("Constant");
-   if (indexcst!=-1)
+
+  // std::cout <<"index constant: "<<fCstIndex<<std::endl;
+   if (fCstIndex!=-1)
    {
-      fFunction1->FixParameter(indexcst,1.);
-      fNofParams1=fNofParams1-1;
-      fParams1.erase(fParams1.begin()+indexcst);
+      fFunction2  -> FixParameter(fCstIndex,1.);
+      fNofParams2 =  fNofParams2-1;
+      fParams2.erase(fParams2.begin()+fCstIndex);
+     // std::cout<<"after: NofParams2 = "<<fNofParams2<<std::endl;
    }
 }
 /*
@@ -136,11 +145,25 @@ void TF1Convolution::SetParameters(Double_t* p)
    for (int i=0; i<fNofParams1; i++)
    {
       fFunction1 -> SetParameter(i,p[i]);
+      fParams1[i] = p[i];
+      //std::cout << "In SetParameters: fParams1["<<i<<"] = "<<fParams1[i]<<std::endl;
    }
-   Int_t k = 0;
-   for (int i=fNofParams1; i<fNofParams1+fNofParams2; i++)
+   Int_t k      = 0;
+   Int_t offset = 0;
+   Int_t offset2 = 0;
+   if (fCstIndex!=-1)   offset = 1; //because fParams2 has decreased of 1
+   Int_t totalnofparams = fNofParams1+fNofParams2+offset;
+   for (int i=fNofParams1; i<totalnofparams; i++)
    {
-      fFunction2->SetParameter(k,p[i]);
+      if (k==fCstIndex)
+      {
+         k++;
+         offset2=1;
+         continue;
+      }
+      fFunction2 -> SetParameter(k,p[i-offset2]);
+      fParams2[k-offset2] = p[i-offset2];
+      //std::cout << "In SetParameters: fParams2["<<k-offset2<<"] = "<<fParams2[k-offset2]<<std::endl;
       k++;
    }
 }
