@@ -15,6 +15,8 @@ include $(ROOTSYS)/etc/Makefile.arch
 CXXFLAGS += -std=c++11 -march=native -DNDEBUG -ffast-math -ftree-vectorize 
 #LDFLAGS += -lrt
 
+#use VDT 
+CXXFLAGS += -DUSE_VDT
 
 CHI2VECTOROBJ     = chi2Vector.$(ObjSuf)
 CHI2VECTORSRC     = chi2Vector.$(SrcSuf)
@@ -26,6 +28,7 @@ CHI2PARALLELOMP        = chi2ParallelOMP$(ExeSuf)
 
 $(CHI2PARALLELOMPOBJ)     : CXXFLAGS += -fopenmp
 $(CHI2PARALLELOMP)     :    LDFLAGS += -fopenmp
+
 
 
 

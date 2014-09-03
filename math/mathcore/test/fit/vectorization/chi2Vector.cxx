@@ -30,9 +30,10 @@
 
 #include "TStopwatch.h"
 
-//#ifndef __INTEL_COMPILER
-//#include "vdt/exp.h"
-//#endif
+
+#ifdef USE_VDT
+#include "vdt/exp.h"
+#endif
 
 #include <sys/times.h>
 #include <unistd.h>
@@ -84,7 +85,11 @@ double myfunc_scalar( double* x, double* p )
 
    double z = ( val - mu ) / sigma;
 
+#ifdef USE_VDT
+   return c*vdt::fast_exp( - z*z / 2.0 );
+#else
    return c*std::exp( - z*z / 2.0 );
+#endif
 }
 
 
@@ -100,10 +105,9 @@ void myfunc_vector( int n, double const * const * ppIn, const double* p, double*
       double val = ppIn[0][i];
 
       double z = ( val - mu ) / sigma;
-#ifdef __INTEL_COMPILER
-      pOut[i] = c * std::exp( - z*z / 2.0 );
+#ifdef USE_VDT
+      pOut[i] = c * vdt::fast_exp( - z*z / 2.0 );
 #else 
-      //pOut[i] = c * vdt::fast_exp( - z*z / 2.0 );
       pOut[i] = c * std::exp( - z*z / 2.0 );
 #endif
    }
