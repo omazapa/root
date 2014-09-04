@@ -40,6 +40,8 @@ ROOFITLIBS= -lMathMore -lMinuit  -lThread -lRooFit -lRooFitCore -lHtml -lFoam
 CXXFLAGS += -g
 endif
 
+#CXXFLAGS += -ftree-vectorize -march=native
+
 SPARSEDATACOMPAREROBJ      = SparseDataComparer.$(ObjSuf)
 SPARSEDATACOMPARERSRC      = SparseDataComparer.$(SrcSuf)
 SPARSEDATACOMPARER         = SparseDataComparer$(ExeSuf)

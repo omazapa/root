@@ -39,7 +39,7 @@
 
 const int N = 3; // n must be greater than 1
 const int nfit = 1; 
-const int nEvents = 10000;
+const int nEvents = 1000000;
 double iniPar[2*N];
 
 //#define DEBUG
@@ -75,14 +75,14 @@ void fillTree(TTree & t2) {
    t2.ResetBranchAddresses() ;
 }
 
-void FillUnBinData(ROOT::Fit::UnBinData *d, TTree * tree ) { 
+ROOT::Fit::UnBinData *  FillUnBinData(TTree * tree ) { 
 
    // fill the unbin data set from a TTree
 
    // large tree 
    unsigned int n = tree->GetEntries(); 
    std::cout << "number of unbin data is " << n << " of dim " << N << std::endl;
-   d = new ROOT::Fit::UnBinData(n,N);
+   ROOT::Fit::UnBinData *d = new ROOT::Fit::UnBinData(n,N);
 
    double vx[N];
    for (int j = 0; j <N; ++j) { 
@@ -108,7 +108,7 @@ void FillUnBinData(ROOT::Fit::UnBinData *d, TTree * tree ) {
 
    tree->ResetBranchAddresses() ;
       
-   return; 
+   return d; 
 
 }
 
@@ -215,12 +215,12 @@ int  FitUsingRooFit(TTree & tree, RooAbsPdf & pdf, RooArgSet & xvars) {
       pdf.getVariables()->Print("v"); // print the parameters 
       std::cout << "\n\nDo the fit now \n\n"; 
 #else 
-      int level = -1; 
+      int level = 0; 
       bool save = false; 
 #endif
 
 #ifndef _WIN32 // until a bug 30762 is fixed
-      RooFitResult * result = pdf.fitTo(data, RooFit::Minos(0), RooFit::Hesse(0) , RooFit::PrintLevel(level), RooFit::Save(save) );
+      RooFitResult * result = pdf.fitTo(data, RooFit::Minos(0), RooFit::Hesse(0) , RooFit::PrintLevel(level), RooFit::Save(save), RooFit::Minimizer("Minuit2") );
 #else
       RooFitResult * result = pdf.fitTo(data );
 #endif
@@ -252,9 +252,9 @@ int  FitUsingRooFit(TTree & tree, RooAbsPdf & pdf, RooArgSet & xvars) {
 template <class MinType>
 int DoFit(TTree * tree, Func & func, bool debug = false, bool = false ) {  
 
-   ROOT::Fit::UnBinData * d = 0; 
-   // need to have done Tree->Draw() before fit
-   FillUnBinData(d,tree);
+   ROOT::Fit::UnBinData * d = FillUnBinData(tree); 
+   
+   std::cout << "data is filled N = " << d->Size() << std::endl;
 
    //std::cout << "Fit parameter 2  " << f.Parameters()[2] << std::endl;
 
@@ -349,11 +349,16 @@ int main() {
       iniPar[2*i+1] = 1;  
    }
 
+#ifdef T0
+
    // start counting t he time
    MultiGaussRooPdf multipdf(N);
    RooAbsPdf & pdf = multipdf.getPdf();
 
    std::auto_ptr<RooArgSet> xvars = multipdf.getVars();   
+
+
+   FitUsingRooFit(tree,pdf, *xvars);
 
    WrapperRooPdf  wpdf( &pdf, *xvars ); 
 
@@ -364,18 +369,17 @@ int main() {
       std::cout << " par " << i << " is " <<  wpdf.ParameterName(i) << " value " << wpdf.Parameters()[i] << std::endl;
 
 
-   FitUsingNewFitter<TMINUIT>(&tree,wpdf);
-
    // reset pdf original values 
    wpdf.SetParameters(iniPar);
-   
-   FitUsingRooFit(tree,pdf, *xvars);
+   FitUsingNewFitter<MINUIT2>(&tree,wpdf);
+
+#endif   
 
    // in case of N = 1 do also a simple gauss fit
    // using TF1 gausN
 //   if (N == 1) { 
-   ROOT::Math::WrappedParamFunction<> gausn(&GausNorm<N>::F,2*N,iniPar,iniPar+2*N);       
-   FitUsingNewFitter<TMINUIT>(&tree,gausn);
+   ROOT::Math::WrappedParamFunction<> gausn(&GausNorm<N>::F,N,iniPar,iniPar+2*N);       
+   FitUsingNewFitter<MINUIT2>(&tree,gausn);
    //}
 
 

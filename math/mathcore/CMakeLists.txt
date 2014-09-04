@@ -27,7 +27,7 @@ ROOT_GENERATE_ROOTMAP(MathCore LINKDEF LinkDef1.h LinkDef2.h LinkDef3.h LinkDef_
 
 add_definitions(-DUSE_ROOT_ERROR )
 
-SET( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -ftree-vectorize -march=native" )
+#SET( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} -ftree-vectorize -march=native" )
 
 ROOT_LINKER_LIBRARY(MathCore *.cxx G__Math.cxx G__MathCore.cxx G__MathFit.cxx LIBRARIES ${CMAKE_THREAD_LIBS_INIT} DEPENDENCIES Core)
 
