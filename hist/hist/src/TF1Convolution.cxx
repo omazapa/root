@@ -10,6 +10,7 @@
 #include "Riostream.h"
 #include "TROOT.h"
 #include "TMath.h"
+
 #include "Math/Integrator.h"
 #include "Math/IntegratorMultiDim.h"
 #include "Math/IntegratorOptions.h"
@@ -17,6 +18,8 @@
 #include "Math/GaussLegendreIntegrator.h"
 #include "Math/AdaptiveIntegratorMultiDim.h"
 #include "Math/Functor.h"
+#include "TVirtualFFT.h"
+#include <fftw3.h>
 
 //ClassImp(TF1Convolution)
 
@@ -55,13 +58,16 @@ void TF1Convolution::InitializeDataMembers(TF1* function1, TF1* function2)
    
    fFunction1  = f1;
    fFunction2  = f2;
-   fXmin       = fFunction1->GetXmin();
-   fXmax       = fFunction1->GetXmax();
+   fXmin       = fFunction1->GetXmin()-std::abs(fFunction1->GetXmin())*0.2;
+   fXmax       = fFunction1->GetXmax()+std::abs(fFunction1->GetXmax())*0.2;
    fNofParams1 = f1->GetNpar();
    fNofParams2 = f2->GetNpar();
    fParams1    = std::vector<Double_t>(fNofParams1);
    fParams2    = std::vector<Double_t>(fNofParams2);
    fCstIndex   = fFunction2-> GetParNumber("Constant");
+   fFlagFFT    = true;
+   fNofPoints  = 10000;
+   fGraphConv  = new TGraph(fNofPoints);
    
    //std::cout<<"before: NofParams2 = "<<fNofParams2<<std::endl;
    
@@ -112,8 +118,83 @@ TF1Convolution::TF1Convolution(TString formula1, TString formula2)
    InitializeDataMembers(f1, f2);
 }
 
+TF1Convolution::~TF1Convolution()
+{
+   delete fGraphConv;
+}
+
+void TF1Convolution::MakeGraphConv()
+{
+
+   //FFT of the two functions
+   
+   std::vector < Double_t > x(fNofPoints);
+   std::vector < Double_t > in1(fNofPoints);
+   std::vector < Double_t > in2(fNofPoints);
+   
+   TVirtualFFT *fft1 = TVirtualFFT::FFT(1, &fNofPoints, "R2C K");
+   TVirtualFFT *fft2 = TVirtualFFT::FFT(1, &fNofPoints, "R2C K");
+   //std::cout << " min " << fXmin << ", max "<<fXmax<<std::endl;
+   for (int i=0; i<fNofPoints; i++)
+   {
+      x[i]   = fXmin + (fXmax-fXmin)/(fNofPoints-1)*i;
+      //std::cout << " x["<<i<<"] = "<< x[i] << std::endl;
+      in1[i] = fFunction1 -> Eval(x[i]);
+      //std::cout<<"in1["<<i<<"] ="<<in1[i]<<std::endl;
+      in2[i] = fFunction2 -> Eval(x[i]);
+      //std::cout<<"in2["<<i<<"] ="<<in2[i]<<std::endl;
+      fft1 -> SetPoint(i, in1[i]);
+      fft2 -> SetPoint(i, in2[i]);
+   }
+   
+   fft1 -> Transform();
+   fft2 -> Transform();
+   
+   //inverse transformation of the product
+   
+   TVirtualFFT *fftinverse = TVirtualFFT::FFT(1, &fNofPoints, "C2R K");
+   
+   Double_t re1, re2, im1, im2, out_re, out_im;
+   
+   std::cout<<"ici?"<<std::endl;
+
+   for (int i=0;i<=fNofPoints/2.;i++)
+   {
+      fft1 -> GetPointComplex(i,re1,im1);
+      fft2 -> GetPointComplex(i,re2,im2);
+      std::cout << " re 1 " << i <<" : "<<re1<< std::endl;
+      std::cout << " re 2 " << i <<" : "<<re2<< std::endl;
+      std::cout << " im 1 " << i <<" : "<<im1<< std::endl;
+      std::cout << " im 2 " << i <<" : "<<im2<< std::endl;
+      out_re = re1*re2 - im1*im2;
+      // std::cout << " out_re " << i <<" = "<< out_re << std::endl;
+      out_im = re1*im2 + re2*im1;
+      fftinverse -> SetPoint(i, out_re, out_im);
+   }
+   std::cout<<"ou la?"<<std::endl;
+   fftinverse -> Transform();
+   std::cout << " ici " << std::endl;
+   for (int i=0;i<fNofPoints;i++)
+   {
+      std::cout<<"x "<<i << " : "<<x[i]<<std::endl;
+      std::cout<<"y "<<i << " : "<<fftinverse->GetPointReal(i)/fNofPoints<<std::endl;
+      fGraphConv->SetPoint(i, x[i], fftinverse->GetPointReal(i)/fNofPoints);//because not normalized
+      
+   }
+  /* delete fft1;
+   delete fft2;
+   delete fftinverse;*/
+}
+
 //________________________________________________________________________
-Double_t TF1Convolution::MakeConvolution(Double_t t)
+Double_t TF1Convolution::MakeFFTConv(Double_t t)
+{
+   MakeGraphConv();
+   return  fGraphConv -> Eval(t);
+}
+
+//________________________________________________________________________
+Double_t TF1Convolution::MakeNumConv(Double_t t)
 {
    TF1Convolution_EvalWrapper fconv((TF1*)fFunction1->Clone(), (TF1*)fFunction2->Clone(), t);
    Double_t result = 0;
@@ -151,8 +232,10 @@ Double_t TF1Convolution::MakeConvolution(Double_t t)
 Double_t TF1Convolution::operator()(Double_t* t, Double_t* p)//used in TF1 when doing the fit, will be valuated at each point
 {
    if (p!=0)   TF1Convolution::SetParameters(p);                           // first refresh the parameters
-   
-   return MakeConvolution(t[0]);
+   Double_t result = 0.;
+   if (fFlagFFT)  result = MakeFFTConv(t[0]);
+   else           result = MakeNumConv(t[0]);
+   return result;
 }
 
 //________________________________________________________________________
@@ -164,8 +247,8 @@ void TF1Convolution::SetParameters(Double_t* p)
       fParams1[i] = p[i];
       //std::cout << "In SetParameters: fParams1["<<i<<"] = "<<fParams1[i]<<std::endl;
    }
-   Int_t k      = 0;
-   Int_t offset = 0;
+   Int_t k       = 0;
+   Int_t offset  = 0;
    Int_t offset2 = 0;
    if (fCstIndex!=-1)   offset = 1; //because fParams2 has decreased of 1
    Int_t totalnofparams = fNofParams1+fNofParams2+offset;
@@ -190,6 +273,26 @@ void TF1Convolution::SetParameters(Double_t p0, Double_t p1, Double_t p2, Double
 {
    Double_t params[]={p0,p1,p2,p3,p4,p5,p6,p7};
    TF1Convolution::SetParameters(params);
+}
 
+//________________________________________________________________________
+void TF1Convolution::SetRange(Double_t percentage)
+{
+   fXmin = fFunction1->GetXmin() - std::abs(fFunction1->GetXmin())*percentage;
+   fXmax = fFunction1->GetXmax() + std::abs(fFunction1->GetXmax())*percentage;
+
+}
+
+//________________________________________________________________________
+void TF1Convolution::SetRange(Double_t a, Double_t b)
+{
+   if (fFlagFFT && ( a==-TMath::Infinity() || b==TMath::Infinity() ) )
+   {
+      Error("TF1Convolution","In FFT mode, range can not be infinite. Infinity has been replaced by range of first function plus a bufferzone to avoid spillover.");
+      if (a==-TMath::Infinity()) fXmin = fFunction1->GetXmin() - std::abs(fFunction1->GetXmin())*0.2;
+      if (b== TMath::Infinity()) fXmax = fFunction1->GetXmax() + std::abs(fFunction1->GetXmax())*0.2;
+   }
+   fXmin = a;
+   fXmax = b;
 
 }
