@@ -10,7 +10,6 @@
 #include "Riostream.h"
 #include "TROOT.h"
 #include "TMath.h"
-
 #include "Math/Integrator.h"
 #include "Math/IntegratorMultiDim.h"
 #include "Math/IntegratorOptions.h"
@@ -20,8 +19,6 @@
 #include "Math/Functor.h"
 #include "TVirtualFFT.h"
 #include <fftw3.h>
-
-//ClassImp(TF1Convolution)
 
 //________________________________________________________________________
 // class wrapping evaluation of TF1(t) * TF1(x-t)
@@ -45,17 +42,13 @@ public:
    {
       return fFunction1->Eval(x) * fFunction2->Eval(x-fT0);
    }
-   
-   
 };
 
 //________________________________________________________________________
 void TF1Convolution::InitializeDataMembers(TF1* function1, TF1* function2)
 {
-   
    std::shared_ptr < TF1 > f1((TF1*)function1->Clone());
    std::shared_ptr < TF1 > f2((TF1*)function2->Clone());
-   
    fFunction1  = f1;
    fFunction2  = f2;
    fXmin       = fFunction1->GetXmin()-std::abs(fFunction1->GetXmin())*0.2;
@@ -66,8 +59,9 @@ void TF1Convolution::InitializeDataMembers(TF1* function1, TF1* function2)
    fParams2    = std::vector<Double_t>(fNofParams2);
    fCstIndex   = fFunction2-> GetParNumber("Constant");
    fFlagFFT    = true;
+   fFlagGraph  = false;
    fNofPoints  = 10000;
-   fGraphConv  = new TGraph(fNofPoints);
+   fGraphConv  = std::shared_ptr< TGraph >(new TGraph(fNofPoints));
    
    //std::cout<<"before: NofParams2 = "<<fNofParams2<<std::endl;
    
@@ -107,6 +101,7 @@ TF1Convolution::TF1Convolution(TF1* function1, TF1* function2, Double_t xmin, Do
    fXmax      = xmax;
 }
 
+//________________________________________________________________________
 TF1Convolution::TF1Convolution(TString formula1, TString formula2)
 {
    TF1::InitStandardFunctions();
@@ -118,23 +113,17 @@ TF1Convolution::TF1Convolution(TString formula1, TString formula2)
    InitializeDataMembers(f1, f2);
 }
 
-TF1Convolution::~TF1Convolution()
-{
-   delete fGraphConv;
-}
-
+//________________________________________________________________________
 void TF1Convolution::MakeGraphConv()
 {
-
    //FFT of the two functions
-   
-   std::vector < Double_t > x(fNofPoints);
+   //std::cout<<"is called"<<std::endl;
+   std::vector < Double_t > x  (fNofPoints);
    std::vector < Double_t > in1(fNofPoints);
    std::vector < Double_t > in2(fNofPoints);
    
    TVirtualFFT *fft1 = TVirtualFFT::FFT(1, &fNofPoints, "R2C K");
    TVirtualFFT *fft2 = TVirtualFFT::FFT(1, &fNofPoints, "R2C K");
-   //std::cout << " min " << fXmin << ", max "<<fXmax<<std::endl;
    for (int i=0; i<fNofPoints; i++)
    {
       x[i]   = fXmin + (fXmax-fXmin)/(fNofPoints-1)*i;
@@ -146,50 +135,42 @@ void TF1Convolution::MakeGraphConv()
       fft1 -> SetPoint(i, in1[i]);
       fft2 -> SetPoint(i, in2[i]);
    }
-   
    fft1 -> Transform();
    fft2 -> Transform();
    
    //inverse transformation of the product
    
    TVirtualFFT *fftinverse = TVirtualFFT::FFT(1, &fNofPoints, "C2R K");
-   
    Double_t re1, re2, im1, im2, out_re, out_im;
    
-   std::cout<<"ici?"<<std::endl;
-
    for (int i=0;i<=fNofPoints/2.;i++)
    {
       fft1 -> GetPointComplex(i,re1,im1);
       fft2 -> GetPointComplex(i,re2,im2);
-      std::cout << " re 1 " << i <<" : "<<re1<< std::endl;
-      std::cout << " re 2 " << i <<" : "<<re2<< std::endl;
-      std::cout << " im 1 " << i <<" : "<<im1<< std::endl;
-      std::cout << " im 2 " << i <<" : "<<im2<< std::endl;
+      //std::cout << " re 1 " << i <<" : "<<re1<< std::endl;
+      //std::cout << " re 2 " << i <<" : "<<re2<< std::endl;
+      //std::cout << " im 1 " << i <<" : "<<im1<< std::endl;
+      //std::cout << " im 2 " << i <<" : "<<im2<< std::endl;
       out_re = re1*re2 - im1*im2;
       // std::cout << " out_re " << i <<" = "<< out_re << std::endl;
       out_im = re1*im2 + re2*im1;
       fftinverse -> SetPoint(i, out_re, out_im);
    }
-   std::cout<<"ou la?"<<std::endl;
    fftinverse -> Transform();
-   std::cout << " ici " << std::endl;
+
    for (int i=0;i<fNofPoints;i++)
    {
-      std::cout<<"x "<<i << " : "<<x[i]<<std::endl;
-      std::cout<<"y "<<i << " : "<<fftinverse->GetPointReal(i)/fNofPoints<<std::endl;
+      //std::cout<<"x "<<i << " : "<<x[i]<<std::endl;
+      //std::cout<<"y "<<i << " : "<<fftinverse->GetPointReal(i)/fNofPoints<<std::endl;
       fGraphConv->SetPoint(i, x[i], fftinverse->GetPointReal(i)/fNofPoints);//because not normalized
       
    }
-  /* delete fft1;
-   delete fft2;
-   delete fftinverse;*/
 }
 
 //________________________________________________________________________
 Double_t TF1Convolution::MakeFFTConv(Double_t t)
 {
-   MakeGraphConv();
+   if (!fFlagGraph)  MakeGraphConv();
    return  fGraphConv -> Eval(t);
 }
 
@@ -203,19 +184,19 @@ Double_t TF1Convolution::MakeNumConv(Double_t t)
    {
       ROOT::Math::GaussIntegrator integrator(1e-9, 1e-9);
       integrator.SetFunction(ROOT::Math::Functor1D(fconv));
-      if      (fXmin != - TMath::Infinity() && fXmax != TMath::Infinity() )
+      if      (fXmin != - TMath::Infinity() && fXmax != TMath::Infinity())
          result =  integrator.Integral(fXmin, fXmax);
-      else if (fXmin == - TMath::Infinity() && fXmax != TMath::Infinity() )
+      else if (fXmin == - TMath::Infinity() && fXmax != TMath::Infinity())
          result = integrator.IntegralLow(fXmax);
-      else if (fXmin != - TMath::Infinity() && fXmax == TMath::Infinity() )
+      else if (fXmin != - TMath::Infinity() && fXmax == TMath::Infinity())
          result = integrator.IntegralUp(fXmin);
-      else if (fXmin == - TMath::Infinity() && fXmax == TMath::Infinity() )
+      else if (fXmin == - TMath::Infinity() && fXmax == TMath::Infinity())
          result = integrator.Integral();
       //error = integrator.Error();
    }
    else {
       ROOT::Math::IntegratorOneDim integrator(fconv, ROOT::Math::IntegratorOneDimOptions::DefaultIntegratorType(), 1e-9, 1e-9);
-      if (fXmin != - TMath::Infinity() && fXmax != TMath::Infinity() )
+      if      (fXmin != - TMath::Infinity() && fXmax != TMath::Infinity() )
          result =  integrator.Integral(fXmin, fXmax);
       else if (fXmin == - TMath::Infinity() && fXmax != TMath::Infinity() )
          result = integrator.IntegralLow(fXmax);
@@ -232,10 +213,18 @@ Double_t TF1Convolution::MakeNumConv(Double_t t)
 Double_t TF1Convolution::operator()(Double_t* t, Double_t* p)//used in TF1 when doing the fit, will be valuated at each point
 {
    if (p!=0)   TF1Convolution::SetParameters(p);                           // first refresh the parameters
+  
    Double_t result = 0.;
    if (fFlagFFT)  result = MakeFFTConv(t[0]);
    else           result = MakeNumConv(t[0]);
    return result;
+}
+//________________________________________________________________________
+void TF1Convolution::SetNofPointsFFT(Int_t n)
+{
+   if (n<0) return;
+   fNofPoints = n;
+   fGraphConv -> Set(fNofPoints); //set nof points of the Tgraph
 }
 
 //________________________________________________________________________
@@ -265,6 +254,12 @@ void TF1Convolution::SetParameters(Double_t* p)
       //std::cout << "In SetParameters: fParams2["<<k-offset2<<"] = "<<fParams2[k-offset2]<<std::endl;
       k++;
    }
+   //do the graph for FFT convolution
+   if (fFlagFFT)
+   {
+      MakeGraphConv();
+      fFlagGraph = true;
+   }
 }
 
 //________________________________________________________________________
@@ -278,6 +273,7 @@ void TF1Convolution::SetParameters(Double_t p0, Double_t p1, Double_t p2, Double
 //________________________________________________________________________
 void TF1Convolution::SetRange(Double_t percentage)
 {
+   if (percentage<0) return;
    fXmin = fFunction1->GetXmin() - std::abs(fFunction1->GetXmin())*percentage;
    fXmax = fFunction1->GetXmax() + std::abs(fFunction1->GetXmax())*percentage;
 
@@ -286,9 +282,10 @@ void TF1Convolution::SetRange(Double_t percentage)
 //________________________________________________________________________
 void TF1Convolution::SetRange(Double_t a, Double_t b)
 {
+   if (a>=b)   return;
    if (fFlagFFT && ( a==-TMath::Infinity() || b==TMath::Infinity() ) )
    {
-      Error("TF1Convolution","In FFT mode, range can not be infinite. Infinity has been replaced by range of first function plus a bufferzone to avoid spillover.");
+      Error("TF1Convolution::SetRange()","In FFT mode, range can not be infinite. Infinity has been replaced by range of first function plus a bufferzone to avoid spillover.");
       if (a==-TMath::Infinity()) fXmin = fFunction1->GetXmin() - std::abs(fFunction1->GetXmin())*0.2;
       if (b== TMath::Infinity()) fXmax = fFunction1->GetXmax() + std::abs(fFunction1->GetXmax())*0.2;
    }
