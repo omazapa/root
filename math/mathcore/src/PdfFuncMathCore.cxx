@@ -18,139 +18,128 @@
 namespace ROOT {
 namespace Math {
 
-
-   double beta_pdf(double x, double a, double b) {
-      if (x < 0 || x > 1.0) return 0;
-      if (x == 0 ) {
+   //____________________________________________________________________
+   double beta_pdf(double x, double a, double b)
+   {
+      if (x < 0. || x > 1.)   return 0.;
+      if (x == 0.)
+      {
          // need this wor Windows
-         if (a < 1) return  std::numeric_limits<double>::infinity();
-         else if (a > 1) return  0;
-         else if ( a == 1) return b; // to avoid a nan from log(0)*0
+         if (a < 1)           return std::numeric_limits<double>::infinity();
+         else if (a > 1)      return 0.;
+         else if (a == 1)     return b; // to avoid a nan from log(0)*0
       }
-      if (x == 1 ) {
+      if (x == 1.)
+      {
          // need this wor Windows
-         if (b < 1) return  std::numeric_limits<double>::infinity();
-         else if (b > 1) return  0;
-         else if ( b == 1) return a; // to avoid a nan from log(0)*0
+         if (b < 1)           return std::numeric_limits<double>::infinity();
+         else if (b > 1)      return 0.;
+         else if (b == 1)     return a; // to avoid a nan from log(0)*0
       }
       return std::exp( ROOT::Math::lgamma(a + b) - ROOT::Math::lgamma(a) - ROOT::Math::lgamma(b) +
                        std::log(x) * (a -1.) + ROOT::Math::log1p(-x ) * (b - 1.) );
    }
-
-   double binomial_pdf(unsigned int k, double p, unsigned int n) {
-
-      if (k > n) {
-         return 0.0;
-      } else {
-
+   
+   //____________________________________________________________________
+   double binomial_pdf(unsigned int k, double p, unsigned int n)
+   {
+      if (k > n)  return 0.;
+      else
+      {
          double coeff = ROOT::Math::lgamma(n+1) - ROOT::Math::lgamma(k+1) - ROOT::Math::lgamma(n-k+1);
          return std::exp(coeff + k * std::log(p) + (n - k) * ROOT::Math::log1p(-p));
       }
    }
+   
+   //____________________________________________________________________
+   double negative_binomial_pdf(unsigned int k, double p, double n)
+   {
+      // implement in term of gamma function
 
-   double negative_binomial_pdf(unsigned int k, double p, double n) {
-      // impelment in term of gamma function
-
-      if (n < 0)  return 0.0;
-      if (p < 0 || p > 1.0) return 0.0;
+      if (n < 0)              return 0.;
+      if (p < 0. || p > 1.)   return 0.;
 
       double coeff = ROOT::Math::lgamma(k+n) - ROOT::Math::lgamma(k+1.0) - ROOT::Math::lgamma(n);
       return std::exp(coeff + n * std::log(p) + double(k) * ROOT::Math::log1p(-p));
-
    }
-
-
-   double breitwigner_pdf(double x, double gamma, double x0) {
-
-      double gammahalf = gamma/2.0;
+   
+   //____________________________________________________________________
+   double breitwigner_pdf(double x, double gamma, double x0)
+   {
+      double gammahalf = gamma/2.;
       return gammahalf/(M_PI * ((x-x0)*(x-x0) + gammahalf*gammahalf));
-
-
    }
-
-
-
-   double cauchy_pdf(double x, double b, double x0) {
-
+   
+   //____________________________________________________________________
+   double cauchy_pdf(double x, double b, double x0)
+   {
       return b/(M_PI * ((x-x0)*(x-x0) + b*b));
-
    }
-
-
-
-   double chisquared_pdf(double x, double r, double x0) {
-
-      if ((x-x0) <  0) {
-         return 0.0;
-      }
+   
+   //____________________________________________________________________
+   double chisquared_pdf(double x, double r, double x0)
+   {
+      if ((x-x0) <  0.)       return 0.;
       double a = r/2 -1.;
       // let return inf for case x  = x0 and treat special case of r = 2 otherwise will return nan
-      if (x == x0 && a == 0) return 0.5;
-
+      if (x == x0 && a == 0)  return 0.5;
       return std::exp ((r/2 - 1) * std::log((x-x0)/2) - (x-x0)/2 - ROOT::Math::lgamma(r/2))/2;
-
    }
 
-
-
-   double exponential_pdf(double x, double lambda, double x0) {
-
-      if ((x-x0) < 0) {
-         return 0.0;
-      } else {
-         return lambda * std::exp (-lambda * (x-x0));
-      }
-
+   //____________________________________________________________________
+   double crystalball_pdf(double x, double alpha, double n, double mean, double sigma)
+   {
+      if (sigma < 0.)     return 0.;
+      double abs_alpha = std::abs(alpha);
+      double A = std::pow(n/abs_alpha,n) * std::exp(-alpha*alpha/2.);
+      double B = n/abs_alpha -abs_alpha;
+      double C = n/abs_alpha * 1./(n-1.) * std::exp(-alpha*alpha/2.);
+      double D = std::sqrt(M_PI/2.)*(1.+ROOT::Math::erf(abs_alpha/std::sqrt(2.)));
+      double N = 1./(sigma*(C+D));
+      if ((x-mean)/sigma > -alpha)  return N*std::exp(-(x-mean)*(x-mean)/(2.*sigma*sigma));
+      else                          return N*A*std::pow(B-(x-mean)/sigma,-n);
    }
 
-
-
-   double fdistribution_pdf(double x, double n, double m, double x0) {
-
+   //____________________________________________________________________
+   double exponential_pdf(double x, double lambda, double x0)
+   {
+      if ((x-x0) < 0)   return 0.0;
+      else              return lambda * std::exp (-lambda * (x-x0));
+   }
+   
+   //____________________________________________________________________
+   double fdistribution_pdf(double x, double n, double m, double x0)
+   {
       // function is defined only for both n and m > 0
-      if (n < 0 || m < 0)
-         return std::numeric_limits<double>::quiet_NaN();
-      if ((x-x0) < 0)
-         return 0.0;
-
+      if (n < 0 || m < 0)  return std::numeric_limits<double>::quiet_NaN();
+      if ((x-x0) < 0)      return 0.0;
       return std::exp((n/2) * std::log(n) + (m/2) * std::log(m) + ROOT::Math::lgamma((n+m)/2) - ROOT::Math::lgamma(n/2) - ROOT::Math::lgamma(m/2)
                          + (n/2 -1) * std::log(x-x0) - ((n+m)/2) * std::log(m +  n*(x-x0)) );
-
    }
 
-
-
-   double gamma_pdf(double x, double alpha, double theta, double x0) {
-
-      if ((x-x0) < 0) {
-         return 0.0;
-      } else if ((x-x0) == 0) {
-
-         if (alpha == 1) {
-            return 1.0/theta;
-         } else {
-            return 0.0;
-         }
-
-      } else if (alpha == 1) {
-         return std::exp(-(x-x0)/theta)/theta;
-      } else {
-         return std::exp((alpha - 1) * std::log((x-x0)/theta) - (x-x0)/theta - ROOT::Math::lgamma(alpha))/theta;
+   //____________________________________________________________________
+   double gamma_pdf(double x, double alpha, double theta, double x0)
+   {
+      if      ((x-x0) < 0) return 0.0;
+      else if ((x-x0) == 0)
+      {
+         if (alpha == 1)   return 1.0/theta;
+         else              return 0.0;
       }
-
+      else if (alpha == 1) return std::exp(-(x-x0)/theta)/theta;
+      else                 return std::exp((alpha - 1) * std::log((x-x0)/theta) - (x-x0)/theta - ROOT::Math::lgamma(alpha))/theta;
    }
-
-
-
-   double gaussian_pdf(double x, double sigma, double x0) {
-
+   
+   //____________________________________________________________________
+   double gaussian_pdf(double x, double sigma, double x0)
+   {
       double tmp = (x-x0)/sigma;
       return (1.0/(std::sqrt(2 * M_PI) * std::fabs(sigma))) * std::exp(-tmp*tmp/2);
    }
-
-
-
-   double landau_pdf(double x, double xi, double x0) {
+   
+   //____________________________________________________________________
+   double landau_pdf(double x, double xi, double x0)
+   {
       // LANDAU pdf : algorithm from CERNLIB G110 denlan
       // same algorithm is used in GSL
 
@@ -176,108 +165,108 @@ namespace Math {
 
       static double a2[2] = {-1.845568670,-4.284640743};
 
-      if (xi <= 0) return 0;
+      if (xi <= 0)      return 0.;
       double v = (x - x0)/xi;
       double u, ue, us, denlan;
-      if (v < -5.5) {
-         u   = std::exp(v+1.0);
-         if (u < 1e-10) return 0.0;
-         ue  = std::exp(-1/u);
-         us  = std::sqrt(u);
+      if (v < -5.5)
+      {
+         u      = std::exp(v+1.0);
+         if (u < 1e-10) return 0.;
+         ue     = std::exp(-1/u);
+         us     = std::sqrt(u);
          denlan = 0.3989422803*(ue/us)*(1+(a1[0]+(a1[1]+a1[2]*u)*u)*u);
-      } else if(v < -1) {
-         u   = std::exp(-v-1);
+      }
+      else if (v < -1)
+      {
+         u      = std::exp(-v-1);
          denlan = std::exp(-u)*std::sqrt(u)*
-            (p1[0]+(p1[1]+(p1[2]+(p1[3]+p1[4]*v)*v)*v)*v)/
-            (q1[0]+(q1[1]+(q1[2]+(q1[3]+q1[4]*v)*v)*v)*v);
-      } else if(v < 1) {
+                  (p1[0]+(p1[1]+(p1[2]+(p1[3]+p1[4]*v)*v)*v)*v)/
+                  (q1[0]+(q1[1]+(q1[2]+(q1[3]+q1[4]*v)*v)*v)*v);
+      }
+      else if (v < 1)
+      {
          denlan = (p2[0]+(p2[1]+(p2[2]+(p2[3]+p2[4]*v)*v)*v)*v)/
-            (q2[0]+(q2[1]+(q2[2]+(q2[3]+q2[4]*v)*v)*v)*v);
-      } else if(v < 5) {
+                  (q2[0]+(q2[1]+(q2[2]+(q2[3]+q2[4]*v)*v)*v)*v);
+      }
+      else if (v < 5)
+      {
          denlan = (p3[0]+(p3[1]+(p3[2]+(p3[3]+p3[4]*v)*v)*v)*v)/
-            (q3[0]+(q3[1]+(q3[2]+(q3[3]+q3[4]*v)*v)*v)*v);
-      } else if(v < 12) {
-         u   = 1/v;
+                  (q3[0]+(q3[1]+(q3[2]+(q3[3]+q3[4]*v)*v)*v)*v);
+      }
+      else if(v < 12)
+      {
+         u      = 1/v;
          denlan = u*u*(p4[0]+(p4[1]+(p4[2]+(p4[3]+p4[4]*u)*u)*u)*u)/
-            (q4[0]+(q4[1]+(q4[2]+(q4[3]+q4[4]*u)*u)*u)*u);
-      } else if(v < 50) {
-         u   = 1/v;
+                      (q4[0]+(q4[1]+(q4[2]+(q4[3]+q4[4]*u)*u)*u)*u);
+      }
+      else if(v < 50)
+      {
+         u      = 1/v;
          denlan = u*u*(p5[0]+(p5[1]+(p5[2]+(p5[3]+p5[4]*u)*u)*u)*u)/
-            (q5[0]+(q5[1]+(q5[2]+(q5[3]+q5[4]*u)*u)*u)*u);
-      } else if(v < 300) {
-         u   = 1/v;
+                      (q5[0]+(q5[1]+(q5[2]+(q5[3]+q5[4]*u)*u)*u)*u);
+      }
+      else if(v < 300)
+      {
+         u      = 1/v;
          denlan = u*u*(p6[0]+(p6[1]+(p6[2]+(p6[3]+p6[4]*u)*u)*u)*u)/
-            (q6[0]+(q6[1]+(q6[2]+(q6[3]+q6[4]*u)*u)*u)*u);
-      } else {
-         u   = 1/(v-v*std::log(v)/(v+1));
+                      (q6[0]+(q6[1]+(q6[2]+(q6[3]+q6[4]*u)*u)*u)*u);
+      }
+      else
+      {
+         u      = 1/(v-v*std::log(v)/(v+1));
          denlan = u*u*(1+(a2[0]+a2[1]*u)*u);
       }
       return denlan/xi;
-
    }
-
-
-
-
-
-   double lognormal_pdf(double x, double m, double s, double x0) {
-
-      if ((x-x0) <= 0) {
-         return 0.0;
-      } else {
+   
+   //____________________________________________________________________
+   double lognormal_pdf(double x, double m, double s, double x0)
+   {
+      if ((x-x0) <= 0)  return 0.;
+      else
+      {
          double tmp = (std::log((x-x0)) - m)/s;
          return 1.0 / ((x-x0) * std::fabs(s) * std::sqrt(2 * M_PI)) * std::exp(-(tmp * tmp) /2);
       }
-
    }
-
-
-
-   double normal_pdf(double x, double sigma, double x0) {
-
+   
+   //____________________________________________________________________
+   double normal_pdf(double x, double sigma, double x0)
+   {
       double tmp = (x-x0)/sigma;
       return (1.0/(std::sqrt(2 * M_PI) * std::fabs(sigma))) * std::exp(-tmp*tmp/2);
-
    }
-
-
-
-   double poisson_pdf(unsigned int n, double mu) {
-
-      if (n >  0)
+   
+   //____________________________________________________________________
+   double poisson_pdf(unsigned int n, double mu)
+   {
+      if (n > 0)
          return std::exp (n*std::log(mu) - ROOT::Math::lgamma(n+1) - mu);
-      else  {
+      else
+      {
          //  when  n = 0 and mu = 0,  1 is returned
          if (mu >= 0) return std::exp(-mu);
          // return a nan for mu < 0 since it does not make sense
          return std::log(mu);
       }
-
    }
-
-
-
-   double tdistribution_pdf(double x, double r, double x0) {
-
+   
+   //____________________________________________________________________
+   double tdistribution_pdf(double x, double r, double x0)
+   {
       return (std::exp (ROOT::Math::lgamma((r + 1.0)/2.0) - ROOT::Math::lgamma(r/2.0)) / std::sqrt (M_PI * r))
       * std::pow ((1.0 + (x-x0)*(x-x0)/r), -(r + 1.0)/2.0);
 
    }
-
-
-
-   double uniform_pdf(double x, double a, double b, double x0) {
+   //____________________________________________________________________
+   double uniform_pdf(double x, double a, double b, double x0)
+   {
 
       //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! when a=b
-
-      if ((x-x0) < b && (x-x0) >= a) {
-         return 1.0/(b - a);
-      } else {
-         return 0.0;
-      }
+      if ((x-x0) < b && (x-x0) >= a)   return 1.0/(b - a);
+      else                             return 0.;
 
    }
-
 
 } // namespace Math
 } // namespace ROOT

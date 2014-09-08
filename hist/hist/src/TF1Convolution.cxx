@@ -234,12 +234,11 @@ void TF1Convolution::SetParameters(Double_t* p)
    {
       fFunction1 -> SetParameter(i,p[i]);
       fParams1[i] = p[i];
-      //std::cout << "In SetParameters: fParams1["<<i<<"] = "<<fParams1[i]<<std::endl;
    }
    Int_t k       = 0;
    Int_t offset  = 0;
    Int_t offset2 = 0;
-   if (fCstIndex!=-1)   offset = 1; //because fParams2 has decreased of 1
+   if (fCstIndex!=-1)   offset = 1;
    Int_t totalnofparams = fNofParams1+fNofParams2+offset;
    for (int i=fNofParams1; i<totalnofparams; i++)
    {
@@ -251,7 +250,6 @@ void TF1Convolution::SetParameters(Double_t* p)
       }
       fFunction2 -> SetParameter(k,p[i-offset2]);
       fParams2[k-offset2] = p[i-offset2];
-      //std::cout << "In SetParameters: fParams2["<<k-offset2<<"] = "<<fParams2[k-offset2]<<std::endl;
       k++;
    }
    //do the graph for FFT convolution
@@ -291,5 +289,4 @@ void TF1Convolution::SetRange(Double_t a, Double_t b)
    }
    fXmin = a;
    fXmax = b;
-
 }

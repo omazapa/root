@@ -25,7 +25,7 @@ protected:
    std::vector < Int_t     > fNOfParams;     // Vector of size fNOfFunctions containing number of parameters for each function (does not contai the coefficients!)
    std::vector < Int_t     > fNOfNonCstParams;
    std::vector < Double_t* > fParams;        // Vector of size [fNOfFunctions][fNOfNonCstParams] containing an array of (non constant) parameters
-   // (non including coefficients) for each function
+                                             // (non including coefficients) for each function
    std::vector < Int_t     > fCstIndexes;
    
    void InitializeDataMembers(const std::vector <std::shared_ptr < TF1 >> &functions, const std::vector <Double_t> &coeffs); // acts as a constrcutor
