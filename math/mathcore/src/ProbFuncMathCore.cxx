@@ -72,7 +72,18 @@ namespace Math {
 
    }
 
+   double crystalball_cdf(double x, double alpha, double n, double mean, double sigma)
+   {
+      double abs_alpha = std::abs(alpha);
+      double A = std::pow(n/abs_alpha,n) * std::exp(-alpha*alpha/2.);
+      double B = n/abs_alpha -abs_alpha;
+      double C = n/abs_alpha * 1./(n-1.) * std::exp(-alpha*alpha/2.);
+      double D = std::sqrt(M_PI/2.)*(1.+ROOT::Math::erf(abs_alpha/std::sqrt(2.)));
+      double N = 1./(sigma*(C+D));
 
+      if ((x-mean)/sigma > -alpha)  return N*(ROOT::Math::gaussian_cdf(x, sigma, mean));
+      else                          return N*A*sigma/(-n+1)*std::pow(B-(x-mean)/sigma,-n+1);
+   }
 
    double exponential_cdf_c(double x, double lambda, double x0) {
 

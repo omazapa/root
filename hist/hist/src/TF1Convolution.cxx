@@ -18,7 +18,7 @@
 #include "Math/AdaptiveIntegratorMultiDim.h"
 #include "Math/Functor.h"
 #include "TVirtualFFT.h"
-#include <fftw3.h>
+//#include <fftw3.h>
 
 //________________________________________________________________________
 // class wrapping evaluation of TF1(t) * TF1(x-t)

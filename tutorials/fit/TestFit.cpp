@@ -79,7 +79,9 @@ void TestFit()
    TF1 *f_exp    = new TF1("Exponential","expo",-5.,5.);
    TF1 *f_gauss  = new TF1("Gaussian",   "gaus",-5.,5.);
    TF1 *f_gauss2 = new TF1("Gaussian2",  "gaus",-5.,5.);
-
+   TF1 *f_gaussn  = new TF1("try","gausn",-5.,5.);
+   std::cout<<f_gaussn->GetNumber()<<std::endl;
+   std::cout<<f_gauss->GetNumber()<<std::endl;
    const std::vector < TF1*     > functions  = {f_exp, f_gauss, f_gauss2};
    const std::vector < Double_t > coeffs     = {1.,1.,1.};
    TF1NormSum *fnorm_exp_gauss = new TF1NormSum("expo + gaus + gaus");

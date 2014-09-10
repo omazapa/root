@@ -44,6 +44,7 @@
 #include "Math/Factory.h"
 #include "Math/ChebyshevPol.h"
 #include "Fit/FitResult.h"
+#include "AnalyticalIntegrals.h"
 
 //#include <iostream>
 
@@ -2673,9 +2674,13 @@ Double_t TF1::IntegralMultiple(Int_t n, const Double_t *a, const Double_t *b, In
 //______________________________________________________________________________
 void TF1::IntegrateForNormalization()
 {
+   
     // Store the value of the integral, which will be used for normalization
     // in the TF1::EvalPar method
-    
+   if (TF1::GetNumber() > 0)
+   {
+      fNormIntegral = AnalyticalIntegral(this);
+      /*
     if (TF1::GetNumber() == 200)                                        // exp(p0+p1*x)
     {
         Double_t p0   = TF1::GetParameter(0);
@@ -2690,7 +2695,9 @@ void TF1::IntegrateForNormalization()
         fNormIntegral  =  sqrt(2*M_PI*sigma)* (ROOT::Math::gaussian_cdf(fXmax, sigma, mean)-
                                                ROOT::Math::gaussian_cdf(fXmin, sigma, mean));
        //std::cout << " integral: " << fNormIntegral << std::endl;
-    }
+    }*/
+     if (fNormIntegral == 0)  fNormIntegral = TF1::Integral(fXmin,fXmax); //if it is a formula that havent been implmented in analytcial integral
+   }
    else fNormIntegral = TF1::Integral(fXmin,fXmax);                     // use setparameters and evalpar and therefore is slower
 }
 
