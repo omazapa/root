@@ -41,9 +41,15 @@ Double_t AnalyticalIntegral(TF1 *f)
    {
       result = p[1]*(ROOT::Math::landau_cdf(xmax,p[1],p[2]) - ROOT::Math::landau_cdf(xmin,p[1],p[2]));
    }
-   else if (num>=300 &&num<400)
+   else if (num>=300 && num<400)//polN
    {
    
+      Int_t n = num - 300;
+      for (int i=0;i<n+1;i++)
+      {
+         result += p[i]/(i+1)*(std::pow(xmax,i+1)-std::pow(xmin,i+1));
+      }
    }
+   
    return result;
 }

@@ -2365,7 +2365,15 @@ Double_t TF1::Integral(Double_t a, Double_t b,  Double_t epsrel)
 {
    // use IntegralOneDim
    Double_t error = 0;
-   return IntegralOneDim(a,b, epsrel, epsrel, error);
+   Double_t result = 0.;
+   if (TF1::GetNumber() > 0)
+   {
+      result = AnalyticalIntegral(this);
+      if (result == 0.)  result = IntegralOneDim(a,b, epsrel, epsrel, error); //if it is a formula that havent been implmented in analytical integral
+   }
+   else result = IntegralOneDim(a,b, epsrel, epsrel, error);
+   return result;
+   // use setparameters and evalpar and therefore is slower
 }
 
 
@@ -2680,23 +2688,7 @@ void TF1::IntegrateForNormalization()
    if (TF1::GetNumber() > 0)
    {
       fNormIntegral = AnalyticalIntegral(this);
-      /*
-    if (TF1::GetNumber() == 200)                                        // exp(p0+p1*x)
-    {
-        Double_t p0   = TF1::GetParameter(0);
-        Double_t p1   = TF1::GetParameter(1);
-        fNormIntegral = (exp(p0)/p1)*(exp(-p1*fXmin)-exp(-p1*fXmax));   //ROOT::Math::exponential_cdf();
-        //std::cout << " integral: " << fNormIntegral << std::endl;
-    }
-    else if (TF1::GetNumber() == 100)                                   // c0*exp(-0.5*((x-mean)/sigma)^2))
-    {
-        Double_t mean  = TF1::GetParameter(1);
-        Double_t sigma = TF1::GetParameter(2);
-        fNormIntegral  =  sqrt(2*M_PI*sigma)* (ROOT::Math::gaussian_cdf(fXmax, sigma, mean)-
-                                               ROOT::Math::gaussian_cdf(fXmin, sigma, mean));
-       //std::cout << " integral: " << fNormIntegral << std::endl;
-    }*/
-     if (fNormIntegral == 0)  fNormIntegral = TF1::Integral(fXmin,fXmax); //if it is a formula that havent been implmented in analytcial integral
+      if (fNormIntegral == 0.)  fNormIntegral = TF1::Integral(fXmin,fXmax); //if it is a formula that havent been implmented in analytical integral
    }
    else fNormIntegral = TF1::Integral(fXmin,fXmax);                     // use setparameters and evalpar and therefore is slower
 }

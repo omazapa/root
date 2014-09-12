@@ -12,6 +12,7 @@ namespace ROOT {
 namespace Math {
 
 
+   
    static const double kSqrt2 = 1.41421356237309515; // sqrt(2.)
 
    double beta_cdf_c(double x, double a, double b) {
@@ -76,7 +77,7 @@ namespace Math {
    {
       double abs_alpha = std::abs(alpha);
       double A = std::pow(n/abs_alpha,n) * std::exp(-alpha*alpha/2.);
-      double B = n/abs_alpha -abs_alpha;
+      double B = n/abs_alpha - abs_alpha;
       double C = n/abs_alpha * 1./(n-1.) * std::exp(-alpha*alpha/2.);
       double D = std::sqrt(M_PI/2.)*(1.+ROOT::Math::erf(abs_alpha/std::sqrt(2.)));
       double N = 1./(sigma*(C+D));
