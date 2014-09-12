@@ -30,20 +30,19 @@ Double_t AnalyticalIntegral(TF1 *f)
    }
    else if (num == 100)//gaus: [0]*exp(-0.5*((x-[1])/[2])^2))
    {
-      result =  p[0]*(ROOT::Math::gaussian_cdf(xmax, p[2], p[1])- ROOT::Math::gaussian_cdf(xmin, p[2], p[1]));//sqrt(2*M_PI*p[2])
+      result =  p[0]*(ROOT::Math::gaussian_cdf(xmax, p[2], p[1])- ROOT::Math::gaussian_cdf(xmin, p[2], p[1]));//sqrt(2*M_PI*p[2]*p[2])
    }
    /*else if (num == ?)gaussn
     {
     result =  ROOT::Math::gaussian_cdf(xmax, p[2], p[1])- ROOT::Math::gaussian_cdf(xmin, p[2], p[1]);
     }
     */
-   else if (num==400)//landau: root::math::landau(x,mpv=0,sigma=1,bool norm=false)
+   else if (num == 400)//landau: root::math::landau(x,mpv=0,sigma=1,bool norm=false)
    {
       result = p[1]*(ROOT::Math::landau_cdf(xmax,p[1],p[2]) - ROOT::Math::landau_cdf(xmin,p[1],p[2]));
    }
-   else if (num>=300 && num<400)//polN
+   else if (num >= 300 && num < 400)//polN
    {
-   
       Int_t n = num - 300;
       for (int i=0;i<n+1;i++)
       {

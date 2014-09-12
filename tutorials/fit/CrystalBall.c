@@ -83,7 +83,7 @@ void CrystalBall()
    h_sum -> Scale(1.,"width");
 
    //fit
-   f_sum -> SetParameters(3.+Epsilon,1.-Epsilon,-0.5+Epsilon,1.+Epsilon, 2.+Epsilon,3+Epsilon,0.3+Epsilon);
+   f_sum -> SetParameters(3.,1.,-0.5,1., 2.,3,0.3);
    new TCanvas("crystal ball","crystal ball",800,1000);
    //h_sum -> Fit("fsum");
    h_sum -> Draw();

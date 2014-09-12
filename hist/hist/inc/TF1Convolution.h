@@ -42,6 +42,7 @@ class TF1Convolution
    
    TF1Convolution(TF1* function1, TF1* function2);
    TF1Convolution(TF1* function1, TF1* function2, Double_t xmin, Double_t xmax);
+   TF1Convolution(TString formula);
    TF1Convolution(TString formula1, TString formula2);
    
    void     SetParameters(Double_t* p);

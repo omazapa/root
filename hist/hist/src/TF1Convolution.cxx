@@ -9,6 +9,8 @@
 #include "TF1Convolution.h"
 #include "Riostream.h"
 #include "TROOT.h"
+#include "TObject.h"
+#include "TObjString.h"
 #include "TMath.h"
 #include "Math/Integrator.h"
 #include "Math/IntegratorMultiDim.h"
@@ -68,23 +70,16 @@ void TF1Convolution::InitializeDataMembers(TF1* function1, TF1* function2)
    for (int i=0; i<fNofParams1; i++)
    {
       fParams1[i] = fFunction1 -> GetParameter(i);
-      //std::cout << "In constructor: fParams1["<<i<<"] = "<<fParams1[i]<<std::endl;
-      
    }
    for (int i=0; i<fNofParams2; i++)
    {
       fParams2[i] = fFunction2 -> GetParameter(i);
-      //std::cout << "In consructor: fParams2["<<i<<"] = "<<fParams2[i]<<std::endl;
-      
    }
-   
-   // std::cout <<"index constant: "<<fCstIndex<<std::endl;
    if (fCstIndex!=-1)
    {
       fFunction2  -> FixParameter(fCstIndex,1.);
       fNofParams2 =  fNofParams2-1;
       fParams2.erase(fParams2.begin()+fCstIndex);
-      // std::cout<<"after: NofParams2 = "<<fNofParams2<<std::endl;
    }
 }
 //________________________________________________________________________
@@ -102,12 +97,28 @@ TF1Convolution::TF1Convolution(TF1* function1, TF1* function2, Double_t xmin, Do
 }
 
 //________________________________________________________________________
+TF1Convolution::TF1Convolution(TString formula)
+{
+   TF1::InitStandardFunctions();
+   
+   TObjArray *objarray   = formula.Tokenize("*");
+   std::vector < TString > stringarray(2);
+   std::vector < TF1*    > funcarray(2);
+   for (int i=0; i<2; i++)
+   {
+      stringarray[i] = ((TObjString*)((*objarray)[i])) -> GetString();
+      stringarray[i].ReplaceAll(" ","");
+      funcarray[i]   = (TF1*)(gROOT -> GetListOfFunctions() -> FindObject(stringarray[i]));
+   }
+   InitializeDataMembers(funcarray[0], funcarray[1]);
+}
+
+//________________________________________________________________________
 TF1Convolution::TF1Convolution(TString formula1, TString formula2)
 {
    TF1::InitStandardFunctions();
    (TString)formula1.ReplaceAll(" ","");
    (TString)formula2.ReplaceAll(" ","");
-   //((TObjString*)((*arrayall)[i])) -> GetString();
    TF1* f1 = (TF1*)(gROOT -> GetListOfFunctions() -> FindObject(formula1));
    TF1* f2 = (TF1*)(gROOT -> GetListOfFunctions() -> FindObject(formula2));
    InitializeDataMembers(f1, f2);
@@ -127,13 +138,10 @@ void TF1Convolution::MakeGraphConv()
    for (int i=0; i<fNofPoints; i++)
    {
       x[i]   = fXmin + (fXmax-fXmin)/(fNofPoints-1)*i;
-      //std::cout << " x["<<i<<"] = "<< x[i] << std::endl;
       in1[i] = fFunction1 -> Eval(x[i]);
-      //std::cout<<"in1["<<i<<"] ="<<in1[i]<<std::endl;
       in2[i] = fFunction2 -> Eval(x[i]);
-      //std::cout<<"in2["<<i<<"] ="<<in2[i]<<std::endl;
-      fft1 -> SetPoint(i, in1[i]);
-      fft2 -> SetPoint(i, in2[i]);
+      fft1  -> SetPoint(i, in1[i]);
+      fft2  -> SetPoint(i, in2[i]);
    }
    fft1 -> Transform();
    fft2 -> Transform();
@@ -147,12 +155,7 @@ void TF1Convolution::MakeGraphConv()
    {
       fft1 -> GetPointComplex(i,re1,im1);
       fft2 -> GetPointComplex(i,re2,im2);
-      //std::cout << " re 1 " << i <<" : "<<re1<< std::endl;
-      //std::cout << " re 2 " << i <<" : "<<re2<< std::endl;
-      //std::cout << " im 1 " << i <<" : "<<im1<< std::endl;
-      //std::cout << " im 2 " << i <<" : "<<im2<< std::endl;
       out_re = re1*re2 - im1*im2;
-      // std::cout << " out_re " << i <<" = "<< out_re << std::endl;
       out_im = re1*im2 + re2*im1;
       fftinverse -> SetPoint(i, out_re, out_im);
    }
@@ -160,10 +163,7 @@ void TF1Convolution::MakeGraphConv()
 
    for (int i=0;i<fNofPoints;i++)
    {
-      //std::cout<<"x "<<i << " : "<<x[i]<<std::endl;
-      //std::cout<<"y "<<i << " : "<<fftinverse->GetPointReal(i)/fNofPoints<<std::endl;
-      fGraphConv->SetPoint(i, x[i], fftinverse->GetPointReal(i)/fNofPoints);//because not normalized
-      
+     fGraphConv->SetPoint(i, x[i], fftinverse->GetPointReal(i)/fNofPoints);//because not normalized
    }
 }
 
@@ -192,9 +192,9 @@ Double_t TF1Convolution::MakeNumConv(Double_t t)
          result = integrator.IntegralUp(fXmin);
       else if (fXmin == - TMath::Infinity() && fXmax == TMath::Infinity())
          result = integrator.Integral();
-      //error = integrator.Error();
    }
-   else {
+   else
+   {
       ROOT::Math::IntegratorOneDim integrator(fconv, ROOT::Math::IntegratorOneDimOptions::DefaultIntegratorType(), 1e-9, 1e-9);
       if      (fXmin != - TMath::Infinity() && fXmax != TMath::Infinity() )
          result =  integrator.Integral(fXmin, fXmax);
@@ -204,7 +204,6 @@ Double_t TF1Convolution::MakeNumConv(Double_t t)
          result = integrator.IntegralUp(fXmin);
       else if (fXmin == - TMath::Infinity() && fXmax == TMath::Infinity() )
          result = integrator.Integral();
-      //error = iod.Error();
    }
    return result;
 }
@@ -272,9 +271,8 @@ void TF1Convolution::SetParameters(Double_t p0, Double_t p1, Double_t p2, Double
 void TF1Convolution::SetRange(Double_t percentage)
 {
    if (percentage<0) return;
-   fXmin = fFunction1->GetXmin() - std::abs(fFunction1->GetXmin())*percentage;
-   fXmax = fFunction1->GetXmax() + std::abs(fFunction1->GetXmax())*percentage;
-
+   fXmin = fFunction1 -> GetXmin() - std::abs(fFunction1 -> GetXmin())*percentage;
+   fXmax = fFunction1 -> GetXmax() + std::abs(fFunction1 -> GetXmax())*percentage;
 }
 
 //________________________________________________________________________
@@ -284,8 +282,8 @@ void TF1Convolution::SetRange(Double_t a, Double_t b)
    if (fFlagFFT && ( a==-TMath::Infinity() || b==TMath::Infinity() ) )
    {
       Error("TF1Convolution::SetRange()","In FFT mode, range can not be infinite. Infinity has been replaced by range of first function plus a bufferzone to avoid spillover.");
-      if (a==-TMath::Infinity()) fXmin = fFunction1->GetXmin() - std::abs(fFunction1->GetXmin())*0.2;
-      if (b== TMath::Infinity()) fXmax = fFunction1->GetXmax() + std::abs(fFunction1->GetXmax())*0.2;
+      if (a ==-TMath::Infinity()) fXmin = fFunction1 -> GetXmin() - std::abs(fFunction1 -> GetXmin())*0.2;
+      if ( b== TMath::Infinity()) fXmax = fFunction1 -> GetXmax() + std::abs(fFunction1 -> GetXmax())*0.2;
    }
    fXmin = a;
    fXmax = b;

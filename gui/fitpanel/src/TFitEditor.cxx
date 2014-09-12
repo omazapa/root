@@ -574,8 +574,7 @@ void TFitEditor::CreateFunctionGroup()
    fAdd = new TGRadioButton(bgr, "Add", kFP_ADD);
    fAdd->SetToolTipText("Addition");
    fConv = new TGRadioButton(bgr, "Conv", kFP_CONV);
-   fConv->SetToolTipText("Convolution (not implemented yet)");
-   fConv->SetState(kButtonDisabled);
+   fConv->SetToolTipText("Convolution");
    fLayoutNone = new TGLayoutHints(kLHintsLeft,0,5,3,-10);
    fLayoutAdd  = new TGLayoutHints(kLHintsLeft,10,5,3,-10);
    fLayoutConv = new TGLayoutHints(kLHintsLeft,10,5,3,-10);
@@ -2208,6 +2207,27 @@ void TFitEditor::DoAddition(Bool_t on)
    // insert the next selected function with a plus sign so that it
    // doesn't override the current content of the formula.
 
+   static Bool_t first = kFALSE;
+   TString s = fEnteredFunc->GetText();
+   if (on) {
+      if (!first) {
+         fSelLabel->SetText(s.Sizeof()>30?s(0,30)+"...":s);
+         //s += "(0)";
+         fEnteredFunc->SetText(s.Data());
+         first = kTRUE;
+         ((TGCompositeFrame *)fSelLabel->GetParent())->Layout();
+      }
+   } else {
+      first = kFALSE;
+   }
+}
+//______________________________________________________________________________
+void TFitEditor::DoNormAddition(Bool_t on)
+{
+   // Slot connected to addition of predefined functions. It will
+   // insert the next selected function with a plus sign so that it
+   // doesn't override the current content of the formula.
+   
    static Bool_t first = kFALSE;
    TString s = fEnteredFunc->GetText();
    if (on) {
