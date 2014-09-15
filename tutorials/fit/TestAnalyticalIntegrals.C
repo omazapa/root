@@ -44,11 +44,11 @@ void TestAnalyticalIntegrals()
    std::cout<<"ana int pol3 "<<f_pol3->Integral(-5.,5.)<<std::endl;
    
    TF1 *f_cb  = new TF1("MyCrystalBall","ROOT::Math::crystalball_pdf(x,[0],[1],[2],[3])",-5.,5.);
-   f_cb -> SetParameters(1,2,3.,0.3);
+   f_cb -> SetParameters(1,3,3.,0.3);
    new TCanvas("cb","cb",800,1000);
    f_cb->Draw();
    cout<<"num int cb "<<f_cb->Integral(-TMath::Infinity(),TMath::Infinity())<<endl;
-   cout<<"ana int cb "<<ROOT::Math::crystalball_cdf(TMath::Infinity(),1,2,3.,0.3)-ROOT::Math::crystalball_cdf(-TMath::Infinity(),1,2,3.,0.3)<<endl;
+   cout<<"ana int cb "<<ROOT::Math::crystalball_cdf(TMath::Infinity(),1,3,3.,0.3)<<endl;
    
    TF1 *f_gaus  = new TF1("MyGauss","gaus",-5.,5.);
    f_gaus -> SetParameters(1.,0.,0.3);

@@ -2,12 +2,17 @@
 // Authors: L. Moneta, A. Zsenei   06/2005
 
 
+
+#include "Riostream.h"
+#include "TROOT.h"
+#include "TObject.h"
+#include "TMath.h"
 #include "Math/Math.h"
 #include "Math/ProbFuncMathCore.h"
 #include "Math/SpecFuncMathCore.h"
-
+#include <stdio.h>
 #include <limits>
-
+using namespace std;
 namespace ROOT {
 namespace Math {
 
@@ -64,17 +69,43 @@ namespace Math {
    }
 
    
-   double crystalball_cdf(double x, double alpha, double n, double mean, double sigma)
+   double crystalball_cdf(double x, double alpha, int n, double mean, double sigma)
    {
+      // parameters:
+      // alpha : is non equal to zero, define the # of sigma from which it becomes a power-law function (from mean-alpha*sigma)
+      // n > 1 : is integrer, is the power of the low  tail
+      if (sigma == 0)   return 0;
+      if (alpha==0)
+      {
+         Error("crystalball_cdf","CrystalBall function not defined at alpha=0");
+         return 0.;
+      }
+      if (n==1)
+      {
+         Error("crystalball_cdf","CrystalBall function not defined at n=1");
+         return 0.;
+      }
+      if (n<=0)   Warning("crystalball_cdf","No physical meaning when n<=0");
+      
       double abs_alpha = std::abs(alpha);
       double A = std::pow(n/abs_alpha,n) * std::exp(-alpha*alpha/2.);
       double B = n/abs_alpha - abs_alpha;
-      double C = n/abs_alpha * 1./(n-1.) * std::exp(-alpha*alpha/2.);
+      double C = (n/abs_alpha) * (1./(n-1)) * std::exp(-alpha*alpha/2.);
       double D = std::sqrt(M_PI/2.)*(1.+ROOT::Math::erf(abs_alpha/std::sqrt(2.)));
       double N = 1./(sigma*(C+D));
-
-      if ((x-mean)/sigma > -alpha)  return std::sqrt(2*M_PI*sigma*sigma)*N*(ROOT::Math::gaussian_cdf(x, sigma, mean));
-      else                          return N*A*sigma/(-n+1)*std::pow(B-(x-mean)/sigma,-n+1);
+      double z = (x-mean)/sigma;
+      double intgaus = 0.;
+      double intpow  = 0.;
+      if (z <= -alpha)
+      {
+         intpow  = - N*A*sigma/(-n+1)*std::pow(B-z,-n+1);//-int(infinity) =0 because alpha>0
+      }
+      else
+      {
+         intgaus = std::sqrt(2*M_PI)*sigma*N*(ROOT::Math::gaussian_cdf(x, sigma, mean) - ROOT::Math::gaussian_cdf(mean-alpha*sigma, sigma, mean));//
+         intpow  = - N*A*sigma/(-n+1.)*std::pow(B-z,-n+1);
+      }
+      return intgaus + intpow;
    }
 
    

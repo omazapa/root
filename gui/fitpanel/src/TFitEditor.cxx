@@ -2244,6 +2244,28 @@ void TFitEditor::DoNormAddition(Bool_t on)
 }
 
 //______________________________________________________________________________
+void TFitEditor::DoConvolution(Bool_t on)
+{
+   // Slot connected to addition of predefined functions. It will
+   // insert the next selected function with a plus sign so that it
+   // doesn't override the current content of the formula.
+   
+   static Bool_t first = kFALSE;
+   TString s = fEnteredFunc->GetText();
+   if (on) {
+      if (!first) {
+         fSelLabel->SetText(s.Sizeof()>30?s(0,30)+"...":s);
+        // s += "(0)";
+         fEnteredFunc->SetText(s.Data());
+         first = kTRUE;
+         ((TGCompositeFrame *)fSelLabel->GetParent())->Layout();
+      }
+   } else {
+      first = kFALSE;
+   }
+}
+
+//______________________________________________________________________________
 void TFitEditor::DoDataSet(Int_t selected)
 {
    // Selects the data set to be fitted
