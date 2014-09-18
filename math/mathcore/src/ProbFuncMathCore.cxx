@@ -98,7 +98,7 @@ namespace Math {
       double intpow  = 0.;
       if (z <= -alpha)
       {
-         intpow  = - N*A*sigma/(-n+1)*std::pow(B-z,-n+1);//-int(infinity) =0 because alpha>0
+         intpow  = - N*A*sigma/(-n+1)*std::pow(B-(alpha-mean/sigma),-n+1);//-int(infinity) =0 because alpha>0
       }
       else
       {

@@ -40,7 +40,7 @@ void fitNormSum()
    
    // ROOT -------------------------------------------------------------------------------------------------------
   
-   ROOT::Math::MinimizerOptions::SetDefaultMinimizer("Minuit2");
+   //ROOT::Math::MinimizerOptions::SetDefaultMinimizer("Minuit2");
    
    
    Int_t NEvents = 1e6;
@@ -60,9 +60,9 @@ void fitNormSum()
    Double_t Mean2   = 0.;
    Double_t Sigma2  = 0.3;
    
-   double LowerLimits[]     = {100.,       100.,       1000.,       0.,        -10.,      0.,         -10.,      0.};
+   double LowerLimits[]     = {100.,       100.,       100.,       0.,        -10.,      0.,         -10.,      0.};
    double UpperLimits[]     = {1.e9,       1.e9,       1.e9,       10.,       10.,       100.,       10.,       100.};
-   double ParametersArray[] = {7e5,        1.5e5,      1.e5, Alpha, Mean1, Sigma1, Mean2, Sigma2};
+   double ParametersArray[] = {1e5,        1.e5,      1.e5, Alpha, Mean1, Sigma1, Mean2, Sigma2};
    string StringArray[]     = {"nbkg",     "nsig1",    "nsig2",    "alpha",   "mean1",   "sigma1",   "mean2",   "sigma2"};
    //*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*
     
@@ -83,9 +83,10 @@ void fitNormSum()
 
    TF1NormSum *fnorm_exp_gauss = new TF1NormSum("expo + gaus + gaus");
    Int_t NofParams = fnorm_exp_gauss -> GetNpar();
+
    TF1   * fsum = new TF1("fsum",*fnorm_exp_gauss, -5., 5., NofParams);
 
-   fsum -> SetParameters(7e5, 1.5e5, 1.e5, Alpha, Mean1, Sigma1, Mean2, Sigma2);
+   fsum -> SetParameters(1e5, 1.e5, 1.e5, Alpha, Mean1, Sigma1, Mean2, Sigma2);
    for (int i=0; i<NofParams; i++)
    {
       fsum -> SetParLimits(i, LowerLimits[i],UpperLimits[i]);
@@ -96,11 +97,11 @@ void fitNormSum()
    new TCanvas("c_gaussexp","c_gaussexp",800,1000);
    TStopwatch tw;
    tw.Start();
-   //for (int i=0;i<10;i++)
-   //{
-      //fsum -> SetParameters(7e5, 1.5e5, 1.e5, Alpha, Mean1, Sigma1, Mean2, Sigma2);
-   h_ExpGauss -> Fit("fsum");
-   //}
+   for (int i=0;i<10;i++)
+   {
+     fsum -> SetParameters(1e5, 1.e5, 1.e5, Alpha, Mean1, Sigma1, Mean2, Sigma2);
+      h_ExpGauss -> Fit("fsum","L");
+   }
    cout << "**************************************************" << endl;
    tw.Print(); //time to fit
    cout << "**************************************************" << endl;
@@ -140,14 +141,14 @@ void fitNormSum()
     
    TStopwatch tw2;
    tw2.Start();
-   // for (int i=0;i<10;i++)
-    //{
-      //  for (int i=0;i<NofParams; i++)
-       // {
-         //   w.var(StringArray[i].c_str())   -> setVal(ParametersArray[i]);
-        //}
+    for (int i=0;i<10;i++)
+    {
+     for (int i=0;i<NofParams; i++)
+      {
+      w.var(StringArray[i].c_str())   -> setVal(ParametersArray[i]);
+      }
         w.pdf("model")->fitTo(data);
-    //}
+    }
    cout << "**************************************************" << endl;
    tw2.Print(); // time to fit
    cout << "**************************************************" << endl;

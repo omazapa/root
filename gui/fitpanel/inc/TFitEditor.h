@@ -208,6 +208,7 @@ public:
    void           FillMinMethodList(Int_t selected = -1);
    virtual void   DoAddition(Bool_t on);
    virtual void   DoNormAddition(Bool_t on);
+   virtual void   DoConvolution(Bool_t on);
    virtual void   DoAdvancedOptions();
    virtual void   DoAllWeights1();
    virtual void   DoClose();

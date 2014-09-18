@@ -620,6 +620,7 @@ TF1::TF1(const char *name,Double_t (*fcn)(Double_t *, Double_t *), Double_t xmin
    SetLineWidth(gStyle->GetFuncWidth());
    SetLineStyle(gStyle->GetFuncStyle());
    SetFillStyle(0);
+   
 
 }
 
@@ -693,7 +694,7 @@ TF1::TF1(const char *name,Double_t (*fcn)(const Double_t *, const Double_t *), D
    SetLineWidth(gStyle->GetFuncWidth());
    SetLineStyle(gStyle->GetFuncStyle());
    SetFillStyle(0);
-
+  
 }
 
 
@@ -728,6 +729,7 @@ TF1::TF1(const char *name, ROOT::Math::ParamFunctor f, Double_t xmin, Double_t x
    fNormIntegral(0),
    fFunctor   ( ROOT::Math::ParamFunctor(f) )
 {
+
    // F1 constructor using the Functor class.
    //
    //   xmin and xmax define the plotting range of the function
@@ -738,6 +740,7 @@ TF1::TF1(const char *name, ROOT::Math::ParamFunctor f, Double_t xmin, Double_t x
    // WARNING! A function created with this constructor cannot be Cloned.
 
    CreateFromFunctor(name, npar);
+   
 }
 
 
@@ -747,7 +750,6 @@ void TF1::CreateFromFunctor(const char *name, Int_t npar)
    // Internal Function to Create a TF1  using a Functor.
    //
    //          Used by the template constructors
-
    fNdim       = 1;
 
    if (npar > 0 ) fNpar = npar;
@@ -780,6 +782,7 @@ void TF1::CreateFromFunctor(const char *name, Int_t npar)
    SetLineWidth(gStyle->GetFuncWidth());
    SetLineStyle(gStyle->GetFuncStyle());
    SetFillStyle(0);
+   
 
 }
 
@@ -2682,7 +2685,6 @@ Double_t TF1::IntegralMultiple(Int_t n, const Double_t *a, const Double_t *b, In
 //______________________________________________________________________________
 void TF1::IntegrateForNormalization()
 {
-   
     // Store the value of the integral, which will be used for normalization
     // in the TF1::EvalPar method
    if (TF1::GetNumber() > 0)
@@ -3194,7 +3196,6 @@ void TF1::SetParameter(Int_t ipar, Double_t value)
 //______________________________________________________________________________
 void TF1::SetParameters(const Double_t *params)
 {
-
     TFormula::SetParameters(params);
 }
 
@@ -3389,14 +3390,12 @@ void TF1::Update()
 
     if (fNormalized)
     {
-        fNormalized = false;
+        fNormalized = false;//because SetNormalized call Update()
         IntegrateForNormalization();
         fNormalized = true;
     }
     std::vector<double>x(fNdim);
-  //  std::cout << "TF1::Update() before  " << fParams[0] << std::endl;
     if ((fType == 1) && !fFunctor.Empty())  fFunctor(x.data(), (Double_t*)fParams);
-   // std::cout << "TF1::Update() after " << fParams[0] << std::endl;
 }
 
 

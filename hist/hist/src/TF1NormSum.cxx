@@ -207,7 +207,6 @@ double TF1NormSum::operator()(double* x, double* p)
       sum += fCoeffs[n]*(fFunctions[n] -> EvalPar(x,0));
    }
    return sum;
-   std::cout <<"appelé"<<std::endl;
 }
 
 //_________________________________________________________________
@@ -255,6 +254,7 @@ void TF1NormSum::SetParameters(const double* params)//params should have the siz
       fFunctions[n] -> FixParameter(fCstIndexes[n], fixedvalue);
       // fFunctions[n]->Print();
       //std::cout << "coeff " << n << " : " << fCoeffs[n] << std::endl;
+      
    }
 }
 
