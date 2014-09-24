@@ -30,7 +30,7 @@ Double_t AnalyticalIntegral(TF1 *f)
    }
    else if (num == 100)//gaus: [0]*exp(-0.5*((x-[1])/[2])^2))
    {
-      result =  p[0]*(ROOT::Math::gaussian_cdf(xmax, p[2], p[1])- ROOT::Math::gaussian_cdf(xmin, p[2], p[1]));//sqrt(2*M_PI*p[2]*p[2])
+      result =  p[0]*sqrt(2*M_PI)*p[2]*(ROOT::Math::gaussian_cdf(xmax, p[2], p[1])- ROOT::Math::gaussian_cdf(xmin, p[2], p[1]));//
    }
    /*else if (num == ?)gaussn
     {

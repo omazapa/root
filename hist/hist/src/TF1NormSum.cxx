@@ -36,7 +36,7 @@ void TF1NormSum::InitializeDataMembers(const std::vector <std::shared_ptr < TF1 
    for (unsigned int n=0; n < fNOfFunctions; n++)
    {
       //normalize the functions if it is not already done
-      if (!fFunctions[n] -> IsNormalized())  fFunctions[n]  -> SetNormalized(true);
+      if (!fFunctions[n] -> IsEvalNormalized())  fFunctions[n]  -> SetNormalized(true);
       fNOfParams[n]       = fFunctions[n] -> GetNpar();
       fNOfNonCstParams[n] = fNOfParams[n];
       fCstIndexes[n]      = fFunctions[n] -> GetParNumber("Constant");//return -1 if there is no constant parameter
@@ -121,7 +121,7 @@ TF1NormSum::TF1NormSum(TF1* function1, TF1* function2, TF1* function3, Double_t 
 }
 
 //_________________________________________________________________
-TF1NormSum::TF1NormSum(const TString &formula)
+TF1NormSum::TF1NormSum(const TString &formula, Double_t xmin, Double_t xmax)
 {
    //  TF1NormSum constructortaking any addition of formulas with coefficient or not
    // example 1 : 2.*expo + gauss + 0.5* gauss
@@ -172,6 +172,7 @@ TF1NormSum::TF1NormSum(const TString &formula)
          TF1* f = (TF1*)(gROOT -> GetListOfFunctions() -> FindObject(funcstringall[k]));
          if (!f)   Error("TF1NormSum", "Function %s does not exist", funcstringall[k].Data());
          functions[i] = std::shared_ptr < TF1 > ((TF1*)f->Clone(TString::Format("function_%s_%d",funcstringall[k].Data(), i)));
+         functions[i]->SetRange(xmin,xmax);
          k++;
       }
       else
@@ -180,6 +181,7 @@ TF1NormSum::TF1NormSum(const TString &formula)
          TF1* f  = (TF1*)(gROOT -> GetListOfFunctions() -> FindObject(funcstringall[k+1]));
          if (!f)   Error("TF1NormSum", "Function %s does not exist", funcstringall[k+1].Data());
          functions[i] = std::shared_ptr < TF1 >((TF1*)f->Clone(TString::Format("function_%s_%d",funcstringall[k+1].Data(), i) ));
+         functions[i]->SetRange(xmin,xmax);
          k=k+2;
       }
    }

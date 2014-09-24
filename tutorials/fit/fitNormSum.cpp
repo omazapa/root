@@ -74,14 +74,20 @@ void fitNormSum()
    TH1F *h_copie    = new TH1F(*h_ExpGauss);
    h_ExpGauss -> Sumw2();
    h_ExpGauss -> Scale(1.,"width");
-   // h_copie = h_ExpGauss;
+   
+   h_ExpGauss->Draw();
+   
+   return;
+   
+  // h_copie = h_ExpGauss;
+   
    //CONSTRUCTION OF THE TF1NORMSUM ........
     
    TF1 *f_exp    = new TF1("Exponential","expo",-5.,5.);
    TF1 *f_gauss  = new TF1("Gaussian",   "gaus",-5.,5.);
    TF1 *f_gauss2 = new TF1("Gaussian2",  "gaus",-5.,5.);
 
-   TF1NormSum *fnorm_exp_gauss = new TF1NormSum("expo + gaus + gaus");
+   TF1NormSum *fnorm_exp_gauss = new TF1NormSum("expo + gaus + gaus",-5.,5.);
    Int_t NofParams = fnorm_exp_gauss -> GetNpar();
 
    TF1   * fsum = new TF1("fsum",*fnorm_exp_gauss, -5., 5., NofParams);
@@ -97,18 +103,18 @@ void fitNormSum()
    new TCanvas("c_gaussexp","c_gaussexp",800,1000);
    TStopwatch tw;
    tw.Start();
-   for (int i=0;i<10;i++)
-   {
-     fsum -> SetParameters(1e5, 1.e5, 1.e5, Alpha, Mean1, Sigma1, Mean2, Sigma2);
-      h_ExpGauss -> Fit("fsum","L");
-   }
+   //for (int i=0;i<100;i++)
+   //{
+     // fsum -> SetParameters(1e5, 1.e5, 1.e5, Alpha, Mean1, Sigma1, Mean2, Sigma2);
+      h_ExpGauss -> Fit("fsum","LW");
+   //}
    cout << "**************************************************" << endl;
    tw.Print(); //time to fit
    cout << "**************************************************" << endl;
    h_ExpGauss -> Draw();
 
    cout << "Integral: " << fsum -> Integral(-5.,5.) << endl;
-    
+   return;
    
    // --------------------------------------------------------------------------------------------------------------
    // ROOFIT -------------------------------------------------------------------------------------------------------
@@ -135,20 +141,21 @@ void fitNormSum()
    {
       w.var(StringArray[i].c_str())   -> setVal(ParametersArray[i]);
    }
+
    RooDataHist data("data","mydata",*x, h_copie);
     
    //fit ...........
     
    TStopwatch tw2;
    tw2.Start();
-    for (int i=0;i<10;i++)
-    {
-     for (int i=0;i<NofParams; i++)
-      {
-      w.var(StringArray[i].c_str())   -> setVal(ParametersArray[i]);
-      }
-        w.pdf("model")->fitTo(data);
-    }
+   //for (int i=0;i<100;i++)
+   //{
+     //for (int i=0;i<NofParams; i++)
+     //{
+       // w.var(StringArray[i].c_str())   -> setVal(ParametersArray[i]);
+     // }
+      w.pdf("model")->fitTo(data);
+    //}
    cout << "**************************************************" << endl;
    tw2.Print(); // time to fit
    cout << "**************************************************" << endl;

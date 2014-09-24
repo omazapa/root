@@ -260,6 +260,7 @@ public:
    }
    virtual Double_t IntegralMultiple(Int_t n, const Double_t *a, const Double_t *b, Double_t epsrel, Double_t &relerr);
    virtual Bool_t   IsInside(const Double_t *x) const;
+   virtual Bool_t   IsEvalNormalized() const;
    virtual void     Paint(Option_t *option="");
    virtual void     Print(Option_t *option="") const;
    virtual void     ReleaseParameter(Int_t ipar);

@@ -49,6 +49,18 @@ using namespace std;
 
 void TestConv()
 {
+   
+   
+   TF1* f_try = new TF1("MyGaussian", "gaus(0)",-10.,10.);
+   f_try -> SetParameters(1.,0.,1.);
+
+   TH1F *h_Gauss = new TH1F("h_Gauss","gaussian",100,-10,10.);
+   h_Gauss->FillRandom("MyGaussian",1e5);
+   new TCanvas("try","try",800,1000);
+   h_Gauss -> Draw();
+   
+   
+   return;
   // gErrorIgnoreLevel=3001;
    TH1F *h_ExpGauss = new TH1F("h_ExpGauss","Exponential convoluted by gaussian",100,0.,5.);
    
@@ -86,18 +98,22 @@ void TestConv()
    new TCanvas("c","c",800,1000);
    TStopwatch tw1;
    tw1.Start();
-   h_ExpGauss -> Fit("f");
+   for (int i=0;i<100;i++)
+   {
+       f->SetParameters(1.,-0.3,0.,1.);
+      h_ExpGauss -> Fit("f");
+   }
    cout << "**************************************************" << endl;
    tw1.Print();
    cout << "**************************************************" << endl;
    h_ExpGauss->Draw();
    //f->Draw();
    //
-   TF1 *f_cb = new TF1("crystal ball","ROOT::Math::crystalball_pdf(x,[0],[1],[2],[3])",0.,5.);
-   f_cb ->SetParameters(1,2,3,0.5);
+   TF1 *f_cb = new TF1("crystal ball","ROOT::Math::crystalball_pdf(x,[0],[1],[2],[3])",-5.,5.);
+   f_cb ->SetParameters(1,2,2.5,0.8);
    new TCanvas("crystal ball","crystal ball",800,1000);
    f_cb -> Draw();
-   return;
+   
    
    
    // --------------------------------------------------------------------------------------------------------------

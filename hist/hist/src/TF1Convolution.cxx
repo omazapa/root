@@ -22,6 +22,9 @@
 #include "TVirtualFFT.h"
 //#include <fftw3.h>
 
+//*********************************
+// (f*g)(t) = int(f(x)g(x-t)dx)   *
+//*********************************
 //________________________________________________________________________
 // class wrapping evaluation of TF1(t) * TF1(x-t)
 class TF1Convolution_EvalWrapper

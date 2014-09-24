@@ -2704,6 +2704,11 @@ Bool_t TF1::IsInside(const Double_t *x) const
    return kTRUE;
 }
 
+//______________________________________________________________________________
+Bool_t TF1::IsEvalNormalized() const
+{
+   return fNormalized;
+}
 
 //______________________________________________________________________________
 void TF1::Paint(Option_t *option)
