@@ -60,10 +60,10 @@ void fitNormSum()
    Double_t Mean2   = 0.;
    Double_t Sigma2  = 0.3;
    
-   double LowerLimits[]     = {100.,       100.,       100.,       0.,        -10.,      0.,         -10.,      0.};
-   double UpperLimits[]     = {1.e9,       1.e9,       1.e9,       10.,       10.,       100.,       10.,       100.};
-   double ParametersArray[] = {1e5,        1.e5,      1.e5, Alpha, Mean1, Sigma1, Mean2, Sigma2};
-   string StringArray[]     = {"nbkg",     "nsig1",    "nsig2",    "alpha",   "mean1",   "sigma1",   "mean2",   "sigma2"};
+   double LowerLimits[]     = {100.,       100.,      100.,    0.,      -10.,    0.,         -10.,    0.      };
+   double UpperLimits[]     = {1.e9,       1.e9,      1.e9,    10.,     10.,     100.,       10.,     100.    };
+   double ParametersArray[] = {1e5,        1.e5,      1.e5,    Alpha,   Mean1,   Sigma1,     Mean2,   Sigma2  };
+   string StringArray[]     = {"nbkg",     "nsig1",   "nsig2", "alpha", "mean1", "sigma1",   "mean2", "sigma2"};
    //*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*.*
     
    f_ExpGauss -> SetParameters(Coeff0,Alpha,Coeff1,Mean1,Sigma1,Coeff2,Mean2,Sigma2);//exact function that we want to fit

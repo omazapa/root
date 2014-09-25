@@ -30,7 +30,7 @@
 #include "Math/BrentRootFinder.h"
 #include "Math/BrentMinimizer1D.h"
 #include "Math/BrentMethods.h"
-#include "Math/DistFunc.h"
+#include "Math/DistFuncMathCore.h"
 #include "Math/Integrator.h"
 #include "Math/IntegratorMultiDim.h"
 #include "Math/IntegratorOptions.h"
@@ -2371,8 +2371,9 @@ Double_t TF1::Integral(Double_t a, Double_t b,  Double_t epsrel)
    Double_t result = 0.;
    if (TF1::GetNumber() > 0)
    {
-      result = AnalyticalIntegral(this);
-      if (result == 0.)  result = IntegralOneDim(a,b, epsrel, epsrel, error); //if it is a formula that havent been implmented in analytical integral
+      result = AnalyticalIntegral(this, a, b);
+      if (TMath::IsNaN(result))
+         result = IntegralOneDim(a,b, epsrel, epsrel, error); //if it is a formula that havent been implmented in analytical integral
    }
    else result = IntegralOneDim(a,b, epsrel, epsrel, error);
    return result;
@@ -2687,12 +2688,7 @@ void TF1::IntegrateForNormalization()
 {
     // Store the value of the integral, which will be used for normalization
     // in the TF1::EvalPar method
-   if (TF1::GetNumber() > 0)
-   {
-      fNormIntegral = AnalyticalIntegral(this);
-      if (fNormIntegral == 0.)  fNormIntegral = TF1::Integral(fXmin,fXmax); //if it is a formula that havent been implmented in analytical integral
-   }
-   else fNormIntegral = TF1::Integral(fXmin,fXmax);                     // use setparameters and evalpar and therefore is slower
+   fNormIntegral = TF1::Integral(fXmin,fXmax);
 }
 
 //______________________________________________________________________________

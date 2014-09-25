@@ -7,19 +7,19 @@
 //
 
 #include <stdio.h>
-#include "TRoot.h"
+#include "TROOT.h"
 #include "TMath.h"
 #include "AnalyticalIntegrals.h"
-#include "Math/DistFunc.h" //for cdf
+#include "Math/DistFuncMathCore.h" //for cdf
 
 
 using namespace std;
 
-Double_t AnalyticalIntegral(TF1 *f)
+Double_t AnalyticalIntegral(TF1 *f, Double_t a, Double_t b)
 {
 
-   Double_t xmin = f->GetXmin();
-   Double_t xmax = f->GetXmax();
+   Double_t xmin = a;
+   Double_t xmax = b;
    Int_t    num  = f->GetNumber();
    Double_t *p   = f->GetParameters();
    Double_t result = 0.;
@@ -49,6 +49,8 @@ Double_t AnalyticalIntegral(TF1 *f)
          result += p[i]/(i+1)*(std::pow(xmax,i+1)-std::pow(xmin,i+1));
       }
    }
+   else
+      result = TMath::QuietNaN();
    
    return result;
 }
