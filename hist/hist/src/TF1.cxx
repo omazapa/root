@@ -2687,7 +2687,7 @@ Double_t TF1::IntegralMultiple(Int_t n, const Double_t *a, const Double_t *b, In
 void TF1::IntegrateForNormalization()
 {
     // Store the value of the integral, which will be used for normalization
-    // in the TF1::EvalPar method
+
    fNormIntegral = TF1::Integral(fXmin,fXmax);
 }
 

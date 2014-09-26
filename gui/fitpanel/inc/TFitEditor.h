@@ -128,9 +128,9 @@ protected:
    TAxis               *fXaxis;            // x-axis
    TAxis               *fYaxis;            // y-axis
    TAxis               *fZaxis;            // z-axis
-   TF1NormSum          *fSumFunc;              //! TF1NormSum object
-   TF1Convolution      *fConvFunc;             //! TF1Convolution object
-
+   TF1NormSum          *fSumFunc;          //! TF1NormSum object
+   TF1Convolution      *fConvFunc;         //! TF1Convolution object
+   
    // structure holding parameter value and limits
    struct FuncParamData_t {
       FuncParamData_t() {
