@@ -366,8 +366,9 @@ TFitEditor::TFitEditor(TVirtualPad* pad, TObject *obj) :
    fXaxis       (0),
    fYaxis       (0),
    fZaxis       (0),
+   fSumFunc     (0),
+   fConvFunc    (0),
    fFuncPars    (0)
-
 {
    // Constructor of fit editor. 'obj' is the object to be fitted and
    // 'pad' where it is drawn.
@@ -526,6 +527,9 @@ TFitEditor::~TFitEditor()
    delete fLayoutNone;
    delete fLayoutAdd;
    delete fLayoutConv;
+
+   if (fConvFunc) delete fConvFunc; 
+   if (fSumFunc) delete fSumFunc; 
 
    // Set the singleton reference to null
    fgFitDialog = 0;
@@ -1122,8 +1126,8 @@ void TFitEditor::DisconnectSlots()
    fEnteredFunc -> Disconnect("ReturnPressed()");
    fSetParam    -> Disconnect("Clicked()");
    fAdd         -> Disconnect("Toggled(Bool_t)");
-   fNormAdd     -> Disconnect("Toggled(Bool_t)");
-   fConv        -> Disconnect("Toggled(Bool_t)");
+   // fNormAdd     -> Disconnect("Toggled(Bool_t)");
+   // fConv        -> Disconnect("Toggled(Bool_t)");
    
    // fit options
    fAllWeights1      -> Disconnect("Toggled(Bool_t)");
@@ -1633,6 +1637,8 @@ void TFitEditor::FillFunctionList(Int_t)
 
       // Select Gaus1D by default
       fFuncList->Select(kFP_GAUS);
+
+      std::cout << "added entry gaus " << kFP_GAUS << " and select it " << std::endl;
    }
    // Case for predefined 2D functions
    else if ( fTypeFit->GetSelected() == kFP_PRED2D && fDim == 2 ) {
@@ -2002,9 +2008,13 @@ void TFitEditor::DoFit()
    // problem, after the last fit the function is never deleted, but
    // ROOT's garbage collector will do the job for us.
    static TF1 *fitFunc = 0;
-   if ( fitFunc )
+   if ( fitFunc ) {
+      std::cout << "delete fit function " << fitFunc << std::endl;
       delete fitFunc;
+   }
    fitFunc = GetFitFunction();
+
+   std::cout << "dofit: using function " << fitFunc << std::endl;
    // This assert
    if (!fitFunc) {
       Error("DoFit","This should have never happend, the fitfunc pointer is NULL! - Please Report" );
@@ -2018,6 +2028,10 @@ void TFitEditor::DoFit()
    Foption_t fitOpts;
    TString strDrawOpts;
    RetrieveOptions(fitOpts, strDrawOpts, mopts, fitFunc->GetNpar());
+
+   // draw now the fit function 
+   fitFunc->Print();
+   new TCanvas(); fitFunc->DrawClone(); 
 
    // Call the fit method, depending on the object to fit.
    switch (fType) {
@@ -2265,6 +2279,7 @@ void TFitEditor::DoNormAddition(Bool_t on)
    } else {
       first = kFALSE;
    }*/
+   if (on) std::cout << "DoNormAddition" << std::endl;
 }
 
 //______________________________________________________________________________
@@ -2286,6 +2301,7 @@ void TFitEditor::DoConvolution(Bool_t on)
       }
    } else
       first = kFALSE;*/
+   if (on) std::cout << "DoConvolution" << std::endl;
 }
 
 //______________________________________________________________________________
@@ -2383,6 +2399,9 @@ void TFitEditor::DoFunction(Int_t selected)
    // Slot connected to predefined fit function settings.
 
    TGTextLBEntry *te = (TGTextLBEntry *)fFuncList->GetSelectedEntry();
+
+   std::cout << "calling do function " << selected << "  " << te->GetTitle() << " function " << te->EntryId() << std::endl;
+   selected = te->EntryId(); 
    bool editable = false;
    if (fNone -> GetState() == kButtonDown || fNone->GetState() == kButtonDisabled)
    {
@@ -3579,15 +3598,19 @@ TF1* TFitEditor::GetFitFunction()
       {
          fitFunc = new TF1("PrevFitTMP",fEnteredFunc->GetText(), xmin, xmax );
          if (fNormAdd->IsOn())
-         {
+         {            
+            if (fSumFunc) delete fSumFunc; 
             fSumFunc = new TF1NormSum(fEnteredFunc->GetText(), xmin, xmax);
             fitFunc  = new TF1("PrevFitTMP", *fSumFunc, xmin, xmax, fSumFunc->GetNpar());
+            std::cout << "create fit normalized function " << fSumFunc << " fitfunc " << fitFunc << std::endl;
          }
       
          if (fConv -> IsOn())
          {
+            if (fConvFunc) delete fConvFunc;
             fConvFunc = new TF1Convolution(fEnteredFunc->GetText());
             fitFunc  = new TF1("PrevFitTMP", *fConvFunc, xmin, xmax, fConvFunc->GetNpar());
+            std::cout << "create fit convolution function " << fSumFunc << " fitfunc " << fitFunc << std::endl;
          }
       }
       else if ( fDim == 2 ) {
