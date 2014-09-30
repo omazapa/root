@@ -22,6 +22,8 @@ class TF1Convolution
    
    std::vector < Double_t >   fParams1;
    std::vector < Double_t >   fParams2;
+
+   std::vector< TString >    fParNames;      // parameter names 
    
    Double_t fXmin;            //minimal bound of the range of the convolution
    Double_t fXmax;            //maximal bound of the range of the convolution
@@ -56,6 +58,7 @@ class TF1Convolution
    Int_t    GetNpar() const {return (fNofParams1+fNofParams2);}
    Double_t GetXmin() const {return fXmin;}
    Double_t GetXmax() const {return fXmax;}
+   const char *    GetParName(Int_t ipar) const { return fParNames.at(ipar).Data(); }
    
    Double_t operator()(Double_t* t, Double_t* p);
 };

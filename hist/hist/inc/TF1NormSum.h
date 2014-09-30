@@ -27,6 +27,7 @@ protected:
    std::vector < Double_t* > fParams;        // Vector of size [fNOfFunctions][fNOfNonCstParams] containing an array of (non constant) parameters
                                              // (non including coefficients) for each function
    std::vector < Int_t     > fCstIndexes;
+   std::vector< TString >    fParNames;      // parameter names 
    
    void InitializeDataMembers(const std::vector <std::shared_ptr < TF1 >> &functions, const std::vector <Double_t> &coeffs); // acts as a constrcutor
    
@@ -47,6 +48,8 @@ public:
                                    Double_t p5=0., Double_t p6=0., Double_t p7=0., Double_t p8=0., Double_t p9=0., Double_t p10=0.);
    
    Int_t             GetNpar() const;
+
+   const char *      GetParName(Int_t ipar) const { return fParNames.at(ipar).Data(); }
    
    //ClassDef(TF1NormSum,1)
    

@@ -1638,7 +1638,6 @@ void TFitEditor::FillFunctionList(Int_t)
       // Select Gaus1D by default
       fFuncList->Select(kFP_GAUS);
 
-      std::cout << "added entry gaus " << kFP_GAUS << " and select it " << std::endl;
    }
    // Case for predefined 2D functions
    else if ( fTypeFit->GetSelected() == kFP_PRED2D && fDim == 2 ) {
@@ -2009,12 +2008,11 @@ void TFitEditor::DoFit()
    // ROOT's garbage collector will do the job for us.
    static TF1 *fitFunc = 0;
    if ( fitFunc ) {
-      std::cout << "delete fit function " << fitFunc << std::endl;
       delete fitFunc;
    }
    fitFunc = GetFitFunction();
 
-   std::cout << "dofit: using function " << fitFunc << std::endl;
+   //std::cout << "dofit: using function " << fitFunc << std::endl;
    // This assert
    if (!fitFunc) {
       Error("DoFit","This should have never happend, the fitfunc pointer is NULL! - Please Report" );
@@ -2028,10 +2026,6 @@ void TFitEditor::DoFit()
    Foption_t fitOpts;
    TString strDrawOpts;
    RetrieveOptions(fitOpts, strDrawOpts, mopts, fitFunc->GetNpar());
-
-   // draw now the fit function 
-   fitFunc->Print();
-   new TCanvas(); fitFunc->DrawClone(); 
 
    // Call the fit method, depending on the object to fit.
    switch (fType) {
@@ -2400,8 +2394,11 @@ void TFitEditor::DoFunction(Int_t selected)
 
    TGTextLBEntry *te = (TGTextLBEntry *)fFuncList->GetSelectedEntry();
 
-   std::cout << "calling do function " << selected << "  " << te->GetTitle() << " function " << te->EntryId() << std::endl;
-   selected = te->EntryId(); 
+   // check that selected passesd value is the correct one in the TextEntry
+   R__ASSERT( selected == te->EntryId());
+   //std::cout << "calling do function " << selected << "  " << te->GetTitle() << " function " << te->EntryId() << std::endl;
+   //selected = te->EntryId(); 
+
    bool editable = false;
    if (fNone -> GetState() == kButtonDown || fNone->GetState() == kButtonDisabled)
    {
@@ -2420,8 +2417,6 @@ void TFitEditor::DoFunction(Int_t selected)
       }
       else
       {
-         std::cout << "selected " << selected << std::endl;
-         std::cout << "kFP_USER " << kFP_USER << std::endl;
          if ( selected <= kFP_USER )
             editable = kTRUE;
          else
@@ -2473,7 +2468,7 @@ void TFitEditor::DoFunction(Int_t selected)
       else
          s += TString::Format("%s", te->GetTitle());
       fEnteredFunc->SetText(s.Data());
-      std::cout <<fEnteredFunc->GetText()<<std::endl;
+      //std::cout <<fEnteredFunc->GetText()<<std::endl;
       editable = true;
    }
    else if (fConv->GetState() == kButtonDown)
@@ -2494,7 +2489,7 @@ void TFitEditor::DoFunction(Int_t selected)
       else
          s += TString::Format("%s", te->GetTitle());
       fEnteredFunc->SetText(s.Data());
-       std::cout <<fEnteredFunc->GetText()<<std::endl;
+      //std::cout <<fEnteredFunc->GetText()<<std::endl;
       editable = true;
    }
 
@@ -3602,7 +3597,8 @@ TF1* TFitEditor::GetFitFunction()
             if (fSumFunc) delete fSumFunc; 
             fSumFunc = new TF1NormSum(fEnteredFunc->GetText(), xmin, xmax);
             fitFunc  = new TF1("PrevFitTMP", *fSumFunc, xmin, xmax, fSumFunc->GetNpar());
-            std::cout << "create fit normalized function " << fSumFunc << " fitfunc " << fitFunc << std::endl;
+            for (int i = 0; i < fitFunc->GetNpar(); ++i) fitFunc->SetParName(i, fSumFunc->GetParName(i) ); 
+            //std::cout << "create fit normalized function " << fSumFunc << " fitfunc " << fitFunc << std::endl;
          }
       
          if (fConv -> IsOn())
@@ -3610,7 +3606,8 @@ TF1* TFitEditor::GetFitFunction()
             if (fConvFunc) delete fConvFunc;
             fConvFunc = new TF1Convolution(fEnteredFunc->GetText());
             fitFunc  = new TF1("PrevFitTMP", *fConvFunc, xmin, xmax, fConvFunc->GetNpar());
-            std::cout << "create fit convolution function " << fSumFunc << " fitfunc " << fitFunc << std::endl;
+            for (int i = 0; i < fitFunc->GetNpar(); ++i) fitFunc->SetParName(i, fConvFunc->GetParName(i) ); 
+            //std::cout << "create fit convolution function " << fSumFunc << " fitfunc " << fitFunc << std::endl;
          }
       }
       else if ( fDim == 2 ) {

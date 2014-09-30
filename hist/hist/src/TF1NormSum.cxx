@@ -21,6 +21,38 @@
 //ClassImp(TF1NormSum)
 
 
+// function to find and rename duplicate parameters with the same name
+
+template<class Iterator> 
+void FixDuplicateNames(Iterator begin, Iterator end) { 
+
+
+   // make a map of values 
+
+   std::multimap<TString, int > parMap; 
+   for (Iterator it = begin; it !=  end; ++it) { 
+      parMap.insert( std::make_pair( *it, std::distance(begin,it) ) );
+   }
+   for ( auto & elem : parMap) { 
+      TString name = elem.first; 
+      int n = parMap.count( name); 
+      if (n > 1 ) {
+          std::pair <std::multimap<TString,int>::iterator, std::multimap<TString,int>::iterator> ret;
+          ret = parMap.equal_range(name);
+          int i = 0; 
+          for (std::multimap<TString,int>::iterator it=ret.first; it!=ret.second; ++it) {
+             *(begin+it->second) = TString::Format("%s%d",name.Data(),++i);
+          }
+      }
+   }
+
+   // for (Iterator it = begin; it !=  end; ++it) 
+   //    std::cout << *it << "  ";
+   // std::cout << std::endl;
+
+}
+
+
 
 void TF1NormSum::InitializeDataMembers(const std::vector <std::shared_ptr < TF1 >> &functions, const std::vector <Double_t> &coeffs)
 {
@@ -32,7 +64,9 @@ void TF1NormSum::InitializeDataMembers(const std::vector <std::shared_ptr < TF1 
    fParams          = std::vector < Double_t* > (fNOfFunctions);
    fCstIndexes      = std::vector < Int_t     > (fNOfFunctions);
    fNOfNonCstParams = std::vector < Int_t     > (fNOfFunctions);
-   
+   fParNames        = std::vector<TString> (fNOfFunctions);
+   fParNames.reserve(3*fNOfFunctions);  // enlarge capacity for function parameters
+
    for (unsigned int n=0; n < fNOfFunctions; n++)
    {
       //normalize the functions if it is not already done
@@ -42,6 +76,7 @@ void TF1NormSum::InitializeDataMembers(const std::vector <std::shared_ptr < TF1 
       fCstIndexes[n]      = fFunctions[n] -> GetParNumber("Constant");//return -1 if there is no constant parameter
       //std::cout << " cst index of function " << n << " : " << fCstIndexes[n] << std::endl;
       //std::cout << "nofparam of function " << n <<" : " << fNOfParams[n] << std::endl;
+      fParNames[n] = TString::Format("Coeff%d",n);
       if (fCstIndexes[n]!= -1)                                        //if there exists a constant parameter
       {
          fFunctions[n] -> FixParameter(fCstIndexes[n], 1.);          //fixes the parameters called "Constant" to 1
@@ -51,14 +86,22 @@ void TF1NormSum::InitializeDataMembers(const std::vector <std::shared_ptr < TF1 
          for (int i=0; i<fNOfParams[n]; i++)                         //go through all the parameter to
          {
             if (i==fCstIndexes[n])   continue;                      //go to next step if this is the constant parameter
-            temp[k] = fFunctions[n] -> GetParameter(i);             //takes all the internal paramteres instead of the constant one
+            temp[k] = fFunctions[n] -> GetParameter(i);             //takes all the internal parameters instead of the constant one
+            fParNames.push_back(  fFunctions[n] -> GetParName(i) ); 
             k++;
          }
          fParams[n] = temp.data();
-         continue;
       }
-      fParams[n] = fFunctions[n] -> GetParameters();
+      else { 
+         fParams[n] = fFunctions[n] -> GetParameters();
+         for (int i=0; i<fNOfParams[n]; i++)                        //go through all the parameter to
+         {
+            fParNames.push_back( fFunctions[n] -> GetParName(i) ); 
+         }
+      }
    }
+
+   FixDuplicateNames(fParNames.begin()+fNOfFunctions, fParNames.end());
 }
 TF1NormSum::TF1NormSum()
 {

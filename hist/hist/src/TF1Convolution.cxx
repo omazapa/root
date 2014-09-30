@@ -35,13 +35,9 @@ class TF1Convolution_EvalWrapper
    
 public:
 
-   TF1Convolution_EvalWrapper(const TF1* function1 , const TF1* function2, Double_t t)
-   :fT0(t)
+   TF1Convolution_EvalWrapper(std::shared_ptr<TF1> & f1 , std::shared_ptr<TF1> & f2, Double_t t)
+      : fFunction1(f1), fFunction2(f2), fT0(t)
    {
-      std::shared_ptr < TF1 > f1((TF1*)function1->Clone());
-      std::shared_ptr < TF1 > f2((TF1*)function2->Clone());
-      fFunction1 = f1;
-      fFunction2 = f2;
    }
    Double_t operator()(Double_t x) const
    {
@@ -69,14 +65,17 @@ void TF1Convolution::InitializeDataMembers(TF1* function1, TF1* function2)
    fGraphConv  = std::shared_ptr< TGraph >(new TGraph(fNofPoints));
    
    //std::cout<<"before: NofParams2 = "<<fNofParams2<<std::endl;
-   
+
+   fParNames.reserve( fNofParams1 + fNofParams2);
    for (int i=0; i<fNofParams1; i++)
    {
       fParams1[i] = fFunction1 -> GetParameter(i);
+      fParNames.push_back(fFunction1 -> GetParName(i) );
    }
    for (int i=0; i<fNofParams2; i++)
    {
       fParams2[i] = fFunction2 -> GetParameter(i);
+      if (i != fCstIndex) fParNames.push_back(fFunction2 -> GetParName(i) );
    }
    if (fCstIndex!=-1)
    {
@@ -180,7 +179,7 @@ Double_t TF1Convolution::MakeFFTConv(Double_t t)
 //________________________________________________________________________
 Double_t TF1Convolution::MakeNumConv(Double_t t)
 {
-   TF1Convolution_EvalWrapper fconv((TF1*)fFunction1->Clone(), (TF1*)fFunction2->Clone(), t);
+   TF1Convolution_EvalWrapper fconv( fFunction1, fFunction2, t);
    Double_t result = 0;
    
    if (ROOT::Math::IntegratorOneDimOptions::DefaultIntegratorType() == ROOT::Math::IntegrationOneDim::kGAUSS )
