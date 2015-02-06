@@ -301,6 +301,38 @@ root[] hist->Fit("f1","","",-2,2)
 See macros `$ROOTSYS/tutorials/fit/myfit.C` and `multifit.C` as more
 completed examples.
 
+## New ROOT::Fit classes
+
+The fitting of the data objects in ROOT, histograms, graphs and tree is performed via some common classes,
+which are defined in the `ROOT::Fit` namespace.
+The classes are derived in three groups:
+   
+   - User classes driving the fits : `ROOT::Fit::Fitter` for executing the fit, `ROOT::Fit::FitConfig` for configuring the fit,
+   `ROOT::Fit::PrameterSettings` to define the fit parameter settings (initial
+     values, bounds, etc..), `ROOT::Fit::FitResult` for storing the result of the fit
+	 - Function Classes defining the type of fit: `ROOT::Fit::Chi2FCN` for chi2 (least-square fits),
+	 `ROOT::Fit::PoissonLikelihoodFCN` for binned likelihood fits of histograms, `ROOT::Fit::LogLikelihoodFCN`,
+	 for generic un-binned likelihood fits. These classes are templated on the type of function interface they implement (see later).
+	 User convenient typedefs are also provided.
+	 - Data classes containing the data sets used in the fitting. These classes are the`ROOT::Fit::BinData`for describing bin data sets,
+	 thus data points containing both coordinates and a corresponding value/weight
+	 with optionally an error on the value or the coordinate  and the `ROOT::Fit::UnBinData` for un-binned data sets,
+	 which consisst only of a vector of coordinate values. The coordinate values can be
+	 one-dimensional (i.e. one entry per event) or multi-dimensional (N entries per event). 
+
+Here we present a detailed description of this classes and how to use them. These interface would allow are more fine control
+to configure and customise fits.
+To understand how these class work, let's goh through a simple example, fitting an histogram.
+
+### Example: Histogram fitting using the ROOT::Fit classes
+
+In this example, instead of using `TH1::Fit` will use the `ROOT::Fit` classes.  We will show how to perform three different fits on the data from the histogram:
+-  a least square fit using the observed errors (Neyman chi-squared).
+- a least square fit using the expected errors from the function (Pearson chi-squared).
+- a binned likelihood fit
+- an extended unbinned likelihood fits using the histogram data stored in the histogram buffer. 
+
+
 ## The Fit Panel
 
 
