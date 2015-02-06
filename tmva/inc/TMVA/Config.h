@@ -86,6 +86,8 @@ namespace TMVA {
          Int_t   fMaxNumOfAllowedVariablesForScatterPlots;
          Int_t   fNbinsMVAoutput;
          Int_t   fNbinsXOfROCCurve;
+         Bool_t  fUsePaperStyle;
+
       } fVariablePlotting; // Customisable plotting properties
 
       // for file names and similar
