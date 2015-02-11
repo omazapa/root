@@ -310,11 +310,11 @@ The classes are derived in three groups:
    - User classes driving the fits : `ROOT::Fit::Fitter` for executing the fit, `ROOT::Fit::FitConfig` for configuring the fit,
    `ROOT::Fit::PrameterSettings` to define the fit parameter settings (initial
      values, bounds, etc..), `ROOT::Fit::FitResult` for storing the result of the fit
-	 - Function Classes defining the type of fit: `ROOT::Fit::Chi2FCN` for chi2 (least-square fits),
+   - Function Classes defining the type of fit: `ROOT::Fit::Chi2FCN` for chi2 (least-square fits),
 	 `ROOT::Fit::PoissonLikelihoodFCN` for binned likelihood fits of histograms, `ROOT::Fit::LogLikelihoodFCN`,
 	 for generic un-binned likelihood fits. These classes are templated on the type of function interface they implement (see later).
 	 User convenient typedefs are also provided.
-	 - Data classes containing the data sets used in the fitting. These classes are the`ROOT::Fit::BinData`for describing bin data sets,
+   - Data classes containing the data sets used in the fitting. These classes are the`ROOT::Fit::BinData`for describing bin data sets,
 	 thus data points containing both coordinates and a corresponding value/weight
 	 with optionally an error on the value or the coordinate  and the `ROOT::Fit::UnBinData` for un-binned data sets,
 	 which consisst only of a vector of coordinate values. The coordinate values can be
@@ -322,16 +322,299 @@ The classes are derived in three groups:
 
 Here we present a detailed description of this classes and how to use them. These interface would allow are more fine control
 to configure and customise fits.
-To understand how these class work, let's goh through a simple example, fitting an histogram.
+To understand how these class work, let's go through a simple example, fitting an histogram.
 
 ### Example: Histogram fitting using the ROOT::Fit classes
 
 In this example, instead of using `TH1::Fit` will use the `ROOT::Fit` classes.  We will show how to perform three different fits on the data from the histogram:
--  a least square fit using the observed errors (Neyman chi-squared).
-- a least square fit using the expected errors from the function (Pearson chi-squared).
-- a binned likelihood fit
-- an extended unbinned likelihood fits using the histogram data stored in the histogram buffer. 
+  - a least square fit using the observed errors (Neyman chi-squared);
+  - a least square fit using the expected errors from the function (Pearson chi-squared);
+  - a binned likelihood fit;
+  - an extended unbinned likelihood fits using the histogram data stored in the histogram buffer. 
 
+Let's go through all the steps required for performing these fits using the `ROOT::Fit::Fitter` class.
+These steps are:
+1) Create the input fit data object
+2) Create the input model function
+3) Configure the fit 
+4) Perform the data fitting 
+5) Examine the result
+
+### Creating the input fit data
+
+We have two types of input data, binned data (class `ROOT::Fit::BinData`) used for least square  (chi-square) fits of histograms or `TGraph` objects
+or un-binned data (class `ROOT::Fit::UnBinData`) used for
+fitting vectors of data points (e.g. from a `TTree`).
+
+#### Using Binned data 
+
+Let's suppose we have an histogram, represented as a `TH1` type object (it can be one or multi-dimensional). The following shows how to create and
+fill a `ROOT:Fit::BinData` object.
+
+``` {.cpp}
+   ROOT::Fit::DataOptions opt;
+   opt.fIntegral = true; 
+   ROOT::Fit::BinData data(opt);
+   // fill the bin data using the histogram 
+   // we can do this using the following helper function from the Hist library 
+   TH1 * h1 = (TH1*) gDirectory->Get("myHistogram");
+   ROOT::Fit::FillData(data, h1);
+```
+
+In this code example we have used the utility function of yje `Hist` library to fill the `BinData` object.
+It is possible to specify when creating the `BinData` object the options we want to use to fill it and the data range we want to use.
+The options are controlled by the ``ROOT::Fit::DataOptions`` class, the range by the ``ROOT::Fit::DataRange`` class. 
+Here is an example how to specify the input option to use the integral of the function value in the bin instead of using the function value
+evaluated at the bin center, when doing the fit and use a
+range beween the xmin and xmax values.  
+
+``` {.cpp}
+   ROOT::Fit::DataOptions opt;
+   opt.fIntegral = true;
+   ROOT::Fit::DataRange range(xmin,xmax);
+   ROOT::Fit::BinData data(opt,range);
+   // fill the bin data using the histogram 
+   // we can do this using the following helper function from the Hist library 
+   TH1 * h1 = (TH1*) gDirectory->Get("myHistogram");
+   ROOT::Fit::FillData(data, h1);
+```
+
+The list of possible options available is the following
+``` {.cpp}
+   ROOT::Fit::DataOptions opt;
+   opt.fIntegral = true;      // use integral of bin content instead of bin center (default is false).
+   opt.fBinVolume = true;     // normalize data by the bin volume (default is false).
+                              //  This is for fitting density functions in histograms with variable bin sizes.
+   opt.fUseRange  =true;      // use the function range when creating the fit data (default is false).
+   opt.fExpErrors = true;     // use the expected errors estimated from the function values
+                              //  assuming Poisson statistics and not the observed errors (default is false).
+   opt.fUseEmpty = true;      // use empty bins when fitting (default is false). If fExpErrors 
+							  //  is not set an arbitrary error = 1 is assigned to those bins.
+   opt.fErrors1 = true;       // Set all measured errors to 1 (default is false).
+   opt.fCoordErrors = false;  // When available coordinate errors are not used in the fit
+                              //  (default is true: the errors are used when they are available,
+                              //  e.g. fitting a TGraphErrors). 
+   opt.fAsymErrors = false;   // When available asymmetric errors are considered in the fit
+                              //  (default is true, the asymmetric errors are used when they are available,
+                              //  e.g. fitting a TGraphAsymmErrors).
+```
+							  
+The  `ROOT::Fit::DataRange` class supports defining multiple rectangular ranges in each dimension, and supports n-dimension.
+The function `DataRange::AddRange(iccord,xmin,xmax)` will add a range in
+the coordinate `icoord` with lower value `xmin` and upper value `xmax`: 
+
+
+``` {.cpp}
+   ROOT::Fit::DataRange range;  
+   range.AddRange(icoordinate, xmin, xmax);
+```
+
+#### Using Un-Binned data 
+
+The unbinned data sets are represented with the `ROOT::Fit::UnBinData` class. 
+For creating un-binned data sets, a  `ROOT::Fit::UnBinData` object, one has two possibility:
+   - Copy the data inside `ROOT::Fit::UnBinData`. One can create an empty `UnBinData` object, iterate on the data and add each data point one by one, or directly create the `UnBinData`
+     object from a data iterator. In this case an input `ROOT::Fit::DataRange` object is passed in order to copy the data according to the given range. 
+   - Use `ROOT::Fit::UnBinData` as a wrapper to an external data storage. In this case the `UnBinData` object is created from an iterator or pointers to the data and the data are not copied
+   inside. In this case the data cannot be selected according to a range (all data will be included in the fit).
+
+The `ROOT::Fit::UnBinData` class supports also weighted data. In addition to the data points (coordinates), which can be of arbitrary `k` dimensions, the class can be constructed from a vector of
+weights. This is an example of taking data from an histogram buffer of a `TH1` object: 
+
+``` {.cpp}
+	double * buffer = histogram->GetBuffer();
+	// number of entry is first entry in the buffer
+	int n = buffer[0];
+	// when creating the data object it is important to create with the size of the data
+	ROOT::Fit::UnBinData data(n);
+	for (int i = 0; i < n; ++i) 
+		data.add(buffer[2*i+1]);  // the buffer of 1D histogram contains nevt,x1,w1,x2,w2,......
+```
+
+Instead in this example we will create a 2-dim `UnBinData` object with the contents from a ROOT `TTree`
+
+``` {.cpp}
+    TFile * file = TFile::Open("hsimple.root");
+    TTree *ntuple = 0; file->GetObject("ntuple",ntuple);
+	// select from the tree the data we want to use for fitting
+	// we can teh TTree::Draw functionality for this
+	int nevt = ntuple->Draw("px:py","","goff");
+	double * x = ntuple->GetV1();
+	double * y = ntuple->GetV2(); 
+    ROOT::Fit::UnBinData data(nevt, x, y );
+```
+
+### Creating the Fit model
+
+In order to fit a data sets we need a model to describe our data, e.g. a probability density function describing our observed data or
+an hypothetical function describing the relation between the independent variables **`X`** and the single dependent variable `Y`.
+We can have an arbitrary number `k` of independent variables. For example in case of a `k`-dimensional histogram fitting,
+the independent variables **`X`** are the bin center coordinates and `Y` is the bin weight.
+
+The model function needs to be expressed as function of some unknown parameters. The fitting will find the best parameter value to describe
+the observed data.
+
+We can use the ROOT `TF1` class, the parametric function class, to describe the model function. However the `ROOT::Fit::Fitter` class, to be independent of the ROOT *`Hist`* library,
+takes as input a more general parametric function object, the interface (abstract) class `ROOT::Math::IParametricFunctionMultiDim`, which describe a generic one or multi-dimensional function
+with parameters. This interface extends the abstract class `ROOT::Math::IBaseFunctionMultiDim` with methods to set/retrieve parameter values and to evaluate the function given the
+independent vector of values **`X`** and vector of parameters `P`.
+More information about the different `ROOT::Math` function interfaces is available in the Mathematical Library chapter.
+An end-user can convert a `TF1` object in a `ROOT::Math::IParametricFunctionMultiDim`, using the wrapper class `ROOT::Math::WrapperMultiTF1`, as below: 
+
+``` {.cpp}
+    TF1 * f1 = new TF1("f1","gaus"); 
+    ROOT::Math::WrappedMultiTF1 fitFunction(f1, f1->GetNdim() );
+    ROOT::Fit::Fitter fitter;
+    fitter.SetFunction( fitFunction, false); 
+ ```
+
+When creating the wrapper class, the parameter values stored in `TF1` will be copied in the `ROOT::Math::WrappedMultiTF1` object.
+
+The function is given to the `ROOT::Fitter` class using the `Fitter::SetFunction` method. 
+The user has also the possibility to provide a function object implementing the derivatives of the function with respect to the parameters.
+This information might be useful for some types of fits. In this case he needs to provide a function object deriving from the
+`ROOT::Math::IParametricGradFunctionMultiDim`.
+Note that the wrapper class `ROOT::Math::WrappedMultiTF1` implements also the gradient interface, by using  `TF1::GradientPar`.
+Since we do not want to provide to the fitter the derivatives computed in TF1, but we want to leave this computation to the minimizer,
+in the previous example we explicitly passed in `Fitter::SetFunction` a `false` value. 
+
+### Fit Configuration
+
+Typical fit configurations consist of :
+
+- setting the initial values of the parameters.
+ - setting the parameter step sizes
+ - setting eventual parameter bounds
+ - setting the minimizer library and teh particular algorithm to use 
+ - setting the minimization options
+ - configure the fitter for the type of parameter errors to compute
+
+All the configuration of the Fitter is done via the `ROOT::Fit::FitConfig` class. 
+
+The initial parameter values can be set directly in the input model function object. However for setting the step sizes (to values different that the automatically computed) and bounds one needs to use the `ROOT::Fit::ParameterSetting` class.
+This example code will set the lower/upper bounds for the first parameter and a lower bound for the second parameter 
+
+``` {.cpp}
+  fitter.SetFunction( fitFunction, false); 
+  fitter.Config().ParSettings(0).SetLimits(0,1.E6);   
+  fitter.Config().ParSettings(2).SetLowerLimit(0); 
+```
+  
+Note that the `ParameterSettings` are created for each parameter in the `FitConfig` class, after the function is set in the Fitter. When the function is set, the number of parameter is known and
+automatically the `FitConfig` creates the corresponding `ParameterSetting` objects.
+
+The Minimizer library type (e.g. Minuit, Minuit2, Fumili, GSL, etc.) and its corresponding algorithm (e.g. Migrad, Simplex,..) can be set using the function `FitConfig::SetMinimizer` or by using
+directly the `ROOT:Math::MinimizerOptions` class.
+Using the ROOT plug-in manager the Minimizer library requested is loaded and in case it is not available the default one is used. The minimizer is used via the `ROOT::Math::Minimizer` class.
+
+### Minimizer Libraries and Algorithms
+
+The list of available Minimizer libraries currently available in ROOT, with their corresponding available algorithms is the following one.  Some Minimizers (e.g. Minuit) contain several algorithms that the user can
+choose. Others are based on a single algorithm (e.g. Fumili)
+
+
+   - **`Minuit`**  (library *libMinuit*). Old version of Minuit, based on the `TMinuit` class. The list of possible algorithms are:
+      - *`Migrad`* (default one)
+	  - *`Simplex`*
+      -  *`Minimize`*  (it is a combination of Migrad and Simplex)
+      -  *`MigradImproved`* 
+	  - *`Scan`*
+	  - *`Seek`*
+
+
+   - **`Minuit2`** (library *libMinuit2*). New C++ version of Minuit. The list of possible algorithm is :
+     - *`Migrad`* (default)
+     - *`Simplex`*
+	 - *`Minimize`*
+	 - *`Scan`*
+	 - *`Fumili`* . This is the same algorithm of `TFumili`, but implemented in the Minuit2 library. 
+
+   - **`Fumili`**. Implement a dedicated minimization algorithm for least-square and likelihood fits. It has requirements on the type of method function to be used.
+       No specific algorithm exists
+
+  - **`GSLMultiMin`** (library *libMathMore*). Minimizer based on the Multidimensional Minimization routines of the Gnu Scientific Library (GSL). The list of available algorithms is
+   - *`BFGS2`* (default) : second version of the vector Broyden-Fletcher-Goldfarb-Shanno (BFGS) algorithm; 
+   - *`BFGS`*  : old version of the vector Broyden-Fletcher-Goldfarb-Shanno (BFGS) algorithm; 
+   - *`ConjugateFR`* : Fletcher-Reeves conjugate gradient algorithm;
+   - *`ConjugatePR`* : Polak-Ribiere conjugate gradient algorithm;
+   - *`SteepestDescent`*:  steepest descent algorithm; 
+
+  - **`GSLMultiFit`** (library *libMathMore*). Minimizer based on the Non-Linear Least-Square routines of GSL. This minimizer can be used only for least-square fits. 
+
+  - **`GSLSimAn`**  (library *libMathMore*). Minimizer based on simulated annealing.
+
+  - **`Genetic`** (library *libGenetic*). Genetic minimizer based on an algorithm implemented in the *TMVA* package.
+
+Each minimizer can be configured using the `ROOT::Math::MinimizerOptions` class. See the reference documentation of that class for
+the list of possible common configuration parameters. Note that not all the option parameters are implemented in all the minimizers.
+For example in Minuit is possible to set the maximum number of function calls but not the maximum number of iterations. 
+
+### Performing the Fit: Available fit methods
+
+Here we have now all the required input ingredients for the fit, the data and  the function to fit.
+Depending on these we have several options to perform the fit, using the corresponding methods of the
+`ROOT::Fit::Fitter` class.
+
+* **Least-square fit**: `Fitter::LeastSquare(const BinData & )` or `Fitter::Fit(const Bindata &)`. It requires the user to pass a `BinData` object. It should be used when the data values follow a Gaussian distribution. 
+* **Binned Likelihood fit** : `Fitter::LikelihoodFit(const Bindata & )`. The user needs to pass a `BinData` object. It should be used when the data values follow a Poisson or a multinomial
+distribution. The Poisson case (extended fit) is the default and in this case the function normalization is also fit to the data. The Multi-nominal case can be selected by passing the optional
+*extended* boolean flag as *false*. 
+* **Un-Binned likelihood fit**: `Fitter::LikelihoodFit(const UnBindata &)`. The user needs to pass an `UnBinData` object. By default the fit is not extended (i.e. the normalization is not fitted to the
+data). As above the user can select an extended likelihood fit by passing the optional
+*extended* boolean flag as *true*.
+* **Linear Fit**: A linear fit can be selected (no iterative minimization is needed in this case, but using linear algebra algorithms from the *Matrix* library), if the model function is linear in the
+  parameters. 
+
+#### Customised Fit methods
+
+Above we described the pre-defined methods used for fitting. A user can also implement its own fitting methods, thus its version of the chi-square or likelihood function he wants to minimize.
+In this case the user does not really need to build as input a `ROOT::Fit` data set and model function as we described before. He can implements its own version of the method function using on its own
+data set objects and functions.
+
+In this case `ROOT::Fit::Fitter::SetFCN` is used to set the method function  and `ROOT::Fit::FitFCN` is used for fitting. The method function can be passed also in `ROOT::Fit::FitFCN`, but in this
+case the default fitting configuration is used (e.g. it is not possible to set parameter bounds).
+
+The possible type of method functions that can be bassed in `ROOT::Fit::Fitter::SetFCN` are:
+* A generic functor object implementing `operator()(const double * p)` where **`p`** is the parameter vectors. In this case one needs to pass the number of parameters,
+the function object and optionally a vector of initial parameter values. Other optional parameter include the size of the data sets and a flag specifying if it is a chi2 (least-square fit).
+In the last two parameters are given, the `chi2/ndf` can be computed after fitting the data. 
+
+``` {.cpp}
+template <class Function> 
+ Fitter::SetFCN(unsigned int npar, Function & f, const double * initialParameters = 0, unsigned int dataSize=0, bool isChi2Fit = false)
+```
+
+* A function object implementing the `ROOT::Math::IBaseFunctionMultiDim` interface.
+``` {.cpp}
+ Fitter::SetFCN(const ROOT::Math::IBaseFunctionMultiDim  & f, const double * initialParameters = 0, unsigned int dataSize=0, bool isChi2Fit = false)
+```
+
+* A function object implementing the `ROOT::Math::FitMethodFunction` interface.  This is an interface class extending
+the `ROOT::Math::IBaseFunctionMultiDim` with some extra functionality which can be used when fitting.
+This extra functionality is required by dedicated fitting algorithms like *Fumili* or *GSLMultiFit*.
+``` {.cpp}
+ Fitter::SetFCN(const ROOT::Math::FitMethodFunction  & f, const double * initialParameters = 0, unsigned int dataSize=0)
+```
+
+* A old-Minuit like FCN interface (i.e. a free function with the signature `fcn(int &npar, double *gin, double &f, double *u, int flag)`.
+``` {.cpp}
+ typedef void(* ROOT::Fit::Fitter::MinuitFCN_t)(int &npar, double *gin, double &f, double *u, int flag)
+ Fitter::SetFCN(MinuitFCN_t fcn, int npar=0, const double *params=0, unsigned int dataSize=0, bool chi2fit=false)
+```
+
+### Fit Result
+
+The result of the fit is contained in the `ROOT::Fit::Result` object. A reference to the result object is obtained with the function
+`Fitter::Result()`.
+The `ROOT::Fit::FitResult` class provides an API for retrieving parameter values, errors, covariance and correlation matrix from the fit,
+minimum chi2/likelihood values, etc...
+A `FitResult::Print` method is also available to print the result of the fit.
+
+The class has a self-explanatory API so, see its reference documentation for the possible information available after the fit.
+
+One extra functionality offered by `ROOT::Fit::FitResult` is the possibility to compute the confidence intervals of the function after the fit. 
+The function `ROOT::Fit::FitResult::GetConfidenceInterval` given an input data sets (e.g. a `BinData` object) and a confidence level value (e.g. 68%)
+computes the lower/upper band values of the model function at the given data points. 
 
 ## The Fit Panel
 
