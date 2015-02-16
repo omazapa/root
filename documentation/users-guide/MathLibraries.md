@@ -1114,17 +1114,15 @@ There is one possible wrapper for every interface explained in the previous sect
 The following table indicates the wrapper for the most basic ones:
 
 
-+-----------------------------------+---------------------------------+
-| **Interface**                                                  |  **Function Wrapper**                          |   
-+-----------------------------------+---------------------------------+
-| `IBaseFunctionOneDim`                               | `Functor1D`                                 |
-+-----------------------------------+---------------------------------+
-| `IGradientFunctionOneDim`                         | `GradFunctor1D`                         |
-+-----------------------------------+---------------------------------+
-| `IBaseFunctionMultiDim`                             | `Functor`                                                 |
-+-----------------------------------+---------------------------------+
-| `IGradientFunctionMultiDim`                       | `GradFunctor`                                          |
-+-----------------------------------+---------------------------------+
+
+
+| **Interface**|   **Function Wrapper**    | 
+|------------------------------------------|------------------------|
+| `ROOT::Math::IBaseFunctionOneDim`              | `ROOT::Math::Functor1D` |
+| `ROOT::Math::IGradientFunctionOneDim`        | `ROOT::Math::GradFunctor1D` |
+| `ROOT::Math::IBaseFunctionMultiDim`             | `ROOT::Math::Functor` |
+| `ROOT::Math::IGradientFunctionMultiDim`       | `ROOT::Math::GradFunctor` |
+
 
 
 Thee functor wrapper are defined in the header file `Math/Functor.h`.
@@ -1300,11 +1298,375 @@ int main()
 
 ## Numerical Integration
 
+The algorithms provided by ROOT for numerical integration are implemented following the hierarchy shown in the next image.
+`ROOT::Math::VirtualIntegrator` defines the most basic functionality while the specific behaviours for one or multiple dimensions are implemented in
+`ROOT::Math::VirtualIntegratorOneDim` and `ROOT::Math::VirtualIntegratorMultiDim`.
+These interfaces define the integrator functionality with abstract methods to set the function, to compute the integral or to set the integration tolerance.
+These methods must be implemented in the concrete classes existing for the different integration algorithms.
+The user cannot create directly these virtual integrator interfaces. He needs to create the
+`ROOT::Math::IntegratorOneDim` class for integrating one-dimensional functions and `ROOT::Math::IntegratorMultiDim` for multi-dimensional functions.
+Through the ROOT Plug-In Manager,  the user can initialize `ROOT::Math::IntegratorOneDim` or  `ROOT::Math::IntegratorMultiDim` with 
+any of the concrete integration classes without dealing with them directly.
+These two classes provide the same interface as in `VirtualIntegratorOneDim` and `VirtualIntegratorMultiDim`, but with the possibility to choose in the constructor,
+which method will be used to perform the integration. 
+
+The method to set the function to be integrated,  must be of the function interface type described before.
+`ROOT::Math::IBaseFunctionOneDimFunction` is used for `ROOT::Math::IBaseFunctionMultiDim` and 
+The only difference between the  `ROOT::Math::IntegratorOneDim`  and `ROOT::Math::IntegratorMultiDim` resides
+in the dimensionality of that function and some specific that will be seen afterwards for the one dimensional one.
+
+![ROOT::Math Numerical Integrator classes](pictures/integration.png)
+
+The rest of the classes shown above in the diagram are the specialized classes provided. Each one implements a different method that will be explained in detail. It is important
+to notice that the two grayed classes (the one which name starts by GSL) are part of the *MathMore* library.
+We will later show in more detail the differences between the implementations.
+
+
+### Integration of One-dimensional Functions
+
+#### Using `ROOT::Math::IntegratorOneDim`
+
+Here is a code example on how to use the  `ROOT::Math::IntegratorOneDim` class
+(note that the class is defined in the header file `Math/Integrator.h`). In this example we create
+different instance of the class using some of the available algorithms in ROOT.
+If no algorithm is specified, the default one is used. The default Integrator together with other integration options
+such as relative and absolute tolerance, can be specified using the static method of the
+`ROOT::Math::IntegratorOneDimOptions`
+
+```{.cpp}
+#include "Math/Integrator.h"
+
+const double ERRORLIMIT = 1E-3;
+ 
+double f(double x) { 
+   return x; 
+} 
+ 
+double f2(const double * x) { 
+   return x[0] + x[1]; 
+} 
+ 
+ 
+int testIntegration1D() { 
+ 
+   const double RESULT = 0.5;
+   int status = 0;
+
+   // set default tolerances for all integrators
+   ROOT::Math::IntegratorOneDimOptions::SetDefaultAbsTolerance(1.E-6);
+   ROOT::Math::IntegratorOneDimOptions::SetDefaultRelTolerance(1.E-6);
+ 
+   ROOT::Math::Functor1D wf(&f);
+   ROOT::Math::Integrator ig(ROOT::Math::IntegrationOneDim::kADAPTIVESINGULAR); 
+   ig.SetFunction(wf);
+   double val = ig.Integral(0,1);
+   std::cout << "integral result is " << val << std::endl;
+   status += std::fabs(val-RESULT) > ERRORLIMIT;
+ 
+   ROOT::Math::Integrator ig2(ROOT::Math::IntegrationOneDim::kNONADAPTIVE); 
+   ig2.SetFunction(wf);
+   val = ig2.Integral(0,1);
+   std::cout << "integral result is " << val << std::endl;
+   status += std::fabs(val-RESULT) > ERRORLIMIT;
+ 
+   ROOT::Math::Integrator ig3(wf, ROOT::Math::IntegrationOneDim::kADAPTIVE); 
+   val = ig3.Integral(0,1);
+   std::cout << "integral result is " << val << std::endl;
+   status += std::fabs(val-RESULT) > ERRORLIMIT;
+ 
+   ROOT::Math::Integrator ig4(ROOT::Math::IntegrationOneDim::kGAUSS); 
+   ig4.SetFunction(wf);
+   val = ig4.Integral(0,1);
+   std::cout << "integral result is " << val << std::endl;
+   status += std::fabs(val-RESULT) > ERRORLIMIT;
+
+   ROOT::Math::Integrator ig4(ROOT::Math::IntegrationOneDim::kLEGENDRE); 
+   ig4.SetFunction(wf);
+   val = ig4.Integral(0,1);
+   std::cout << "integral result is " << val << std::endl;
+   status += std::fabs(val-RESULT) > ERRORLIMIT;
+ 
+   return status;
+}
+```
+
+### One-dimensional Integration Algorithms
+
+Here we provide a brief description of the different integration algorithms, which are also
+implemented as separate classes. The algorithms can be instantiated using the following enumeration values:
+
+| **Enumeration name**|   **Integrator class**    | 
+|------------------------------------  |-------------------------------|
+| `ROOT::Math::IntegratorOneDim::kGAUSS`      | `ROOT::Math::GaussianIntegrator`     |
+| `ROOT::Math::IntegratorOneDim::kLEGENDRE`   | `ROOT::Math:::GausLegendreIntegrator` |
+|  `ROOT::Math::Integration::kNONADAPTIVE`           |         `ROOT::Math:::GSLIntegrator`               |
+|  `ROOT::Math::Integration::kADAPTIVE`           |         `ROOT::Math:::GSLIntegrator`               |
+|  `ROOT::Math::Integration::kADAPTIVESINGULAR`           |         `ROOT::Math:::GSLIntegrator`               |
+
+#### ROOT::Math:::GaussIntegrator
+
+It uses the most basic Gaussian integration algorithm, it uses the 8-point and the 16-point Gaussian
+quadrature approximations. It is derived from the `DGAUSS` rountine of the *CERNLIB* by S. Kolbig.
+This class  
+Here is an example of using directly  the `GaussIntegrator` class
+
+```{.cpp}
+#include "TF1.h"
+#include "Math/WrappedTF1.h"
+#include "Math/GaussIntegrator.h"
+ 
+int main()
+{
+   TF1 f("Sin Function", "sin(x)", 0, TMath::Pi());
+   ROOT::Math::WrappedTF1 wf1(f);
+ 
+   ROOT::Math::GaussIntegrator ig;
+ 
+   ig.SetFunction(wf1, false);
+   ig.SetRelTolerance(0.001);
+ 
+   cout << ig.Integral(0, TMath::PiOver2()) << endl;
+ 
+   return 0;
+}
+```
+#### ROOT::Math::GaussLegendreIntegrator
+
+This class implementes the Gauss-Legendre quadrature formulas. This sort of numerical methods requieres that the user specifies the number of intermediate function points
+used in the calculation of the integral. It will automatically determine the coordinates and weights of such points before performing the integration.
+We can use the example above, but replacing the creation of a `ROOT::Math::GaussIntegrator` object with `ROOT::Math::GaussLegendreIntegrator`.
+
+#### ROOT::Math::GSLIntegrator
+
+This is a wrapper for the *QUADPACK* integrator implemented in the GSL library. It supports several integration methods that can be chosen in construction time.
+The default type is adaptive integration with singularity applying a Gauss-Kronrod 21-point integration rule. For a detail description of the GSL methods visit the GSL user guide
+This class implements the best algorithms for numerical integration for one dimensional functions. We encourage the use it as the main option, bearing in mind that it uses code from the
+GSL library, wich is provided in the *MathMore* library of ROOT.
+
+The interface to use is the same as above. We have now the possibility to specify a different integration algorithm in the constructor of the `ROOT::Math::GSLIntegrator` class. 
+```{.cpp}
+ROOT::Math::GSLIntegrator ig(ROOT::Math::Integration::kADAPTIVE, ROOT::Math::Integration::kGAUSS51);   // create the adaptive integrator with the 51 point rule
+ig.SetRelTolerance(1.E-6);  // set relative tolerance
+ig.SetAbsTolerance(1.E-6);   // set absoulte tolerance
+```
+
+The algorithm is controlled by the given absolute and relative tolerance. The iterations are continued until the following condition is satisfied
+$$
+absErr <= max ( epsAbs, epsRel * Integral)
+$$
+Where *absErr* is an estimate of the absolute error (it can be retrieved with `GSLIntegrator::Error()`)  and *Integral* is the estimate of the function integral
+(it can be obtained with `GSLIntegrator::Result()`)
+
+The possible integration algorithm types to use with the GSLIntegrator are the following. More information is provided in the `GSL` users documentation.
+* `ROOT::Math::Integration::kNONADAPTIVE` : based on `gsl_integration_qng`. It is a non-adaptive procedure which uses fixed Gauss-Kronrod-Patterson abscissae
+to sample the integrand at a maximum of 87 points. It is provided for fast integration of smooth functions.
+* `ROOT::Math::Integration::kADAPTIVE`: based on `gsl_integration_qag`. It is an adaptiva Gauss-Kronrod integration algorithm, the integration region is divided into subintervals, and on each
+iteration the subinterval with the largest estimated error is bisected. It is possible to specify the integration rule as an extra enumeration parameter. The possible rules are
+     *  `Integration::kGAUSS15` : 15 points Gauss-Konrod rule (value = 1)
+     *  `Integration::kGAUSS21` : 21 points Gauss-Konrod rule (value = 2)
+     *  `Integration::kGAUSS31` : 31 points Gauss-Konrod rule (value = 3)
+     *  `Integration::kGAUSS41` : 41 points Gauss-Konrod rule (value = 4)
+     *  `Integration::kGAUSS51` : 51 points Gauss-Konrod rule (value = 5)
+     *  `Integration::kGAUSS61` : 61 points Gauss-Konrod rule (value = 6)
+	 The higher-order rules give better accuracy for smooth functions, while lower-order rules save time when the function contains local difficulties, such as discontinuities. If no integration rule
+	 is passed, the 31 points rule is used as default.
+
+* 	 `ROOT::Math::Integration::kADAPTIVESINGULAR`: based on `gsl_integration_qags`. It is an integration type which can be used in the case of the presence of singularities.It uses the
+       Gauss-Kronrod 21-point integration rule. This is the default algorithm 
+
+Note that when using the common `ROOT::Math::IntegratorOneDIm` class the enumeration type defining the algorithm must be defined in the namespace `ROOT::Math::IntegrationOneDim` (to distinguish from
+the multi-dimensional case) and  the rule enumeration (or its corresponding integer) can be passed in the constructor of the `ROOT::Math::IntegratorOneDIm`.
+
+### Multi-dimensional Integration 
+
+The multi-dimensional integration algorithm should be applied to functions with dimension larger than one. 
+Adaptive multi-dimensional integration works for low function dimension, while MC integration can be applied to higher dimensions.
+
+#### Using `ROOT::Math::IntegratorMultiDim`
+
+Here is a code example on how to use the  `ROOT::Math::IntegratorOneDim` class
+(note that the class is defined in the header file `Math/Integrator.h`). In this example we create
+different instance of the class using some of the available algorithms in ROOT.
+
+```{.cpp}
+#include "Math/IntegratorMultiDim.h"
+#include "Math/Functor.h"
+
+  
+double f2(const double * x) { 
+   return x[0] + x[1]; 
+} 
+
+int testIntegrationMultiDim() { 
+ 
+   const double RESULT = 1.0;
+   const double ERRORLIMIT = 1E-3;
+   int status = 0;
+ 
+   ROOT::Math::Functor wf(&f2,2);
+   double a[2] = {0,0};
+   double b[2] = {1,1};
+ 
+   ROOT::Math::IntegratorMultiDim ig(ROOT::Math::IntegrationMultiDim::kADAPTIVE); 
+   ig.SetFunction(wf);
+   double val = ig.Integral(a,b);
+   std::cout << "integral result is " << val << std::endl;
+   status += std::fabs(val-RESULT) > ERRORLIMIT;
+ 
+   ROOT::Math::IntegratorMultiDim ig2(ROOT::Math::IntegrationMultiDim::kVEGAS); 
+   ig2.SetFunction(wf);
+   val = ig2.Integral(a,b);
+   std::cout << "integral result is " << val << std::endl;
+   status += std::fabs(val-RESULT) > ERRORLIMIT;
+ 
+   ROOT::Math::IntegratorMultiDim ig3(wf,ROOT::Math::IntegrationMultiDim::kPLAIN); 
+   val = ig3.Integral(a,b);
+   std::cout << "integral result is " << val << std::endl;
+   status += std::fabs(val-RESULT) > ERRORLIMIT;
+ 
+   ROOT::Math::IntegratorMultiDim ig4(wf,ROOT::Math::IntegrationMultiDim::kMISER); 
+   val = ig4.Integral(a,b);
+   std::cout << "integral result is " << val << std::endl;
+   status += std::fabs(val-RESULT) > ERRORLIMIT;
+ 
+   return status;
+}
+```
+
+#### Multi-dimensions Integration Algorithms
+
+Here is the types, that can be specified as enumeration and the corresponding classes
+
+| **Enumeration name**|   **Integrator class**    | 
+|------------------------------------  |-------------------------------|
+| `ROOT::Math::IntegratorMultiDim::kADAPTIVE`      | `ROOT::Math::AdaptiveIntegratorMultiDim`     |
+| `ROOT::Math::IntegratorMultiDim::kVEGAS`   | `ROOT::Math:::GSLMCIntegrator` |
+| `ROOT::Math::IntegratorMultiDim::kMISER`   | `ROOT::Math:::GSLMCIntegrator` |
+| `ROOT::Math::IntegratorMultiDim::kPLAIN`   | `ROOT::Math:::GSLMCIntegrator` |
+
+The control parameters for the integration algorithms can be specified using the
+`ROOT::Math::IntegratorMultiDimOptions` class. Static methods are provided to change the default values.
+It is possible to print the list of default control parameters using the  `ROOT::Math::IntegratorMultiDimOptions::Print` function.
+Example:
+```{.cpp}
+ROOT::Math::IntegratorMultiDimOptions opt;
+opt.Print();
+          Integrator Type :        ADAPTIVE
+       Absolute tolerance :           1e-09
+       Relative tolerance :           1e-09
+           Workspace size :          100000
+     (max) function calls :          100000
+```
+Depending on the algorithm, some of the control parameters might have no effect. 
+
+#### `ROOT::Math::AdaptiveIntegratorMultiDim`
+
+This class implements an adaptive quadrature integration method for multi dimensional functions. It is described in this paper
+*Genz, A.A. Malik, An adaptive algorithm for numerical integration over an N-dimensional rectangular region, J. Comput. Appl. Math. 6 (1980) 295-302*.
+It is part of the *MathCore* library.
+The user can control the relative and absolute tolerance and the maximum allowed number of function evaluation. 
+
+
+#### `ROOT::Math::GSLMCIntegrator`
+
+It is a class for performing numerical integration of a multidimensional function. It uses the numerical integration algorithms of GSL, which reimplements the algorithms used
+in the QUADPACK, a numerical integration package written in Fortran. Plain MC, MISER and VEGAS integration algorithms are supported for integration over finite (hypercubic) ranges.
+For a detail description of the GSL methods visit the GSL users guide.
+Specific configuration options (documented in the GSL user guide) for the `ROOT::Math::GSLMCIntegration` can be set directly in the class, or when using it via the `ROOT::Math::IntegratorMultiDim`
+interface, can be defined using the `ROOT::Math::IntegratorMultiDimOptions`.
+
+
+
 ## Function Derivation
+
+There are in ROOT only two classes to perform numerical derivation. One of them is in the MathCore library while the other is in the MathMore wrapping an integration function from the GSL library.
+* RichardsonDerivator: Implements the Richardson method for numerical integration. It can calculate up to the third derivative of a function.
+* GSLDerivator of *MathMore* based on GSL. 
 
 ## Numerical Minimization
 
+The algorithms provided by ROOT for numerical integration are implemented following the hierarchy shown in the next image. The left branch of classes are used for one dimensional minimization, while
+the right one is used for multidimensional minimization. In the case of multidimensional minimization we have also the classes `TMinuitMinimizer` implemented using `TMinuit`, `TFumiliMinimizer`
+implemented using `TFumili` for least square or likelihood minimizations.
+We encourage the use of the GSL algorithms for one dimensional minimization and `Minuit2` (or the old version`Minuit`) for multi dimensional minimization.
+
+![Numerical Minimization classes](pictures/minimization.png)
+
+
+### One-Dimensional Minimization
+
+These algorithms are for finding the minimum of a one-dimensional minimization function.
+The function to minimize must be given to the class implementing the algorithm as a
+`ROOT::Math::IBaseFunctionOneDim` object.
+The algorithms supported are only bracketing algorithm which do not use derivatives information.
+
+
+Two classes exist. One in the *MathCore* library implementing the Brent method (not using the derivatives)
+and one in the *MathMore* library implementing several different methods, using in some case the derivatives.
+
+#### `ROOT::Math::BrentMinimizer1D`
+
+This class implements the Brent method to minimize one-dimensional function.
+An interval containing the function minimum must be provided.
+Here is an example where we define the function to minimize as a *lambda* function
+(requires C++11). The function to minimize must be given to the class implementing the algorithm as a
+`ROOT::Math::IBaseFunctionOneDim` object.
+
+```{.cpp}
+  ROOT::Math::Functor1D func( [](double x){ return 1 + -4*x + 1*x*x; } );
+ 
+   ROOT::Math::BrentMinimizer1D bm;
+   bm.SetFunction(func, -10,10);
+   bm.Minimize(10,0,0);
+   cout << "Minimum: f(" << bm.XMinimum() << ") = " <<bm.FValMinimum() << endl;
+```
+
+Note that when setting the function to minimize, one needs to provide the  interval range to find the minimum.
+In the `Minimize` call, the maximum number of function calls, the relative and absolute tolerance must be provided.
+
+#### `ROOT::Math::GSLMInimizer1D`
+
+This class wraps two different methods from the GSL. 
+The algorithms which can be choosen at construction time are *GOLDENSECTION*, which is the simplest method
+but the slowest and *BRENT* (the default one) which combines the golden section with a parabolic interpolation.
+The algorithm can be chosen as a different enumeration in the constructor:
+* `ROOT::Math::Minim1D::kBRENT` for the Brent algorithm (default)
+* `ROOT::Math::Minim1D::kGOLDENSECTION` for the golden section algorithm 
+
+```{.cpp}
+ // this makes class with the default Brent algorithm
+ ROOT::Math::GSLMinimizer1D minBrent;
+  // this make the class with the Golden Section algorithm 
+   ROOT::Math::GSLMinimizer1D minGold(ROOT::Math::Minim1D::kGOLDENSECTION);
+```
+
+The interface to set the function and to minimize is the same as in the case of the `BrentMinimizer1D`. 
+
+#### Using the TF1 class
+
+It is possible to perform the one-dimensional minimization/maximization of a function by using directly the  function class in ROOT, `TF1` of the *Hist* library.
+The minmization is implemented in `TF1` using the BrentMInimizer1D and available with the class member functions
+* `TF1::GetMinimum`/`TF1::GetMaximum` to find the function minimum/maximum value
+* `TF1::GetMinimumX`/`TF1::GetMaximumX` to find the x value corresponding at the function minimum.
+
+The interval to search for the minimum (the default is the `TF1` range),  tolerance and maximum iterations can be provided as optional parameters of the
+`TF1::GetMinimum/Maximum` functions. 
+
+
+### Multi-Dimensional Minimization
+
+All the algorithms for multi-dimensional minimization are implementing the `ROOT::Math::Minimizer`
+interface and they can be used in the same way and one can switch between minimizer at run-time.
+The minimizer concrete class can be in different ROOT libraries and they can be instantiate using the ROOT
+plug-in manager. 
+
 ## ROOT Finder Algorithms
+
+The function must be given to the class implementing the algorithm as a
+`ROOT::Math::IBaseFunctionOneDim` object.
+Some of the algorithm requires the derivatives of the function.
+In that case a `ROOT::Math::IGradientFunctionOneDim` object must be provided.
+
 
 ## Interpolation Algorithms
 
