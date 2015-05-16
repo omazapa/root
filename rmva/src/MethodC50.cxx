@@ -110,10 +110,9 @@ void     MethodC50::Init()
         fDfTrain[GetInputLabel( i ).Data()]=fArrayTrain[i];
     }
     
-    TString jobName=GetJobName();
-    
-//    r["fDfTrain"]=fDfTrain;
-//    r<<"print(fDfTrain)";
+    //NOTE:need improved names in R's environment using JobName of TMVA
+    r["fDfTrain"]=fDfTrain;
+    r<<"print(fDfTrain)";
 
 //    const UInt_t trainsize = Data()->GetNTrainingEvents();
 //    const UInt_t testsize = Data()->GetNTestEvents();
