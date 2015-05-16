@@ -91,6 +91,8 @@ namespace TMVA {
    protected:
        ROOT::R::TRDataFrame fDfTrain;//signal and backgrd
        ROOT::R::TRDataFrame fDfTest;
+       TVectorD             fWeightTrain;
+       TVectorD             fWeightTest;
 
       ClassDef(RMethodBase,0)  // Virtual base class for all TMVA method
 

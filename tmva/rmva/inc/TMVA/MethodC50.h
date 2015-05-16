@@ -48,7 +48,7 @@ namespace TMVA {
 
 
       virtual ~MethodC50( void );
-      virtual void     Train() {}// = 0;
+      virtual void     Train();
       // options treatment
       virtual void     Init();
       virtual void     DeclareOptions(){}// = 0;

@@ -19,11 +19,9 @@ ROOT_USE_PACKAGE(tmva)
 
 include_directories(${R_INCLUDE_DIRS})
 
-#include_directories(${CMAKE_SOURCE_DIR}/rmva/inc ${RCPP_INCLUDE_DIR} ${RINSIDE_INCLUDE_DIR} ${R_INCLUDE_DIR})
 
-
-set(R_HEADERS ${CMAKE_SOURCE_DIR}/rmva/inc/TMVA/RMethodBase.h 
-              ${CMAKE_SOURCE_DIR}/rmva/inc/TMVA/MethodC50.h
+set(R_HEADERS ${CMAKE_SOURCE_DIR}/tmva/rmva/inc/TMVA/RMethodBase.h 
+              ${CMAKE_SOURCE_DIR}/tmva/rmva/inc/TMVA/MethodC50.h
               )
 
 SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)

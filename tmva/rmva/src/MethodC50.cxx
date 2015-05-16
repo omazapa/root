@@ -23,6 +23,7 @@
 #include "Riostream.h"
 #include "TMatrix.h"
 #include "TMatrixD.h"
+#include "TVectorD.h"
 
 #include "TMVA/VariableTransformBase.h"
 #include "TMVA/MethodC50.h"
@@ -32,9 +33,6 @@
 #include "TMVA/PDF.h"
 #include "TMVA/ClassifierFactory.h"
 
-#ifndef ROOT_R_TRInterface
-#include<TRInterface.h>
-#endif
 
 
 using namespace TMVA;
@@ -82,10 +80,10 @@ void     MethodC50::Init()
 {
     if(!r.IsInstalled("C50"))
     {
-        Error("Init","R's package C50 is not installed.");
+        Error( "Init","R's package C50 is not installed.");
         return;
     }
-    
+        
     if(!r.Require("C50"))
     {
         Error("Init","R's package C50 can not be loaded.");
@@ -93,7 +91,7 @@ void     MethodC50::Init()
     }
     const UInt_t nvar = DataInfo().GetNVariables();
     
-    const UInt_t ntrains=Data()->GetNEvtSigTest()+Data()->GetNEvtBkgdTest();
+    const UInt_t ntrains=Data()->GetNEvtBkgdTrain()+Data()->GetNEvtSigTrain();
     
     std::vector<std::vector<Float_t> > fArrayTrain(nvar);
     
@@ -111,42 +109,45 @@ void     MethodC50::Init()
     }
     
     //NOTE:need improved names in R's environment using JobName of TMVA
-    r["fDfTrain"]=fDfTrain;
-    r<<"print(fDfTrain)";
+    r["RMVA.C50.fDfTrain"]=fDfTrain;
+//    r<<"print(fDfTrain)";
 
-//    const UInt_t trainsize = Data()->GetNTrainingEvents();
-//    const UInt_t testsize = Data()->GetNTestEvents();
-//    
-//    Log() << Endl;
-//    Log() << gTools().Color("bold") << "--- Nvars:"<<nvar << gTools().Color("reset") << Endl;
-//    Log() << gTools().Color("bold") << "--- Train Size:"<<trainsize << gTools().Color("reset") << Endl;
-//    Log() << gTools().Color("bold") << "--- Test Size:"<<testsize << gTools().Color("reset") << Endl;
-//    
-//    Log() << gTools().Color("bold") << "--- NEvtSigTest:"<<Data()->GetNEvtSigTest() << gTools().Color("reset") << Endl;
-//    Log() << gTools().Color("bold") << "--- NEvtBkgdTest:"<<Data()->GetNEvtBkgdTest() << gTools().Color("reset") << Endl;
-//    Log() << gTools().Color("bold") << "--- NEvtSigTrain:"<<Data()->GetNEvtSigTrain() << gTools().Color("reset") << Endl;
-//    Log() << gTools().Color("bold") << "--- NEvtBkgdTrain:"<<Data()->GetNEvtBkgdTrain() << gTools().Color("reset") << Endl;
-//    
-//    
-  
-//    ROOT::R::TRDataFrame df_testing;
-//    for(int i=0;i<nvar;i++)
-//    {
-//    Log() << Endl;
-//    Log() << gTools().Color("bold") << "--- InputVar:"<< GetInputVar( i ) << gTools().Color("reset") << Endl;
-//    Log() << gTools().Color("bold") << "--- InputLabel:"<< GetInputLabel( i ) << gTools().Color("reset") << Endl;
-//    Log() << gTools().Color("bold") << "--- GetInputTitle:"<< GetInputTitle( i ) << gTools().Color("reset") << Endl;
-//    Log() << gTools().Color("bold") << "--- Size Training:"<< Data()->GetEvent(  i, Types::ETreeType::kTraining )->GetValues().size() << gTools().Color("reset") << Endl;
-//    Log() << gTools().Color("bold") << "--- Size Testing:"<< Data()->GetEvent(  i, Types::ETreeType::kTesting )->GetValues().size() << gTools().Color("reset") << Endl;
-    //df_testing[ GetInputLabel( i ).Data()] =  Data()->GetEvent(  i, Types::ETreeType::kTraining )->GetValues();  
-//    df_testing[ GetInputLabel( i ).Data()] =  Data()->GetEvent(  i, Types::ETreeType::kTraining )->GetValues();  
-//    }
-//    r["df_testing"]=df_testing;
-//    r<<"print(df_testing)";
-//   
+    const UInt_t ntests = Data()->GetNEvtSigTest()+Data()->GetNEvtBkgdTest();
+
+    std::vector<std::vector<Float_t> > fArrayTest(nvar);
     
+    for(UInt_t j=0;j<ntests;j++)
+    {  
+        for(UInt_t i=0;i<nvar;i++)
+        {  
+            fArrayTest[i].push_back( Data()->GetEvent(  j, Types::ETreeType::kTesting )->GetValues()[i]);
+        }    
+        
+    }    
+    for(UInt_t i=0;i<nvar;i++)
+    {
+        fDfTest[GetInputLabel( i ).Data()]=fArrayTest[i];
+    }
+    r["RMVA.C50.fDfTest"]=fDfTest;
+    
+    //factors creations
+    TString facCmd="RMVA.C50.Factor<-factor(c(rep('signal',";
+    facCmd+=Data()->GetNEvtSigTest();
+    facCmd+="),rep('background',";
+    facCmd+=Data()->GetNEvtBkgdTest();
+    facCmd+=")))";
+    r<<facCmd;
+    
+        
 }
 
+void MethodC50::Train()
+{
+    r<<"RMVA.C50.Model<-C5.0(RMVA.C50.fDfTrain,RMVA.C50.Factor)";
+    r.SetVerbose(1);
+    r<<"summary(RMVA.C50.Model)";
+    r.SetVerbose(0);
+}
 
 
 //_______________________________________________________________________
