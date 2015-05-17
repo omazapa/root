@@ -93,10 +93,16 @@ void     MethodC50::Init()
     
     const UInt_t ntrains=Data()->GetNEvtBkgdTrain()+Data()->GetNEvtSigTrain();
     
+    //array of columns for every var to create a dataframe for training
     std::vector<std::vector<Float_t> > fArrayTrain(nvar);
     
     for(UInt_t j=0;j<ntrains;j++)
     {  
+        //creating array with class type(signal or background) for factor required
+        if(Data()->GetEvent(  j, Types::ETreeType::kTraining )->GetClass()==fSignalClass) fFactorTrain.push_back("signal");
+        else fFactorTrain.push_back("background");
+        
+        //filling vector of columns for training
         for(UInt_t i=0;i<nvar;i++)
         {  
             fArrayTrain[i].push_back( Data()->GetEvent(  j, Types::ETreeType::kTraining )->GetValues()[i]);
@@ -110,14 +116,20 @@ void     MethodC50::Init()
     
     //NOTE:need improved names in R's environment using JobName of TMVA
     r["RMVA.C50.fDfTrain"]=fDfTrain;
-//    r<<"print(fDfTrain)";
+    r<<"write.table(RMVA.C50.fDfTrain,file='fDfTrain.txt')";
 
+    
     const UInt_t ntests = Data()->GetNEvtSigTest()+Data()->GetNEvtBkgdTest();
 
+    //array of columns for every var to create a dataframe for testing
     std::vector<std::vector<Float_t> > fArrayTest(nvar);
     
     for(UInt_t j=0;j<ntests;j++)
     {  
+        //creating array with class type(signal or background) for factor required
+        if(Data()->GetEvent(  j, Types::ETreeType::kTesting )->GetClass()==fSignalClass) fFactorTest.push_back("signal");
+        else fFactorTest.push_back("background");
+        
         for(UInt_t i=0;i<nvar;i++)
         {  
             fArrayTest[i].push_back( Data()->GetEvent(  j, Types::ETreeType::kTesting )->GetValues()[i]);
@@ -129,21 +141,16 @@ void     MethodC50::Init()
         fDfTest[GetInputLabel( i ).Data()]=fArrayTest[i];
     }
     r["RMVA.C50.fDfTest"]=fDfTest;
-    
+    r<<"write.table(RMVA.C50.fDfTest,file='fDfTest.txt')";
+   
     //factors creations
-    TString facCmd="RMVA.C50.Factor<-factor(c(rep('signal',";
-    facCmd+=Data()->GetNEvtSigTest();
-    facCmd+="),rep('background',";
-    facCmd+=Data()->GetNEvtBkgdTest();
-    facCmd+=")))";
-    r<<facCmd;
-    
-        
+    r["RMVA.C50.FactorTrain"]=fFactorTrain;
+    r<<"RMVA.C50.FactorTrain<-factor(RMVA.C50.FactorTrain)";       
 }
 
 void MethodC50::Train()
 {
-    r<<"RMVA.C50.Model<-C5.0(RMVA.C50.fDfTrain,RMVA.C50.Factor)";
+    r<<"RMVA.C50.Model<-C5.0(RMVA.C50.fDfTrain,RMVA.C50.FactorTrain)";
     r.SetVerbose(1);
     r<<"summary(RMVA.C50.Model)";
     r.SetVerbose(0);

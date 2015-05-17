@@ -41,7 +41,7 @@ void c50()
    // The second argument is the output file for the training results
    // All TMVA output can be suppressed by removing the "!" (not) in
    // front of the "Silent" argument in the option string
-   TMVA::Factory *factory = new TMVA::Factory( "TMVAClassification", outputFile,
+   TMVA::Factory *factory = new TMVA::Factory( "RMVAClassification", outputFile,
                                                "!V:!Silent:Color:DrawProgressBar:Transformations=I;D;P;G,D:AnalysisType=Classification" );
    
     // Define the input variables that shall be used for the MVA training

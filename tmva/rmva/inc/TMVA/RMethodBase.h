@@ -93,6 +93,8 @@ namespace TMVA {
        ROOT::R::TRDataFrame fDfTest;
        TVectorD             fWeightTrain;
        TVectorD             fWeightTest;
+       std::vector<std::string> fFactorTrain;
+       std::vector<std::string> fFactorTest;
 
       ClassDef(RMethodBase,0)  // Virtual base class for all TMVA method
 
