@@ -12,12 +12,12 @@
 #include "TROOT.h"
 
 
-#if not defined(__CINT__) || defined(__MAKECINT__)
-// needs to be included when makecint runs (ACLIC)
 #include "TMVA/Factory.h"
 #include "TMVA/Tools.h"
-#endif
 #include<TMVA/MethodC50.h>
+
+ROOT::R::TRInterface &r=ROOT::R::TRInterface::Instance();
+
 void c50()
 {
    // This loads the library
@@ -105,15 +105,15 @@ void c50()
                                         "nTrain_Signal=0:nTrain_Background=0:SplitMode=Random:NormMode=NumEvents:!V" );
    
    factory->BookMethod( TMVA::Types::kC50, "C50",
-                           "!H:!V" );
+                           "!H:NTrials=1:Rules=kFALSE:!V" );
       // Train MVAs using the set of training events
    factory->TrainAllMethods();
 
    // ---- Evaluate all MVAs using the set of test events
-   factory->TestAllMethods();
+//   factory->TestAllMethods();
 
    // ----- Evaluate and compare performance of all configured MVAs
-   factory->EvaluateAllMethods();
+//   factory->EvaluateAllMethods();
 
    // --------------------------------------------------------------
 

@@ -48,7 +48,7 @@ MethodC50::MethodC50( const TString& jobName,
                           DataSetInfo& dsi,
                           const TString& theOption,
                           TDirectory* theTargetDir ) :
-   RMethodBase( jobName, Types::kC50, methodTitle, dsi, theOption, theTargetDir )
+   RMethodBase( jobName, Types::kC50, methodTitle, dsi, theOption, theTargetDir ),fNTrials(1),fRules(kFALSE)
 {
    // standard constructor for the C50
         
@@ -56,7 +56,7 @@ MethodC50::MethodC50( const TString& jobName,
 
 //_______________________________________________________________________
 MethodC50::MethodC50( DataSetInfo& theData, const TString& theWeightFile, TDirectory* theTargetDir )
-   : RMethodBase( Types::kC50, theData, theWeightFile, theTargetDir )
+   : RMethodBase( Types::kC50, theData, theWeightFile, theTargetDir ),fNTrials(1),fRules(kFALSE)
 {
    // constructor from weight file
 }
@@ -81,12 +81,16 @@ void     MethodC50::Init()
     if(!r.IsInstalled("C50"))
     {
         Error( "Init","R's package C50 is not installed.");
+        Log() << kERROR << " R's package C50 is not installed."
+              << Endl;    
         return;
     }
         
     if(!r.Require("C50"))
     {
         Error("Init","R's package C50 can not be loaded.");
+        Log() << kERROR << " R's package C50 can not be loaded."
+              << Endl;
         return;
     }
     const UInt_t nvar = DataInfo().GetNVariables();
@@ -145,17 +149,41 @@ void     MethodC50::Init()
    
     //factors creations
     r["RMVA.C50.FactorTrain"]=fFactorTrain;
-    r<<"RMVA.C50.FactorTrain<-factor(RMVA.C50.FactorTrain)";       
+    r<<"RMVA.C50.FactorTrain<-factor(RMVA.C50.FactorTrain)";
+    
 }
 
 void MethodC50::Train()
 {
-    r<<"RMVA.C50.Model<-C5.0(RMVA.C50.fDfTrain,RMVA.C50.FactorTrain)";
+    r<<"RMVA.C50.Model<-C5.0(RMVA.C50.fDfTrain,RMVA.C50.FactorTrain,RMVA.C50.NTrials,rules=RMVA.C50.Rules)";
     r.SetVerbose(1);
     r<<"summary(RMVA.C50.Model)";
     r.SetVerbose(0);
 }
 
+//_______________________________________________________________________
+void MethodC50::DeclareOptions()
+{
+    //
+    DeclareOptionRef(fNTrials, "NTrials", "An integer specifying the number of boosting iterations");
+    DeclareOptionRef(fRules, "Rules", "A logical: should the tree be decomposed into a rule-basedmodel?");
+}
+
+//_______________________________________________________________________
+void MethodC50::ProcessOptions()
+{
+    if (fNTrials<=0){
+      Log() << kERROR << " fNTrials <=0... that does not work !! "
+            << " I set it to 1 .. just so that the program does not crash"
+            << Endl;
+      fNTrials = 1;
+   }
+    r["RMVA.C50.NTrials"]=fNTrials;
+    Log()<<"NTrials  "<<fNTrials<<Endl;
+    r["RMVA.C50.Rules"]=fRules;
+    Log()<<"Rules  "<<fRules<<Endl;
+ 
+}
 
 //_______________________________________________________________________
 void MethodC50::GetHelpMessage() const

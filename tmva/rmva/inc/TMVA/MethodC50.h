@@ -51,8 +51,8 @@ namespace TMVA {
       virtual void     Train();
       // options treatment
       virtual void     Init();
-      virtual void     DeclareOptions(){}// = 0;
-      virtual void     ProcessOptions(){}// = 0;
+      virtual void     DeclareOptions();
+      virtual void     ProcessOptions();
       // create ranking
       virtual const Ranking* CreateRanking(){return NULL;}// = 0;
       
@@ -73,7 +73,9 @@ namespace TMVA {
       friend class Factory;                   // DSMTEST
       friend class Reader;                    // DSMTEST      
    protected:
-      
+       UInt_t fNTrials;//number of trials with boost enabled
+       Bool_t fRules;//A logical: should the tree be decomposed into a rule-based model?
+
       // get help message text
       void GetHelpMessage() const;
 
