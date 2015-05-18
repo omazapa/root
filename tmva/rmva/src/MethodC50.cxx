@@ -99,17 +99,20 @@ void     MethodC50::Init()
     
     //array of columns for every var to create a dataframe for training
     std::vector<std::vector<Float_t> > fArrayTrain(nvar);
-    
+    fWeightTrain.ResizeTo(ntrains);
     for(UInt_t j=0;j<ntrains;j++)
     {  
+        const Event *ev=Data()->GetEvent(  j, Types::ETreeType::kTraining );
         //creating array with class type(signal or background) for factor required
-        if(Data()->GetEvent(  j, Types::ETreeType::kTraining )->GetClass()==fSignalClass) fFactorTrain.push_back("signal");
+        if(ev->GetClass()==fSignalClass) fFactorTrain.push_back("signal");
         else fFactorTrain.push_back("background");
+        
+        fWeightTrain[j]=ev->GetOriginalWeight();
         
         //filling vector of columns for training
         for(UInt_t i=0;i<nvar;i++)
         {  
-            fArrayTrain[i].push_back( Data()->GetEvent(  j, Types::ETreeType::kTraining )->GetValues()[i]);
+            fArrayTrain[i].push_back(ev->GetValues()[i]);
         }    
         
     }    
@@ -120,23 +123,26 @@ void     MethodC50::Init()
     
     //NOTE:need improved names in R's environment using JobName of TMVA
     r["RMVA.C50.fDfTrain"]=fDfTrain;
+    r["RMVA.C50.fWeightTrain"]=fWeightTrain;
     r<<"write.table(RMVA.C50.fDfTrain,file='fDfTrain.txt')";
-
+    
     
     const UInt_t ntests = Data()->GetNEvtSigTest()+Data()->GetNEvtBkgdTest();
 
     //array of columns for every var to create a dataframe for testing
     std::vector<std::vector<Float_t> > fArrayTest(nvar);
-    
+    fWeightTest.ResizeTo(ntests);
     for(UInt_t j=0;j<ntests;j++)
     {  
+        const Event *ev=Data()->GetEvent(  j, Types::ETreeType::kTesting );
         //creating array with class type(signal or background) for factor required
-        if(Data()->GetEvent(  j, Types::ETreeType::kTesting )->GetClass()==fSignalClass) fFactorTest.push_back("signal");
+        if(ev->GetClass()==fSignalClass) fFactorTest.push_back("signal");
         else fFactorTest.push_back("background");
         
+        fWeightTest[j]=ev->GetOriginalWeight();
         for(UInt_t i=0;i<nvar;i++)
         {  
-            fArrayTest[i].push_back( Data()->GetEvent(  j, Types::ETreeType::kTesting )->GetValues()[i]);
+            fArrayTest[i].push_back( ev->GetValues()[i]);
         }    
         
     }    
@@ -145,17 +151,18 @@ void     MethodC50::Init()
         fDfTest[GetInputLabel( i ).Data()]=fArrayTest[i];
     }
     r["RMVA.C50.fDfTest"]=fDfTest;
+    r["RMVA.C50.fWeightTest"]=fWeightTest;    
     r<<"write.table(RMVA.C50.fDfTest,file='fDfTest.txt')";
    
     //factors creations
-    r["RMVA.C50.FactorTrain"]=fFactorTrain;
-    r<<"RMVA.C50.FactorTrain<-factor(RMVA.C50.FactorTrain)";
+    r["RMVA.C50.fFactorTrain"]=fFactorTrain;
+    r<<"RMVA.C50.fFactorTrain<-factor(RMVA.C50.fFactorTrain)";
     
 }
 
 void MethodC50::Train()
 {
-    r<<"RMVA.C50.Model<-C5.0(RMVA.C50.fDfTrain,RMVA.C50.FactorTrain,RMVA.C50.NTrials,rules=RMVA.C50.Rules)";
+    r<<"RMVA.C50.Model<-C5.0(RMVA.C50.fDfTrain,RMVA.C50.fFactorTrain,RMVA.C50.NTrials,rules=RMVA.C50.Rules,weights=RMVA.C50.fWeightTrain)";
     r.SetVerbose(1);
     r<<"summary(RMVA.C50.Model)";
     r.SetVerbose(0);
