@@ -110,7 +110,7 @@ void c50()
    factory->TrainAllMethods();
 
    // ---- Evaluate all MVAs using the set of test events
-//   factory->TestAllMethods();
+   factory->TestAllMethods();
 
    // ----- Evaluate and compare performance of all configured MVAs
 //   factory->EvaluateAllMethods();

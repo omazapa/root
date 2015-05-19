@@ -47,19 +47,24 @@ namespace TMVA {
                    TDirectory* theTargetDir = NULL );
 
 
-      virtual ~MethodC50( void );
-      virtual void     Train();
+      ~MethodC50( void );
+      void     Train();
       // options treatment
-      virtual void     Init();
-      virtual void     DeclareOptions();
-      virtual void     ProcessOptions();
+      void     Init();
+      void     DeclareOptions();
+      void     ProcessOptions();
       // create ranking
-      virtual const Ranking* CreateRanking(){return NULL;}// = 0;
+      const Ranking* CreateRanking(){return NULL;}// = 0;
       
-      virtual Double_t GetMvaValue( Double_t* errLower = 0, Double_t* errUpper = 0) {return 0;}//= 0;
+      Double_t GetMvaValue( Double_t* errLower = 0, Double_t* errUpper = 0);
 
-     Bool_t HasAnalysisType( Types::EAnalysisType type, UInt_t numberClasses, UInt_t numberTargets );
+      Bool_t HasAnalysisType( Types::EAnalysisType type, UInt_t numberClasses, UInt_t numberTargets );
      
+      // performs classifier testing
+      virtual void     TestClassification();
+      
+      // performs multiclass classifier testing
+      virtual void     TestMulticlass();
 
       
       using MethodBase::ReadWeightsFromStream;
