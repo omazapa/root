@@ -4,7 +4,7 @@
 /**********************************************************************************
  * Project: TMVA - a Root-integrated toolkit for multivariate data analysis       *
  * Package: TMVA                                                                  *
- * Class  : MethodC50                                                              *
+ * Class  : MethodC50                                                             *
  * Web    : http://tmva.sourceforge.net                                           *
  *                                                                                *
  * Description:                                                                   *
@@ -36,8 +36,8 @@
 
 
 using namespace TMVA;
-REGISTER_METHOD(C50)
 
+REGISTER_METHOD(C50)
 
 ClassImp(MethodC50)
 
@@ -50,6 +50,19 @@ MethodC50::MethodC50( const TString& jobName,
                           TDirectory* theTargetDir ) :
    RMethodBase( jobName, Types::kC50, methodTitle, dsi, theOption, theTargetDir ),fNTrials(1),fRules(kFALSE)
 {
+    
+    //C5.0Control options
+    fControlSubset=kTRUE;
+    fControlBands=0; 
+    fControlWinnow=kFALSE;
+    fControlNoGlobalPruning=kFALSE; 
+    fControlCF=0.25; 
+    fControlMinCases=2;
+    fControlFuzzyThreshold=kFALSE;
+    fControlSample=0;
+    r["sample.int(4096, size = 1) - 1L"]>>fControlSeed;
+    fControlEarlyStopping=kTRUE;
+
    // standard constructor for the C50
         
 }
@@ -59,6 +72,17 @@ MethodC50::MethodC50( DataSetInfo& theData, const TString& theWeightFile, TDirec
    : RMethodBase( Types::kC50, theData, theWeightFile, theTargetDir ),fNTrials(1),fRules(kFALSE)
 {
    // constructor from weight file
+    fControlSubset=kTRUE;
+    fControlBands=0; 
+    fControlWinnow=kFALSE;
+    fControlNoGlobalPruning=kFALSE; 
+    fControlCF=0.25; 
+    fControlMinCases=2;
+    fControlFuzzyThreshold=kFALSE;
+    fControlSample=0;
+    r["sample.int(4096, size = 1) - 1L"]>>fControlSeed;
+    fControlEarlyStopping=kTRUE;
+
 }
 
 
@@ -115,6 +139,7 @@ void MethodC50::Train()
     r.SetVerbose(1);
     r<<"summary(RMVA.C50.Model)";
     r.SetVerbose(0);
+    r<<"RMVA.C50.PartyTree<-as.party(RMVA.C50.Model)";
     //Save results for training with the next lines
     //Results* results = Data()->GetResults(GetMethodName(), Types::kTraining, GetAnalysisType());
 }
@@ -125,6 +150,38 @@ void MethodC50::DeclareOptions()
     //
     DeclareOptionRef(fNTrials, "NTrials", "An integer specifying the number of boosting iterations");
     DeclareOptionRef(fRules, "Rules", "A logical: should the tree be decomposed into a rule-basedmodel?");
+    
+    //C5.0Control Options
+    DeclareOptionRef(fControlSubset, "ControlSubset", "A logical: should the model evaluate groups of discrete \
+                                      predictors for splits? Note: the C5.0 command line version defaults this \
+                                      parameter to ‘FALSE’, meaning no attempted gropings will be evaluated \
+                                      during the tree growing stage.");
+    DeclareOptionRef(fControlBands, "ControlBands", "An integer between 2 and 1000. If ‘TRUE’, the model orders \
+                                     the rules by their affect on the error rate and groups the \
+                                     rules into the specified number of bands. This modifies the \
+                                     output so that the effect on the error rate can be seen for \
+                                     the groups of rules within a band. If this options is \
+                                     selected and ‘rules = kFALSE’, a warning is issued and ‘rules’ \
+                                     is changed to ‘kTRUE’.");
+    DeclareOptionRef(fControlWinnow, "ControlWinnow", "A logical: should predictor winnowing (i.e feature selection) be used?");
+    DeclareOptionRef(fControlNoGlobalPruning, "ControlNoGlobalPruning", "A logical to toggle whether the final, global pruning \
+                                                                         step to simplify the tree.");
+    DeclareOptionRef(fControlCF, "ControlCF", "A number in (0, 1) for the confidence factor.");
+    DeclareOptionRef(fControlMinCases, "ControlMinCases", "an integer for the smallest number of samples that must be \
+                                                           put in at least two of the splits.");
+    
+    DeclareOptionRef(fControlFuzzyThreshold, "ControlFuzzyThreshold", "A logical toggle to evaluate possible advanced splits \
+                                                                      of the data. See Quinlan (1993) for details and examples.");
+    DeclareOptionRef(fControlSample, "ControlSample", "A value between (0, .999) that specifies the random \
+                                                       proportion of the data should be used to train the model. By \
+                                                       default, all the samples are used for model training. Samples \
+                                                       not used for training are used to evaluate the accuracy of \
+                                                       the model in the printed output.");
+    DeclareOptionRef(fControlSeed, "ControlSeed", " An integer for the random number seed within the C code.");
+    DeclareOptionRef(fControlEarlyStopping, "ControlEarlyStopping", " A logical to toggle whether the internal method for \
+                                                                      stopping boosting should be used.");
+    
+    
 }
 
 //_______________________________________________________________________
@@ -140,6 +197,19 @@ void MethodC50::ProcessOptions()
     Log()<<"NTrials  "<<fNTrials<<Endl;
     r["RMVA.C50.Rules"]=fRules;
     Log()<<"Rules  "<<fRules<<Endl;
+    
+   // constructor from weight file
+    r["RMVA.C50.ControlOptions.ControlSubset"]=fControlSubset;
+    r["RMVA.C50.ControlOptions.ControlBands"]=fControlBands; 
+    r["RMVA.C50.ControlOptions.ControlWinnow"]=fControlWinnow;
+    r["RMVA.C50.ControlOptions.ControlNoGlobalPruning"]=fControlNoGlobalPruning; 
+    r["RMVA.C50.ControlOptions.ControlCF"]=fControlCF; 
+    r["RMVA.C50.ControlOptions.ControlMinCases"]=fControlMinCases;
+    r["RMVA.C50.ControlOptions.ControlFuzzyThreshold"]=fControlFuzzyThreshold;
+    r["RMVA.C50.ControlOptions.ControlSample"]=fControlSample;
+    r["RMVA.C50.ControlOptions.ControlSeed"]=fControlSeed;
+    r["RMVA.C50.ControlOptions.ControlEarlyStopping"]=fControlEarlyStopping;
+    
  
 }
 
