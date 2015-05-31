@@ -105,7 +105,7 @@ void c50()
                                         "nTrain_Signal=0:nTrain_Background=0:SplitMode=Random:NormMode=NumEvents:!V" );
    
    factory->BookMethod( TMVA::Types::kC50, "C50",
-                           "!H:NTrials=1:Rules=kFALSE:!V" );
+                           "!H:NTrials=1:Rules=kFALSE:RObjName=C50:!V" );
       // Train MVAs using the set of training events
    factory->TrainAllMethods();
 

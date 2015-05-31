@@ -50,6 +50,7 @@ MethodC50::MethodC50( const TString& jobName,
                           TDirectory* theTargetDir ) :
    RMethodBase( jobName, Types::kC50, methodTitle, dsi, theOption, theTargetDir ),fNTrials(1),fRules(kFALSE)
 {
+   // standard constructor for the C50
     
     //C5.0Control options
     fControlSubset=kTRUE;
@@ -62,8 +63,6 @@ MethodC50::MethodC50( const TString& jobName,
     fControlSample=0;
     r["sample.int(4096, size = 1) - 1L"]>>fControlSeed;
     fControlEarlyStopping=kTRUE;
-
-   // standard constructor for the C50
         
 }
 
@@ -71,7 +70,8 @@ MethodC50::MethodC50( const TString& jobName,
 MethodC50::MethodC50( DataSetInfo& theData, const TString& theWeightFile, TDirectory* theTargetDir )
    : RMethodBase( Types::kC50, theData, theWeightFile, theTargetDir ),fNTrials(1),fRules(kFALSE)
 {
-   // constructor from weight file
+
+    // constructor from weight file
     fControlSubset=kTRUE;
     fControlBands=0; 
     fControlWinnow=kFALSE;
@@ -131,11 +131,20 @@ void     MethodC50::Init()
     r["RMVA.C50.fFactorTrain"]=fFactorTrain;
     r<<"RMVA.C50.fFactorTrain<-factor(RMVA.C50.fFactorTrain)";
     
+    
+   
+//    r<<"RMVA.C50.Control<-C5.0Control( 
+//                                        )";
 }
 
 void MethodC50::Train()
 {
-    r<<"RMVA.C50.Model<-C5.0(RMVA.C50.fDfTrain,RMVA.C50.fFactorTrain,RMVA.C50.NTrials,rules=RMVA.C50.Rules,weights=RMVA.C50.fWeightTrain)";
+    r<<"RMVA.C50.Model<-C5.0( x        = RMVA.C50.fDfTrain, \
+                              y        = RMVA.C50.fFactorTrain, \
+                              trials   = RMVA.C50.NTrials, \
+                              rules    = RMVA.C50.Rules, \
+                              weights  = RMVA.C50.fWeightTrain, \
+                              control  = RMVA.C50.Control )";
     r.SetVerbose(1);
     r<<"summary(RMVA.C50.Model)";
     r.SetVerbose(0);
@@ -210,7 +219,20 @@ void MethodC50::ProcessOptions()
     r["RMVA.C50.ControlOptions.ControlSeed"]=fControlSeed;
     r["RMVA.C50.ControlOptions.ControlEarlyStopping"]=fControlEarlyStopping;
     
- 
+    //C5.0Control Creation
+    r<<"RMVA.C50.Control<-C5.0COntrol( subset           = RMVA.C50.ControlOptions.ControlSubset, \
+                                       bands            = RMVA.C50.ControlOptions.ControlBands, \
+                                       winnow           = RMVA.C50.ControlOptions.ControlWinnow, \
+                                       noGlobalPruning  = RMVA.C50.ControlOptions.ControlNoGlobalPruning, \
+                                       CF               = RMVA.C50.ControlOptions.ControlCF, \
+                                       minCases         = RMVA.C50.ControlOptions.ControlMinCases, \
+                                       fuzzyThreshold   = RMVA.C50.ControlOptions.ControlFuzzyThreshold, \
+                                       sample           = RMVA.C50.ControlOptions.ControlSample, \
+                                       seed             = RMVA.C50.ControlOptions.ControlSeed, \
+                                       earlyStopping    = RMVA.C50.ControlOptions.ControlEarlyStopping )";
+//    Log() << kERROR << " RObjName = " << this->fRObjName
+//              << Endl;    
+    
 }
 
 //_______________________________________________________________________
