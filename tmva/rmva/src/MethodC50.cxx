@@ -139,6 +139,7 @@ void     MethodC50::Init()
 
 void MethodC50::Train()
 {
+    
     r<<"RMVA.C50.Model<-C5.0( x        = RMVA.C50.fDfTrain, \
                               y        = RMVA.C50.fFactorTrain, \
                               trials   = RMVA.C50.NTrials, \
@@ -220,7 +221,7 @@ void MethodC50::ProcessOptions()
     r["RMVA.C50.ControlOptions.ControlEarlyStopping"]=fControlEarlyStopping;
     
     //C5.0Control Creation
-    r<<"RMVA.C50.Control<-C5.0COntrol( subset           = RMVA.C50.ControlOptions.ControlSubset, \
+    r<<"RMVA.C50.Control<-C5.0Control( subset           = RMVA.C50.ControlOptions.ControlSubset, \
                                        bands            = RMVA.C50.ControlOptions.ControlBands, \
                                        winnow           = RMVA.C50.ControlOptions.ControlWinnow, \
                                        noGlobalPruning  = RMVA.C50.ControlOptions.ControlNoGlobalPruning, \
@@ -230,9 +231,7 @@ void MethodC50::ProcessOptions()
                                        sample           = RMVA.C50.ControlOptions.ControlSample, \
                                        seed             = RMVA.C50.ControlOptions.ControlSeed, \
                                        earlyStopping    = RMVA.C50.ControlOptions.ControlEarlyStopping )";
-//    Log() << kERROR << " RObjName = " << this->fRObjName
-//              << Endl;    
-    
+   
 }
 
 //_______________________________________________________________________
