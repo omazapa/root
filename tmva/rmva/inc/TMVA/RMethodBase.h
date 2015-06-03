@@ -95,6 +95,7 @@ namespace TMVA {
        TVectorD             fWeightTest;
        std::vector<std::string> fFactorTrain;
        std::vector<std::string> fFactorTest;
+       ROOT::R::TRDataFrame fDfSpectators;
     private:
        void LoadData();//Read data from Data() Aand DataInfo() to Dataframes and Vectors
       ClassDef(RMethodBase,0)  // Virtual base class for all TMVA method

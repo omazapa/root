@@ -131,6 +131,11 @@ void     MethodC50::Init()
     r["RMVA.C50.fFactorTrain"]=fFactorTrain;
     r<<"RMVA.C50.fFactorTrain<-factor(RMVA.C50.fFactorTrain)";
     
+    //Spectator creation
+    r["RMVA.C50.fDfSpectators"]=fDfSpectators;
+    
+    
+    
     
    
 //    r<<"RMVA.C50.Control<-C5.0Control( 

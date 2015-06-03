@@ -39,6 +39,9 @@ RMethodBase::RMethodBase( Types::EMVA methodType,
 //_______________________________________________________________________
 void RMethodBase::LoadData()
 {
+    ///////////////////////////
+    //Loading Training Data  //
+    ///////////////////////////
    const UInt_t nvar = DataInfo().GetNVariables();
     
     const UInt_t ntrains=Data()->GetNEvtBkgdTrain()+Data()->GetNEvtSigTrain();
@@ -67,11 +70,17 @@ void RMethodBase::LoadData()
         fDfTrain[GetInputLabel( i ).Data()]=fArrayTrain[i];
     }
  
-        
+    ////////////////////////
+    //Loading Test  Data  //
+    ////////////////////////
+    
     const UInt_t ntests = Data()->GetNEvtSigTest()+Data()->GetNEvtBkgdTest();
+    const UInt_t nspectators = DataInfo().GetNSpectators(kTRUE);
 
     //array of columns for every var to create a dataframe for testing
     std::vector<std::vector<Float_t> > fArrayTest(nvar);
+    //array of columns for every spectator to create a dataframe for testing
+    std::vector<std::vector<Float_t> > fArraySpectators(nvar);
     fWeightTest.ResizeTo(ntests);
     for(UInt_t j=0;j<ntests;j++)
     {  
@@ -81,22 +90,27 @@ void RMethodBase::LoadData()
         else fFactorTest.push_back("background");
         
         fWeightTest[j]=ev->GetOriginalWeight();
+        
         for(UInt_t i=0;i<nvar;i++)
         {  
             fArrayTest[i].push_back( ev->GetValues()[i]);
         }    
-        
+        for(UInt_t i=0;i<nspectators;i++)
+        {  
+            fArraySpectators[i].push_back( ev->GetSpectator(i));
+        }    
     }    
     for(UInt_t i=0;i<nvar;i++)
     {
         fDfTest[GetInputLabel( i ).Data()]=fArrayTest[i];
     }
-//TODO:added spectators
-//    UInt_t nspectators=DataInfo().GetNSpectators(kTRUE);
-//    for(int i=0;i<nspectators;i++)
-//    {
-//               Log() << " Spectator "<<i<<" "<<DataInfo().GetSpectatorInfo(i).GetExpression()
-//                     << Endl;    
-//    }
+    for(UInt_t i=0;i<nspectators;i++)
+    {
+        fDfSpectators[DataInfo().GetSpectatorInfo(i).GetLabel().Data()]=fArraySpectators[i];
+//        Log() <<kERROR<< " Spectator Label "<<i<<" "<<DataInfo().GetSpectatorInfo(i).GetLabel()
+//        << Endl;    
+//        Log() <<kERROR<< " Spectator "<<i<<" "<<DataInfo().GetSpectatorInfo(i).GetExpression()
+//        << Endl;    
+    }
 
 }
