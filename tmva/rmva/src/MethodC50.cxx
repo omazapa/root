@@ -102,10 +102,17 @@ Bool_t MethodC50::HasAnalysisType( Types::EAnalysisType type, UInt_t numberClass
 //_______________________________________________________________________
 void     MethodC50::Init()
 {
+    if(!r.Require("partykit"))
+    {
+        Error("Init","R's package partykit can not be loaded.");
+        Log() << kFATAL << " R's package partykit can not be loaded."
+              << Endl;
+        return;
+    }
     if(!r.IsInstalled("C50"))
     {
         Error( "Init","R's package C50 is not installed.");
-        Log() << kERROR << " R's package C50 is not installed."
+        Log() << kFATAL << " R's package C50 is not installed."
               << Endl;    
         return;
     }
@@ -113,7 +120,7 @@ void     MethodC50::Init()
     if(!r.Require("C50"))
     {
         Error("Init","R's package C50 can not be loaded.");
-        Log() << kERROR << " R's package C50 can not be loaded."
+        Log() << kFATAL << " R's package C50 can not be loaded."
               << Endl;
         return;
     }
@@ -154,7 +161,7 @@ void MethodC50::Train()
     r.SetVerbose(1);
     r<<"summary(RMVA.C50.Model)";
     r.SetVerbose(0);
-    r<<"RMVA.C50.PartyTree<-as.party(RMVA.C50.Model)";
+    if(fRules==kFALSE && fControlBands==0)     r<<"RMVA.C50.PartyTree<-as.party(RMVA.C50.Model)";
     //Save results for training with the next lines
     //Results* results = Data()->GetResults(GetMethodName(), Types::kTraining, GetAnalysisType());
 }
