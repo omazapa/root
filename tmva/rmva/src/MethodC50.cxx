@@ -34,6 +34,7 @@
 #include "TMVA/ClassifierFactory.h"
 
 #include "TMVA/EventWrapper.h"
+#include "TMVA/Results.h"
 
 using namespace TMVA;
 
@@ -145,8 +146,6 @@ void     MethodC50::Init()
     
     
    
-//    r<<"RMVA.C50.Control<-C5.0Control( 
-//                                        )";
 }
 
 void MethodC50::Train()
@@ -163,7 +162,8 @@ void MethodC50::Train()
 //    r.SetVerbose(0);
     if(fRules==kFALSE && fControlBands==0)     r<<"RMVA.C50.PartyTree<-as.party(RMVA.C50.Model)";
     //Save results for training with the next lines
-    //Results* results = Data()->GetResults(GetMethodName(), Types::kTraining, GetAnalysisType());
+//    Results* results = Data()->GetResults(GetMethodName(), Types::kTraining, GetAnalysisType());
+    
 }
 
 //_______________________________________________________________________
@@ -251,30 +251,51 @@ void MethodC50::TestClassification()
 {
 //    r.SetVerbose(1);
     r<<"RMVA.C50.Predictor.Prob<-predict.C5.0(RMVA.C50.Model,RMVA.C50.fDfTest,type='prob')";
+    r<<"RMVA.C50.Predictor.Class<-predict.C5.0(RMVA.C50.Model,RMVA.C50.fDfTest,type='class')";
+    //confisuionMatrix function from caret package to get Cohen's kappa coefficient, Accuracy, Sensitivity, Specificity etc..
+    //r<<"RMVA.C50.ConfusionMatrix<-caret::confusionMatrix(RMVA.C50.Predictor.Class,RMVA.C50.fDfTest,positive='signal')";//is not working yet
     Log()<<kWARNING<<"Testing Classification C50 METHOD  "<<Endl;
 //    r.SetVerbose(0);
     //Save results for classification with the next lines
-//    Results* results = Data()->GetResults(GetMethodName(), Types::kTesting, GetAnalysisType());
-}
-
-//_______________________________________________________________________
-void     MethodC50::TestMulticlass()
-{
-    r<<"RMVA.C50.Predictor.Class<-predict.C5.0(RMVA.C50.Model,RMVA.C50.fDfTest,type='class')";
-    Log()<<kWARNING<<"Testing MultiClass C50 METHOD  "<<Endl;
+    Results* results = Data()->GetResults(GetMethodName(), Types::kTesting, GetAnalysisType());
+    Int_t nBins = 100;
+    Double_t xMin=0,xMax=1;
+    TString hname = "C50 Test";
+    TH1* h = new TH1F("C50 signal",hname,nBins,xMin,xMax);
+    results->Store(h,"signal");
 }
 
 //_______________________________________________________________________
 Double_t MethodC50::GetMvaValue( Double_t* errLower, Double_t* errUpper)
 {
+   const Event *ev = GetEvent();
+   return GetMvaValue(ev,errLower,errUpper);
+}
+
+Double_t MethodC50::GetMvaValue( const TMVA::Event* const ev, Double_t* errLower, Double_t* errUpper )
+{
   // cannot determine error
    NoErrorCalc(errLower, errUpper);
-   r["RMVA.C50.fCounter"]=1+int(r["RMVA.C50.fCounter"]);
-//   const Event *ev = GetEvent();
-//   r["RMVA.C50.Event"]<<*ev; 
-//   r<<"RMVA.C50.Event$Print()";
-   
-   return 0;
+   const UInt_t nvar = DataInfo().GetNVariables();
+   ROOT::R::TRDataFrame fDfEvent;
+   for(UInt_t i=0;i<nvar;i++)
+   {
+        fDfEvent[GetInputLabel( i ).Data()]=ev->GetValues()[i];
+   }
+   r["RMVA.C50.fDfEvent"]<<fDfEvent;
+//   r<<"print(RMVA.C50.Event)";
+   r<<"RMVA.C50.Predictor.Event<-predict.C5.0(RMVA.C50.Model,RMVA.C50.fDfEvent,type='prob')";
+//   r<<"print(RMVA.C50.Predictor.Event)";
+   Double_t mvavar;
+   //hacemos la prediccion sobre un evento y miramos si es signal o background para obtener la probabilidad
+   if(ev->GetClass()==fSignalClass)
+   {
+       r["RMVA.C50.Predictor.Event[2]"]>>mvavar;
+   }else
+   {
+       r["RMVA.C50.Predictor.Event[1]"]>>mvavar;
+   }
+   return mvavar; 
 }
 
 //_______________________________________________________________________

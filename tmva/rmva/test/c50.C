@@ -16,13 +16,15 @@
 #include "TMVA/Tools.h"
 #include<TMVA/MethodC50.h>
 
+//Global Objects to use from ROOT prompt for debug and testing
 ROOT::R::TRInterface &r=ROOT::R::TRInterface::Instance();
+TMVA::Factory *factory;
 
 void c50()
 {
    // This loads the library
    TMVA::Tools::Instance();
-
+   
     // --------------------------------------------------------------------------------------------------
 
    // --- Here the preparation phase begins
@@ -41,7 +43,7 @@ void c50()
    // The second argument is the output file for the training results
    // All TMVA output can be suppressed by removing the "!" (not) in
    // front of the "Silent" argument in the option string
-   TMVA::Factory *factory = new TMVA::Factory( "RMVAClassification", outputFile,
+   factory = new TMVA::Factory( "RMVAClassification", outputFile,
                                                "!V:!Silent:Color:DrawProgressBar:Transformations=I;D;P;G,D:AnalysisType=Classification" );
    
     // Define the input variables that shall be used for the MVA training
@@ -102,7 +104,7 @@ void c50()
    //    factory->PrepareTrainingAndTestTree( mycut,
    //                                         "NSigTrain=3000:NBkgTrain=3000:NSigTest=3000:NBkgTest=3000:SplitMode=Random:!V" );
    factory->PrepareTrainingAndTestTree( mycuts, mycutb,
-                                        "nTrain_Signal=0:nTrain_Background=0:SplitMode=Random:NormMode=NumEvents:!V" );
+                                        "nTrain_Signal=500:nTrain_Background=500:nTest_Signal=500:nTest_Background=500:SplitMode=Random:NormMode=NumEvents:!V" );
    
    factory->BookMethod( TMVA::Types::kC50, "C50",
    "!H:NTrials=10:Rules=kFALSE:ControlSubSet=kFALSE:ControlBands=0:ControlWinnow=kFALSE:ControlNoGlobalPruning=kTRUE:ControlCF=0.25:ControlMinCases=2:ControlFuzzyThreshold=kTRUE:ControlSample=0:ControlEarlyStopping=kTRUE:!V" );
@@ -116,7 +118,7 @@ void c50()
    factory->TestAllMethods();
 
    // ----- Evaluate and compare performance of all configured MVAs
-//   factory->EvaluateAllMethods();
+//   factory->EvaluateAllMethods();//requires to fill Results* results = Data()->GetResults(GetMethodName(), Types::kTesting, GetAnalysisType());
 
    // --------------------------------------------------------------
 
@@ -126,6 +128,7 @@ void c50()
    std::cout << "==> Wrote root file: " << outputFile->GetName() << std::endl;
    std::cout << "==> TMVAClassification is done!" << std::endl;
 
-   delete factory;
+//   delete factory;
+    r.SetVerbose(1);
 
 }

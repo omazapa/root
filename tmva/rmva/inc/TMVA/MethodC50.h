@@ -56,16 +56,16 @@ namespace TMVA {
       // create ranking
       const Ranking* CreateRanking(){return NULL;}// = 0;
       
-      Double_t GetMvaValue( Double_t* errLower = 0, Double_t* errUpper = 0);
-
+      
       Bool_t HasAnalysisType( Types::EAnalysisType type, UInt_t numberClasses, UInt_t numberTargets );
      
       // performs classifier testing
       virtual void     TestClassification();
       
-      // performs multiclass classifier testing
-      virtual void     TestMulticlass();
-
+      
+      Double_t GetMvaValue( Double_t* errLower = 0, Double_t* errUpper = 0);
+      // signal/background classification response
+      Double_t GetMvaValue( const TMVA::Event* const ev, Double_t* err = 0, Double_t* errUpper = 0 );
       
       using MethodBase::ReadWeightsFromStream;
       // the actual "weights"
