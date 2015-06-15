@@ -33,7 +33,7 @@
 #include "TMVA/PDF.h"
 #include "TMVA/ClassifierFactory.h"
 
-
+#include "TMVA/EventWrapper.h"
 
 using namespace TMVA;
 
@@ -92,7 +92,7 @@ MethodC50::~MethodC50( void )
 }
 
 //_______________________________________________________________________
-Bool_t MethodC50::HasAnalysisType( Types::EAnalysisType type, UInt_t numberClasses, UInt_t /*numberTargets*/ )
+Bool_t MethodC50::HasAnalysisType( Types::EAnalysisType type, UInt_t numberClasses, UInt_t numberTargets )
 {
    if (type == Types::kClassification && numberClasses == 2) return kTRUE;
    return kFALSE;
@@ -141,7 +141,7 @@ void     MethodC50::Init()
     //Spectator creation
     r["RMVA.C50.fDfSpectators"]=fDfSpectators;
     
-    
+    r["RMVA.C50.fCounter"]=0;
     
     
    
@@ -158,9 +158,9 @@ void MethodC50::Train()
                               rules    = RMVA.C50.Rules, \
                               weights  = RMVA.C50.fWeightTrain, \
                               control  = RMVA.C50.Control )";
-    r.SetVerbose(1);
+//    r.SetVerbose(1);
     r<<"summary(RMVA.C50.Model)";
-    r.SetVerbose(0);
+//    r.SetVerbose(0);
     if(fRules==kFALSE && fControlBands==0)     r<<"RMVA.C50.PartyTree<-as.party(RMVA.C50.Model)";
     //Save results for training with the next lines
     //Results* results = Data()->GetResults(GetMethodName(), Types::kTraining, GetAnalysisType());
@@ -269,6 +269,11 @@ Double_t MethodC50::GetMvaValue( Double_t* errLower, Double_t* errUpper)
 {
   // cannot determine error
    NoErrorCalc(errLower, errUpper);
+   r["RMVA.C50.fCounter"]=1+int(r["RMVA.C50.fCounter"]);
+//   const Event *ev = GetEvent();
+//   r["RMVA.C50.Event"]<<*ev; 
+//   r<<"RMVA.C50.Event$Print()";
+   
    return 0;
 }
 

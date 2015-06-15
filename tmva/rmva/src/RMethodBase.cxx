@@ -12,6 +12,7 @@
  **********************************************************************************/
 
 #include<TMVA/RMethodBase.h>
+#include<TApplication.h>
 using namespace TMVA;
 
 ClassImp(RMethodBase)
@@ -25,6 +26,7 @@ RMethodBase::RMethodBase( const TString& jobName,
                   TDirectory* theBaseDir ,ROOT::R::TRInterface &_r):MethodBase(jobName,methodType, methodTitle,dsi,theOption,theBaseDir),r(_r)
 {
     LoadData();
+    InitWrap();
 }
 
 //_______________________________________________________________________
@@ -34,6 +36,15 @@ RMethodBase::RMethodBase( Types::EMVA methodType,
                   TDirectory* theBaseDir,ROOT::R::TRInterface &_r ):MethodBase(methodType,dsi,weightFile,theBaseDir),r(_r)
 {
     LoadData();
+    InitWrap();
+}
+
+//_______________________________________________________________________
+void RMethodBase::InitWrap()
+{
+      gApplication->ProcessLine("#include<TMVA/EventWrapper.h>");
+      gApplication->ProcessLine("LOAD_ROOTR_MODULE(RMVA_EventWrapper);");
+      r.Execute("Event       <- .GlobalEnv$.__C__Rcpp_Event");
 }
 
 //_______________________________________________________________________
