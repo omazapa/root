@@ -150,6 +150,7 @@ void     MethodC50::Init()
 
 void MethodC50::Train()
 {
+    if (Data()->GetNTrainingEvents()==0) Log() << kFATAL << "<Train> Data() has zero events" << Endl;
     
     r<<"RMVA.C50.Model<-C5.0( x        = RMVA.C50.fDfTrain, \
                               y        = RMVA.C50.fFactorTrain, \
@@ -249,20 +250,14 @@ void MethodC50::ProcessOptions()
 //_______________________________________________________________________
 void MethodC50::TestClassification()
 {
+    MethodBase::TestClassification();
 //    r.SetVerbose(1);
     r<<"RMVA.C50.Predictor.Prob<-predict.C5.0(RMVA.C50.Model,RMVA.C50.fDfTest,type='prob')";
     r<<"RMVA.C50.Predictor.Class<-predict.C5.0(RMVA.C50.Model,RMVA.C50.fDfTest,type='class')";
     //confisuionMatrix function from caret package to get Cohen's kappa coefficient, Accuracy, Sensitivity, Specificity etc..
     //r<<"RMVA.C50.ConfusionMatrix<-caret::confusionMatrix(RMVA.C50.Predictor.Class,RMVA.C50.fDfTest,positive='signal')";//is not working yet
-    Log()<<kWARNING<<"Testing Classification C50 METHOD  "<<Endl;
+    Log()<<kINFO<<"Testing Classification C50 METHOD  "<<Endl;
 //    r.SetVerbose(0);
-    //Save results for classification with the next lines
-    Results* results = Data()->GetResults(GetMethodName(), Types::kTesting, GetAnalysisType());
-    Int_t nBins = 100;
-    Double_t xMin=0,xMax=1;
-    TString hname = "C50 Test";
-    TH1* h = new TH1F("C50 signal",hname,nBins,xMin,xMax);
-    results->Store(h,"signal");
 }
 
 //_______________________________________________________________________
