@@ -49,7 +49,7 @@ MethodC50::MethodC50( const TString& jobName,
                       DataSetInfo& dsi,
                       const TString& theOption,
                       TDirectory* theTargetDir ) :
-    RMethodBase( jobName, Types::kC50, methodTitle, dsi, theOption, theTargetDir ),fNTrials(1),fRules(kFALSE)
+    RMethodBase( jobName, Types::kC50, methodTitle, dsi, theOption, theTargetDir ),fNTrials(1),fRules(kFALSE),fMvaCounter(0)
 {
     // standard constructor for the C50
 
@@ -69,7 +69,7 @@ MethodC50::MethodC50( const TString& jobName,
 
 //_______________________________________________________________________
 MethodC50::MethodC50( DataSetInfo& theData, const TString& theWeightFile, TDirectory* theTargetDir )
-    : RMethodBase( Types::kC50, theData, theWeightFile, theTargetDir ),fNTrials(1),fRules(kFALSE)
+    : RMethodBase( Types::kC50, theData, theWeightFile, theTargetDir ),fNTrials(1),fRules(kFALSE),fMvaCounter(0)
 {
 
     // constructor from weight file
@@ -162,6 +162,14 @@ void MethodC50::Train()
                               control  = RMVA.C50.Control )";
 //    r.SetVerbose(1);
     r<<"summary(RMVA.C50.Model)";
+    //performing prediction with training data (required for the method GetMvaValue)
+    r<<"RMVA.C50.Predictor.ClassResultForTrain<-predict.C5.0(RMVA.C50.Model,RMVA.C50.fDfTrain,type='class')";
+    r["as.vector(RMVA.C50.Predictor.ClassResultForTrain)"]>>fClassResultForTrain;
+   
+//    Log() << kWARNING << " RMVA.C50.Predictor.ClassResultForTrain SIze. = "<<fClassResultForTrain.size()<< Endl;
+
+    
+            
 //    r.SetVerbose(0);
 }
 
@@ -253,6 +261,8 @@ void MethodC50::TestClassification()
     r<<"RMVA.C50.Predictor.Prob<-predict.C5.0(RMVA.C50.Model,RMVA.C50.fDfTest,type='prob')";
     r<<"RMVA.C50.Predictor.Class<-predict.C5.0(RMVA.C50.Model,RMVA.C50.fDfTest,type='class')";
 //    r.SetVerbose(0);
+    gSystem->MakeDirectory("C50");
+    gSystem->MakeDirectory("C50/plots");
 
     if(r.IsInstalled("ROCR"))
     {
@@ -260,8 +270,6 @@ void MethodC50::TestClassification()
         {
         //calculation ROC curves https://ifordata.wordpress.com/category/predictions-in-r/
         r<<"RMVA.C50.ROCRPredictionSig<-ROCR::prediction(predictions = RMVA.C50.Predictor.Prob[,2], labels=RMVA.C50.fFactorTest)";
-        gSystem->MakeDirectory("C50");
-        gSystem->MakeDirectory("C50/plots");
         //at the moment I am using default performance method for ROCR but it mush be an option to parse from booking
 
         //plots TPR (True Positive Rate) and FPR (False Positive Rate)
@@ -299,15 +307,33 @@ void MethodC50::TestClassification()
         r.SetVerbose(0);
         }
     }
-         MethodBase::TestClassification();
+    MethodBase::TestClassification();
+    //NOTE: the next line is the same that in the method Train
+    //I am using it here because after run GetMvaValue in a thread the vector is empty
+    //and I donk know why factory is calling GetMvaValue for training two times.
+    r["as.vector(RMVA.C50.Predictor.ClassResultForTrain)"]>>fClassResultForTrain;
 }
 
 
 //_______________________________________________________________________
 Double_t MethodC50::GetMvaValue( Double_t* errLower, Double_t* errUpper)
 {
+    Double_t mvaValue;
+    if(Data()->GetCurrentType()==Types::kTraining) 
+    {
+       if(fClassResultForTrain[fMvaCounter]=="signal") mvaValue=Types::kSignal;
+       else mvaValue=Types::kBackground;
+        std::cout<<"Counter  = "<<fMvaCounter<<std::endl;
+        std::cout<<"class    = "<<fClassResultForTrain[fMvaCounter]<<std::endl;
+       
+       if(fMvaCounter < (Data()->GetNEvtBkgdTrain()+Data()->GetNEvtSigTrain())-1) fMvaCounter++;
+       else fMvaCounter=0;
+       return mvaValue;
+    }else
+    {
      const Event *ev = GetEvent();
-    return GetMvaValue(ev,errLower,errUpper);
+     return GetMvaValue(ev,errLower,errUpper);    
+    }
 }
 
 
