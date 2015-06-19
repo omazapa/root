@@ -96,6 +96,7 @@ namespace TMVA {
        
        UInt_t fMvaCounter;
        std::vector<std::string> fClassResultForTrain;//prediction result using type='class' in predict.C5.0(..)
+       std::vector<std::string> fClassResultForTest;//prediction result using type='class' in predict.C5.0(..)
        
       // get help message text
       void GetHelpMessage() const;
