@@ -94,6 +94,7 @@ namespace TMVA {
        Int_t fControlSeed;//An integer for the random number seed within the C code.
        Bool_t fControlEarlyStopping;// logical to toggle whether the internal method for stopping boosting should be used.
        
+       std::vector<Float_t> fBoostResultsErrors;//error in every tree for every trial in boosting
        
       // get help message text
       void GetHelpMessage() const;
