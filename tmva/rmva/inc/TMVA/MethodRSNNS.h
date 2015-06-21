@@ -78,7 +78,11 @@ namespace TMVA {
       friend class Factory;                   // DSMTEST
       friend class Reader;                    // DSMTEST      
    protected:
-       
+       UInt_t fMvaCounter;
+       std::vector<std::string> fClassResultForTrain;//prediction result using type='class' in predict.C5.0(..)
+       std::vector<std::string> fClassResultForTest;//prediction result using type='class' in predict.C5.0(..)
+
+       TString fNetType;//default MPL 
       // get help message text
       void GetHelpMessage() const;
 

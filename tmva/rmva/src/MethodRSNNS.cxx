@@ -48,7 +48,7 @@ MethodRSNNS::MethodRSNNS( const TString& jobName,
                       DataSetInfo& dsi,
                       const TString& theOption,
                       TDirectory* theTargetDir ) :
-    RMethodBase( jobName, Types::kRSNNS, methodTitle, dsi, theOption, theTargetDir )
+    RMethodBase( jobName, Types::kRSNNS, methodTitle, dsi, theOption, theTargetDir ),fMvaCounter(0)
 {
     // standard constructor for the RSNNS
 
@@ -56,7 +56,7 @@ MethodRSNNS::MethodRSNNS( const TString& jobName,
 
 //_______________________________________________________________________
 MethodRSNNS::MethodRSNNS( DataSetInfo& theData, const TString& theWeightFile, TDirectory* theTargetDir )
-    : RMethodBase( Types::kRSNNS, theData, theWeightFile, theTargetDir )
+    : RMethodBase( Types::kRSNNS, theData, theWeightFile, theTargetDir ),fMvaCounter(0)
 {
 
 }
@@ -113,6 +113,7 @@ void     MethodRSNNS::Init()
     //factors creations
     r["RMVA.RSNNS.fFactorTrain"]=fFactorTrain;
     r<<"RMVA.RSNNS.fFactorTrain<-factor(RMVA.RSNNS.fFactorTrain)";
+    r<<"write.table(RMVA.RSNNS.fFactorTrain,file='fFactorTrain.txt')";
     r["RMVA.RSNNS.fFactorTest"]=fFactorTest;
     r<<"RMVA.RSNNS.fFactorTest<-factor(RMVA.RSNNS.fFactorTest)";
 
@@ -125,9 +126,10 @@ void     MethodRSNNS::Init()
 void MethodRSNNS::Train()
 {
     if (Data()->GetNTrainingEvents()==0) Log() << kFATAL << "<Train> Data() has zero events" << Endl;
-
-//    r.SetVerbose(1);
-   //    r.SetVerbose(0);
+    r<<"RMVA.RSNNS.Model<-caret::train(x=RMVA.RSNNS.fDfTrain,y=RMVA.RSNNS.fFactorTrain,method='mlp')";
+    r.SetVerbose(1);
+    r<<"RMVA.RSNNS.Model";
+    r.SetVerbose(0);
 }
 
 //_______________________________________________________________________
@@ -147,7 +149,7 @@ void MethodRSNNS::ProcessOptions()
 void MethodRSNNS::TestClassification()
 {
     Log()<<kINFO<<"Testing Classification RSNNS METHOD  "<<Endl;
-    
+     r<<"RMVA.RSNNS.Predictor.Test.Prob<-predict(RMVA.RSNNS.Model,RMVA.RSNNS.fDfTest,type='prob')";
 //    r.SetVerbose(1);
 //    r.SetVerbose(0);
     gSystem->MakeDirectory("RSNNS");
@@ -163,9 +165,32 @@ Double_t MethodRSNNS::GetMvaValue( Double_t* errLower, Double_t* errUpper)
     Double_t mvaValue;
     if(Data()->GetCurrentType()==Types::kTraining) 
     {
+        if(fClassResultForTrain.size()==0)
+        {
+           r<<"RMVA.RSNNS.Predictor.Train.Class<-predict(RMVA.RSNNS.Model,RMVA.RSNNS.fDfTrain,type='raw')";
+           r["as.vector(RMVA.RSNNS.Predictor.Train.Class)"]>>fClassResultForTrain;
+        }
+       if(fClassResultForTrain[fMvaCounter]=="signal") mvaValue=Types::kSignal;
+       else mvaValue=Types::kBackground;
+//        std::cout<<"Counter  = "<<fMvaCounter<<std::endl;
+//        std::cout<<"class    = "<<fClassResultForTrain[fMvaCounter]<<std::endl;
+       
+       if(fMvaCounter < (Data()->GetNEvtBkgdTrain()+Data()->GetNEvtSigTrain())-1) fMvaCounter++;
+       else fMvaCounter=0;
        return mvaValue;
     }else
     {
+        if(fClassResultForTest.size()==0)
+        {
+        r<<"RMVA.RSNNS.Predictor.Test.Class<-predict(RMVA.RSNNS.Model,RMVA.RSNNS.fDfTest,type='raw')";
+        r["as.vector(RMVA.RSNNS.Predictor.Test.Class)"]>>fClassResultForTest;
+        }
+//        std::cout<<"Counter  = "<<fMvaCounter<<std::endl;
+//        std::cout<<"class    = "<<fClassResultForTest[fMvaCounter]<<std::endl;
+        if(fClassResultForTest[fMvaCounter]=="signal") mvaValue=Types::kSignal;
+        else mvaValue=Types::kBackground;
+       if(fMvaCounter < (Data()->GetNEvtBkgdTest()+Data()->GetNEvtSigTest())-1) fMvaCounter++;
+       else fMvaCounter=0;
        return mvaValue;
     }
 }

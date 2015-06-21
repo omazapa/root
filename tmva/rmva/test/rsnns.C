@@ -104,7 +104,7 @@ void rsnns()
    //    factory->PrepareTrainingAndTestTree( mycut,
    //                                         "NSigTrain=3000:NBkgTrain=3000:NSigTest=3000:NBkgTest=3000:SplitMode=Random:!V" );
    factory->PrepareTrainingAndTestTree( mycuts, mycutb,
-                                        "nTrain_Signal=0:nTrain_Background=0:nTest_Signal=0:nTest_Background=0:SplitMode=Random:NormMode=NumEvents:!V" );
+                                        "nTrain_Signal=500:nTrain_Background=500:nTest_Signal=500:nTest_Background=500:SplitMode=Random:NormMode=NumEvents:!V" );
    
    factory->BookMethod( TMVA::Types::kRSNNS, "RSNNS",
    "!H:!V" );
@@ -115,10 +115,10 @@ void rsnns()
    factory->TrainAllMethods();
 
    // ---- Evaluate all MVAs using the set of test events
-//   factory->TestAllMethods();
+   factory->TestAllMethods();
 
    // ----- Evaluate and compare performance of all configured MVAs
-//   factory->EvaluateAllMethods();
+   factory->EvaluateAllMethods();
    // --------------------------------------------------------------
 
    // Save the output
