@@ -55,24 +55,28 @@ void RMethodBase::LoadData()
     ///////////////////////////
    const UInt_t nvar = DataInfo().GetNVariables();
     
-    const UInt_t ntrains=Data()->GetNEvtBkgdTrain()+Data()->GetNEvtSigTrain();
+    const UInt_t ntrains=Data()->GetNTrainingEvents();
     
     //array of columns for every var to create a dataframe for training
     std::vector<std::vector<Float_t> > fArrayTrain(nvar);
+//    Data()->SetCurrentEvent(1);
+//    Data()->SetCurrentType(Types::ETreeType::kTraining);
+    
     fWeightTrain.ResizeTo(ntrains);
     for(UInt_t j=0;j<ntrains;j++)
     {  
         const Event *ev=Data()->GetEvent(  j, Types::ETreeType::kTraining );
+//        const Event *ev=Data()->GetEvent( j );
         //creating array with class type(signal or background) for factor required
-        if(ev->GetClass()==fSignalClass) fFactorTrain.push_back("signal");
+        if(ev->GetClass()==Types::kSignal) fFactorTrain.push_back("signal");
         else fFactorTrain.push_back("background");
         
-        fWeightTrain[j]=ev->GetOriginalWeight();
+        fWeightTrain[j]=ev->GetWeight();
         
         //filling vector of columns for training
         for(UInt_t i=0;i<nvar;i++)
         {  
-            fArrayTrain[i].push_back(ev->GetValues()[i]);
+            fArrayTrain[i].push_back(ev->GetValue(i));
         }    
         
     }    
@@ -85,7 +89,7 @@ void RMethodBase::LoadData()
     //Loading Test  Data  //
     ////////////////////////
     
-    const UInt_t ntests = Data()->GetNEvtSigTest()+Data()->GetNEvtBkgdTest();
+    const UInt_t ntests = Data()->GetNTestEvents();
     const UInt_t nspectators = DataInfo().GetNSpectators(kTRUE);
 
     //array of columns for every var to create a dataframe for testing
@@ -93,18 +97,20 @@ void RMethodBase::LoadData()
     //array of columns for every spectator to create a dataframe for testing
     std::vector<std::vector<Float_t> > fArraySpectators(nvar);
     fWeightTest.ResizeTo(ntests);
+//    Data()->SetCurrentType(Types::ETreeType::kTesting);
     for(UInt_t j=0;j<ntests;j++)
     {  
         const Event *ev=Data()->GetEvent(  j, Types::ETreeType::kTesting );
+//        const Event *ev=Data()->GetEvent(j);
         //creating array with class type(signal or background) for factor required
-        if(ev->GetClass()==fSignalClass) fFactorTest.push_back("signal");
+        if(ev->GetClass()==Types::kSignal) fFactorTest.push_back("signal");
         else fFactorTest.push_back("background");
         
-        fWeightTest[j]=ev->GetOriginalWeight();
+        fWeightTest[j]=ev->GetWeight();
         
         for(UInt_t i=0;i<nvar;i++)
         {  
-            fArrayTest[i].push_back( ev->GetValues()[i]);
+            fArrayTest[i].push_back( ev->GetValue(i));
         }    
         for(UInt_t i=0;i<nspectators;i++)
         {  
@@ -118,10 +124,6 @@ void RMethodBase::LoadData()
     for(UInt_t i=0;i<nspectators;i++)
     {
         fDfSpectators[DataInfo().GetSpectatorInfo(i).GetLabel().Data()]=fArraySpectators[i];
-//        Log() <<kERROR<< " Spectator Label "<<i<<" "<<DataInfo().GetSpectatorInfo(i).GetLabel()
-//        << Endl;    
-//        Log() <<kERROR<< " Spectator "<<i<<" "<<DataInfo().GetSpectatorInfo(i).GetExpression()
-//        << Endl;    
     }
 
 }

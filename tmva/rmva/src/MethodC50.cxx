@@ -334,8 +334,7 @@ Double_t MethodC50::GetMvaValue( Double_t* errLower, Double_t* errUpper)
 //        std::cout<<"Counter  = "<<fMvaCounter<<std::endl;
 //        std::cout<<"class    = "<<fClassResultForTest[fMvaCounter]<<std::endl;
         if(fClassResultForTest[fMvaCounter]=="signal") mvaValue=Types::kSignal;
-       else mvaValue=Types::kBackground;
-       
+        else mvaValue=Types::kBackground;
        if(fMvaCounter < (Data()->GetNEvtBkgdTest()+Data()->GetNEvtSigTest())-1) fMvaCounter++;
        else fMvaCounter=0;
        return mvaValue;
