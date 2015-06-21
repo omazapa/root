@@ -33,7 +33,6 @@
 #include "TMVA/PDF.h"
 #include "TMVA/ClassifierFactory.h"
 
-#include "TMVA/EventWrapper.h"
 #include "TMVA/Results.h"
 
 using namespace TMVA;

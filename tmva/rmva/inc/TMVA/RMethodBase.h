@@ -98,7 +98,6 @@ namespace TMVA {
        ROOT::R::TRDataFrame fDfSpectators;
     private:
        void LoadData();//Read data from Data() Aand DataInfo() to Dataframes and Vectors
-       void InitWrap();//Init wrap for TMVA::Event
       ClassDef(RMethodBase,0)  // Virtual base class for all TMVA method
 
    };

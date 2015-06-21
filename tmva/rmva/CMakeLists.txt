@@ -22,6 +22,7 @@ include_directories(${R_INCLUDE_DIRS})
 
 set(R_HEADERS ${CMAKE_SOURCE_DIR}/tmva/rmva/inc/TMVA/RMethodBase.h 
               ${CMAKE_SOURCE_DIR}/tmva/rmva/inc/TMVA/MethodC50.h
+              ${CMAKE_SOURCE_DIR}/tmva/rmva/inc/TMVA/MethodRSNNS.h
               )
 
 SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)

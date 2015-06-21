@@ -99,7 +99,8 @@ namespace TMVA {
          kPlugins        ,
          kCategory       ,
          kMaxMethod      ,
-         kC50       
+         kC50            ,
+         kRSNNS       
       };
 
       // available variable transformations
