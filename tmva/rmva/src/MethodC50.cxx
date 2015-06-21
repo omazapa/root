@@ -317,10 +317,8 @@ Double_t MethodC50::GetMvaValue( Double_t* errLower, Double_t* errUpper)
         }
        if(fClassResultForTrain[fMvaCounter]=="signal") mvaValue=1;
        else mvaValue=-1;
-//        std::cout<<"Counter  = "<<fMvaCounter<<std::endl;
-//        std::cout<<"class    = "<<fClassResultForTrain[fMvaCounter]<<std::endl;
        
-       if(fMvaCounter < (Data()->GetNEvtBkgdTrain()+Data()->GetNEvtSigTrain())-1) fMvaCounter++;
+       if(fMvaCounter < Data()->GetNTrainingEvents()-1) fMvaCounter++;
        else fMvaCounter=0;
        return mvaValue;
     }else
@@ -330,11 +328,9 @@ Double_t MethodC50::GetMvaValue( Double_t* errLower, Double_t* errUpper)
         r<<"RMVA.C50.Predictor.Test.Class<-predict.C5.0(RMVA.C50.Model,RMVA.C50.fDfTest,type='class')";
         r["as.vector(RMVA.C50.Predictor.Test.Class)"]>>fClassResultForTest;
         }
-//        std::cout<<"Counter  = "<<fMvaCounter<<std::endl;
-//        std::cout<<"class    = "<<fClassResultForTest[fMvaCounter]<<std::endl;
         if(fClassResultForTest[fMvaCounter]=="signal") mvaValue=1;
         else mvaValue=-1;
-       if(fMvaCounter < (Data()->GetNEvtBkgdTest()+Data()->GetNEvtSigTest())-1) fMvaCounter++;
+       if(fMvaCounter < Data()->GetNTestEvents()-1) fMvaCounter++;
        else fMvaCounter=0;
        return mvaValue;
     }
@@ -356,8 +352,8 @@ Double_t MethodC50::GetMvaValue( const TMVA::Event* const ev, Double_t* errLower
 
          TString type;
          r["as.vector(predict.C5.0(RMVA.C50.Model,RMVA.C50.fDfEvent,type='class'))[1]"]>>type;
-         if(type=="signal") return Types::kSignal;
-         else return Types::kBackground;
+         if(type=="signal") return 1;
+         else return -1;
 
      }
 

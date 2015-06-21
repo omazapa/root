@@ -87,7 +87,9 @@ namespace TMVA {
       virtual void ReadWeightsFromXML   ( void* wghtnode ) = 0;
       virtual void ReadWeightsFromStream( std::istream& ) = 0;       // backward compatibility
       virtual void ReadWeightsFromStream( TFile& ) {}                // backward compatibility
-
+        
+       
+      void LoadData();//Read data from Data() Aand DataInfo() to Dataframes and Vectors
    protected:
        ROOT::R::TRDataFrame fDfTrain;//signal and backgrd
        ROOT::R::TRDataFrame fDfTest;
@@ -97,7 +99,6 @@ namespace TMVA {
        std::vector<std::string> fFactorTest;
        ROOT::R::TRDataFrame fDfSpectators;
     private:
-       void LoadData();//Read data from Data() Aand DataInfo() to Dataframes and Vectors
       ClassDef(RMethodBase,0)  // Virtual base class for all TMVA method
 
    };

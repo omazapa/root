@@ -170,12 +170,10 @@ Double_t MethodRSNNS::GetMvaValue( Double_t* errLower, Double_t* errUpper)
            r<<"RMVA.RSNNS.Predictor.Train.Class<-predict(RMVA.RSNNS.Model,RMVA.RSNNS.fDfTrain,type='raw')";
            r["as.vector(RMVA.RSNNS.Predictor.Train.Class)"]>>fClassResultForTrain;
         }
-       if(fClassResultForTrain[fMvaCounter]=="signal") mvaValue=Types::kSignal;
-       else mvaValue=Types::kBackground;
-//        std::cout<<"Counter  = "<<fMvaCounter<<std::endl;
-//        std::cout<<"class    = "<<fClassResultForTrain[fMvaCounter]<<std::endl;
+       if(fClassResultForTrain[fMvaCounter]=="signal") mvaValue=1;
+       else mvaValue=-1;
        
-       if(fMvaCounter < (Data()->GetNEvtBkgdTrain()+Data()->GetNEvtSigTrain())-1) fMvaCounter++;
+       if(fMvaCounter < Data()->GetNTrainingEvents()-1) fMvaCounter++;
        else fMvaCounter=0;
        return mvaValue;
     }else
@@ -185,11 +183,9 @@ Double_t MethodRSNNS::GetMvaValue( Double_t* errLower, Double_t* errUpper)
         r<<"RMVA.RSNNS.Predictor.Test.Class<-predict(RMVA.RSNNS.Model,RMVA.RSNNS.fDfTest,type='raw')";
         r["as.vector(RMVA.RSNNS.Predictor.Test.Class)"]>>fClassResultForTest;
         }
-//        std::cout<<"Counter  = "<<fMvaCounter<<std::endl;
-//        std::cout<<"class    = "<<fClassResultForTest[fMvaCounter]<<std::endl;
-        if(fClassResultForTest[fMvaCounter]=="signal") mvaValue=Types::kSignal;
-        else mvaValue=Types::kBackground;
-       if(fMvaCounter < (Data()->GetNEvtBkgdTest()+Data()->GetNEvtSigTest())-1) fMvaCounter++;
+        if(fClassResultForTest[fMvaCounter]=="signal") mvaValue=1;
+        else mvaValue=-1;
+       if(fMvaCounter < Data()->GetNTestEvents()-1) fMvaCounter++;
        else fMvaCounter=0;
        return mvaValue;
     }
@@ -210,8 +206,9 @@ Double_t MethodRSNNS::GetMvaValue( const TMVA::Event* const ev, Double_t* errLow
          //   r<<"print(RMVA.RSNNS.Event)";
 
          TString type;
-         if(type=="signal") return Types::kSignal;
-         else return Types::kBackground;
+         r["as.vector(predict.C5.0(RMVA.RSNNS.Model,RMVA.RSNNS.fDfEvent,type='raw'))[1]"]>>type;
+         if(type=="signal") return 1;
+         else return -1;
 
      }
 
