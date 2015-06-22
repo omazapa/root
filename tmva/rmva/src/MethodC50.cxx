@@ -251,9 +251,6 @@ void MethodC50::TestClassification()
 {
     Log()<<kINFO<<"Testing Classification C50 METHOD  "<<Endl;
     
-//    r.SetVerbose(1);
-    r<<"RMVA.C50.Predictor.Test.Prob<-predict.C5.0(RMVA.C50.Model,RMVA.C50.fDfTest,type='prob')";//pridiction type prob use for ROC curves
-//    r.SetVerbose(0);
     gSystem->MakeDirectory("C50");
     gSystem->MakeDirectory("C50/plots");
 
@@ -313,49 +310,31 @@ Double_t MethodC50::GetMvaValue( Double_t* errLower, Double_t* errUpper)
         if(fClassResultForTrain.size()==0)
         {
            r<<"RMVA.C50.Predictor.Train.Class<-predict.C5.0(RMVA.C50.Model,RMVA.C50.fDfTrain,type='class')";
+           r<<"RMVA.C50.Predictor.Train.Prob<-predict.C5.0(RMVA.C50.Model,RMVA.C50.fDfTrain,type='prob')";//pridiction type prob use for ROC curves
+
            r["as.vector(RMVA.C50.Predictor.Train.Class)"]>>fClassResultForTrain;
+           fProbResultForTrainSig.resize(Data()->GetNTrainingEvents());
+           r["as.vector(RMVA.C50.Predictor.Train.Prob[,2])"]>>fProbResultForTrainSig;
         }
-       if(fClassResultForTrain[fMvaCounter]=="signal") mvaValue=1;
-       else mvaValue=-1;
+          mvaValue=fProbResultForTrainSig[fMvaCounter];
        
        if(fMvaCounter < Data()->GetNTrainingEvents()-1) fMvaCounter++;
        else fMvaCounter=0;
-       return mvaValue;
     }else
     {
         if(fClassResultForTest.size()==0)
         {
         r<<"RMVA.C50.Predictor.Test.Class<-predict.C5.0(RMVA.C50.Model,RMVA.C50.fDfTest,type='class')";
+        r<<"RMVA.C50.Predictor.Test.Prob <-predict.C5.0(RMVA.C50.Model,RMVA.C50.fDfTest,type='prob')";
         r["as.vector(RMVA.C50.Predictor.Test.Class)"]>>fClassResultForTest;
+        r["as.vector(RMVA.C50.Predictor.Test.Prob[,2])"]>>fProbResultForTestSig;
         }
-        if(fClassResultForTest[fMvaCounter]=="signal") mvaValue=1;
-        else mvaValue=-1;
+       mvaValue=fProbResultForTestSig[fMvaCounter];
        if(fMvaCounter < Data()->GetNTestEvents()-1) fMvaCounter++;
        else fMvaCounter=0;
-       return mvaValue;
     }
+       return mvaValue;
 }
-
-
-Double_t MethodC50::GetMvaValue( const TMVA::Event* const ev, Double_t* errLower, Double_t* errUpper )
-{
-         // cannot determine error
-         NoErrorCalc(errLower, errUpper);
-         const UInt_t nvar = DataInfo().GetNVariables();
-         ROOT::R::TRDataFrame fDfEvent;
-         for(UInt_t i=0;i<nvar;i++)
-     {
-         fDfEvent[GetInputLabel( i ).Data()]=ev->GetValues()[i];
-     }
-         r["RMVA.C50.fDfEvent"]<<fDfEvent;
-         //   r<<"print(RMVA.C50.Event)";
-
-         TString type;
-         r["as.vector(predict.C5.0(RMVA.C50.Model,RMVA.C50.fDfEvent,type='class'))[1]"]>>type;
-         if(type=="signal") return 1;
-         else return -1;
-
-     }
 
 //_______________________________________________________________________
 void MethodC50::GetHelpMessage() const

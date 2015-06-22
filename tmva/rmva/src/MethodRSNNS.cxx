@@ -126,7 +126,7 @@ void     MethodRSNNS::Init()
 void MethodRSNNS::Train()
 {
     if (Data()->GetNTrainingEvents()==0) Log() << kFATAL << "<Train> Data() has zero events" << Endl;
-    r<<"RMVA.RSNNS.Model<-caret::train(x=RMVA.RSNNS.fDfTrain,y=RMVA.RSNNS.fFactorTrain,method='mlp')";
+    r<<"RMVA.RSNNS.Model<-caret::train(x=RMVA.RSNNS.fDfTrain,y=RMVA.RSNNS.fFactorTrain,method='mlp',maxit=50)";
     r.SetVerbose(1);
     r<<"RMVA.RSNNS.Model";
     r.SetVerbose(0);
