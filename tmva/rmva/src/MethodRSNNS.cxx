@@ -100,6 +100,14 @@ void     MethodRSNNS::Init()
               << Endl;
         return;
     }
+    
+    if(!r.Require("caret"))
+    {
+        Error("Init","R's package caret can not be loaded.");
+        Log() << kFATAL << " R's package caret can not be loaded."
+              << Endl;
+        return;
+    }
     //Paassing Data to R's environment
     //NOTE:need improved names in R's environment using JobName of TMVA
     r["RMVA.RSNNS.fDfTrain"]=fDfTrain;
@@ -168,49 +176,32 @@ Double_t MethodRSNNS::GetMvaValue( Double_t* errLower, Double_t* errUpper)
         if(fClassResultForTrain.size()==0)
         {
            r<<"RMVA.RSNNS.Predictor.Train.Class<-predict(RMVA.RSNNS.Model,RMVA.RSNNS.fDfTrain,type='raw')";
+           r<<"RMVA.RSNNS.Predictor.Train.Prob<-predict(RMVA.RSNNS.Model,RMVA.RSNNS.fDfTrain,type='prob')";
            r["as.vector(RMVA.RSNNS.Predictor.Train.Class)"]>>fClassResultForTrain;
+           r["as.vector(RMVA.RSNNS.Predictor.Train.Prob[,2])"]>>fProbResultForTrainSig;
+
         }
-       if(fClassResultForTrain[fMvaCounter]=="signal") mvaValue=1;
-       else mvaValue=-1;
-       
+        mvaValue=fProbResultForTrainSig[fMvaCounter];
        if(fMvaCounter < Data()->GetNTrainingEvents()-1) fMvaCounter++;
        else fMvaCounter=0;
-       return mvaValue;
     }else
     {
         if(fClassResultForTest.size()==0)
         {
         r<<"RMVA.RSNNS.Predictor.Test.Class<-predict(RMVA.RSNNS.Model,RMVA.RSNNS.fDfTest,type='raw')";
+        r<<"RMVA.RSNNS.Predictor.Test.Prob<-predict(RMVA.RSNNS.Model,RMVA.RSNNS.fDfTest,type='prob')";
         r["as.vector(RMVA.RSNNS.Predictor.Test.Class)"]>>fClassResultForTest;
+        r["as.vector(RMVA.RSNNS.Predictor.Test.Prob[,2])"]>>fProbResultForTestSig;
         }
-        if(fClassResultForTest[fMvaCounter]=="signal") mvaValue=1;
-        else mvaValue=-1;
+        
+        mvaValue=fProbResultForTestSig[fMvaCounter];
+        
        if(fMvaCounter < Data()->GetNTestEvents()-1) fMvaCounter++;
        else fMvaCounter=0;
-       return mvaValue;
     }
+       return mvaValue;
 }
 
-
-Double_t MethodRSNNS::GetMvaValue( const TMVA::Event* const ev, Double_t* errLower, Double_t* errUpper )
-{
-         // cannot determine error
-         NoErrorCalc(errLower, errUpper);
-         const UInt_t nvar = DataInfo().GetNVariables();
-         ROOT::R::TRDataFrame fDfEvent;
-         for(UInt_t i=0;i<nvar;i++)
-     {
-         fDfEvent[GetInputLabel( i ).Data()]=ev->GetValues()[i];
-     }
-         r["RMVA.RSNNS.fDfEvent"]<<fDfEvent;
-         //   r<<"print(RMVA.RSNNS.Event)";
-
-         TString type;
-         r["as.vector(predict.C5.0(RMVA.RSNNS.Model,RMVA.RSNNS.fDfEvent,type='raw'))[1]"]>>type;
-         if(type=="signal") return 1;
-         else return -1;
-
-     }
 
 //_______________________________________________________________________
 void MethodRSNNS::GetHelpMessage() const

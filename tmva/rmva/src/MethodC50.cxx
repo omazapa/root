@@ -311,9 +311,7 @@ Double_t MethodC50::GetMvaValue( Double_t* errLower, Double_t* errUpper)
         {
            r<<"RMVA.C50.Predictor.Train.Class<-predict.C5.0(RMVA.C50.Model,RMVA.C50.fDfTrain,type='class')";
            r<<"RMVA.C50.Predictor.Train.Prob<-predict.C5.0(RMVA.C50.Model,RMVA.C50.fDfTrain,type='prob')";//pridiction type prob use for ROC curves
-
            r["as.vector(RMVA.C50.Predictor.Train.Class)"]>>fClassResultForTrain;
-           fProbResultForTrainSig.resize(Data()->GetNTrainingEvents());
            r["as.vector(RMVA.C50.Predictor.Train.Prob[,2])"]>>fProbResultForTrainSig;
         }
           mvaValue=fProbResultForTrainSig[fMvaCounter];

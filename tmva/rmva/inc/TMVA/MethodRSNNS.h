@@ -64,8 +64,6 @@ namespace TMVA {
       
       
       Double_t GetMvaValue( Double_t* errLower = 0, Double_t* errUpper = 0);
-      // signal/background classification response
-      Double_t GetMvaValue( const TMVA::Event* const ev, Double_t* err = 0, Double_t* errUpper = 0 );
       
       using MethodBase::ReadWeightsFromStream;
       // the actual "weights"
@@ -81,6 +79,9 @@ namespace TMVA {
        UInt_t fMvaCounter;
        std::vector<std::string> fClassResultForTrain;//prediction result using type='class' in predict.C5.0(..)
        std::vector<std::string> fClassResultForTest;//prediction result using type='class' in predict.C5.0(..)
+
+       std::vector<Float_t> fProbResultForTrainSig;
+       std::vector<Float_t> fProbResultForTestSig;
 
        TString fNetType;//default MPL 
       // get help message text
