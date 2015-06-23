@@ -137,7 +137,7 @@ namespace ROOT {
          void Interactive();
          void ProcessEventsLoop();
          Bool_t IsInstalled(TString pkg);
-         Bool_t Require(TString pkg);
+         Bool_t Require(TString pkg,Bool_t silent=kTRUE);
          Bool_t Install(TString pkg,TString repos="http://cran.r-project.org");
          Binding operator[](const TString &name);
          static TRInterface &Instance();

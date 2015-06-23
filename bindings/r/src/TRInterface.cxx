@@ -311,9 +311,11 @@ Bool_t TRInterface::IsInstalled(TString pkg)
     return fR->parseEval(cmd.Data());
 }
 
-Bool_t TRInterface::Require(TString pkg)
+Bool_t TRInterface::Require(TString pkg,Bool_t silent)
 {
-    TString cmd="require('"+pkg+"',quiet=TRUE)";
+    TString cmd;
+    if(silent)  cmd="suppressWarnings(suppressMessages(require('"+pkg+"',quiet=TRUE)))";
+    else cmd="require('"+pkg+"',quiet=TRUE)";
     return fR->parseEval(cmd.Data());
 }
 
