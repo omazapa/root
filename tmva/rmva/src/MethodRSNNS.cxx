@@ -50,14 +50,70 @@ MethodRSNNS::MethodRSNNS( const TString& jobName,
                       TDirectory* theTargetDir ) :
     RMethodBase( jobName, Types::kRSNNS, methodTitle, dsi, theOption, theTargetDir ),fMvaCounter(0)
 {
-    // standard constructor for the RSNNS
+    fNetType=this->GetMethodName();
+    if(fNetType!="RMLP")
+    {
+        Log() << kFATAL << " Unknow Method"+fNetType
+              << Endl;
+        return;        
+    }
 
+    // standard constructor for the RSNNS
+       //RSNNS Options for all NN methods
+       fSize.ResizeTo(1);
+       fSize[0]=5;
+       fMaxit=100;
+       
+       fInitFunc="Randomize_Weights";
+       fInitFuncParams[0]=-0.3;
+       fInitFuncParams[1]=0.3;
+       
+       fLearnFunc="Std_Backpropagation";
+       fLearnFuncParams[0]=0.2;
+       fLearnFuncParams[1]=0;
+       
+       fUpdateFunc="Topological_Order";
+       fUpdateFuncParams.ResizeTo(1);
+       fUpdateFuncParams[0]=0;
+
+       fHiddenActFunc="Act_Logistic";
+       fShufflePatterns=kTRUE;
+       fLinOut=kFALSE;
 }
 
 //_______________________________________________________________________
 MethodRSNNS::MethodRSNNS( DataSetInfo& theData, const TString& theWeightFile, TDirectory* theTargetDir )
     : RMethodBase( Types::kRSNNS, theData, theWeightFile, theTargetDir ),fMvaCounter(0)
 {
+    fNetType=this->GetMethodName();
+    if(fNetType!="RMLP")
+    {
+        Log() << kFATAL << " Unknow Method"+fNetType
+              << Endl;
+        return;        
+    }
+
+    // standard constructor for the RSNNS
+       //RSNNS Options for all NN methods
+       fSize.ResizeTo(1);
+       fSize[0]=5;
+       fMaxit=100;
+       
+       fInitFunc="Randomize_Weights";
+       fInitFuncParams[0]=-0.3;
+       fInitFuncParams[1]=0.3;
+       
+       fLearnFunc="Std_Backpropagation";
+       fLearnFuncParams[0]=0.2;
+       fLearnFuncParams[1]=0;
+       
+       fUpdateFunc="Topological_Order";
+       fUpdateFuncParams.ResizeTo(1);
+       fUpdateFuncParams[0]=0;
+
+       fHiddenActFunc="Act_Logistic";
+       fShufflePatterns=kTRUE;
+       fLinOut=kFALSE;
 
 }
 
@@ -143,8 +199,7 @@ void     MethodRSNNS::Init()
     r["RMVA.RSNNS.fDfSpectators"]=fDfSpectators;
 
     r["RMVA.RSNNS.fCounter"]=0;
-    
-    
+        
 }
 
 void MethodRSNNS::Train()
@@ -160,7 +215,25 @@ void MethodRSNNS::Train()
 //_______________________________________________________________________
 void MethodRSNNS::DeclareOptions()
 {
-    //
+       //RSNNS Options for all NN methods
+//       TVectorF  fSize;//number of units in the hidden layer(s)
+    DeclareOptionRef(fMaxit, "Maxit", "Maximum of iterations to learn");
+    
+    DeclareOptionRef(fInitFunc, "InitFunc", "the initialization function to use");
+
+    fInitFuncParams=new Float_t[5];//the maximun number of pacameter is 5 see RSNNS::getSnnsRFunctionTable() type 6
+    DeclareOptionRef(fInitFuncParams,5, "InitFuncParams", "the parameters for the initialization function"); 
+       
+    DeclareOptionRef(fLearnFunc, "LearnFunc", "the learning function to use");
+    fLearnFuncParams=new Float_t[5];
+    DeclareOptionRef(fLearnFuncParams,5, "LearnFuncParams", "the parameters for the learning function"); 
+
+    DeclareOptionRef(fUpdateFunc, "UpdateFunc", "the update function to use");  
+//    TVectorF fUpdateFuncParams;//the parameters for the update function
+
+    DeclareOptionRef(fHiddenActFunc, "HiddenActFunc", "the activation function of all hidden units");  
+    DeclareOptionRef(fShufflePatterns, "ShufflePatterns", "should the patterns be shuffled?");  
+    DeclareOptionRef(fLinOut, "LinOut", "sets the activation function of the output units to linear or logistic");
 
 }
 

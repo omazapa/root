@@ -113,7 +113,7 @@ void rsnns()
 
     factory->BookMethod( TMVA::Types::kMLP, "MLPBNN", "H:!V:NeuronType=tanh:VarTransform=N:NCycles=600:HiddenLayers=N+5:TestRate=5:TrainingMethod=BFGS:UseRegulator" ); // BFGS training with bayesian regulators
 
-    factory->BookMethod( TMVA::Types::kRSNNS, "RSNNS","!H:VarTransform=N:!V" );
+    factory->BookMethod( TMVA::Types::kRSNNS, "MLP","!H:VarTransform=N:!V" );
    
 
    
