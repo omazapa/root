@@ -14,13 +14,13 @@
 
 #include "TMVA/Factory.h"
 #include "TMVA/Tools.h"
-#include<TMVA/MethodRSNNS.h>
+#include<TMVA/MethodC50.h>
 
 //Global Objects to use from ROOT prompt for debug and testing
 ROOT::R::TRInterface &r=ROOT::R::TRInterface::Instance();
 TMVA::Factory *factory;
 
-void rsnns()
+void rsvm()
 {
    // This loads the library
    TMVA::Tools::Instance();
@@ -30,7 +30,7 @@ void rsnns()
    // --- Here the preparation phase begins
 
    // Create a ROOT output file where TMVA will store ntuples, histograms, etc.
-   TString outfileName( "TMVA-RSNNS.root" );
+   TString outfileName( "TMVA.root" );
    TFile* outputFile = TFile::Open( outfileName, "RECREATE" );
 
    // Create the factory object. Later you can choose the methods
@@ -106,14 +106,8 @@ void rsnns()
    factory->PrepareTrainingAndTestTree( mycuts, mycutb,
                                         "nTrain_Signal=0:nTrain_Background=0:nTest_Signal=0:nTest_Background=0:SplitMode=Random:NormMode=NumEvents:!V" );
    
-    // TMVA ANN: MLP (recommended ANN) -- all ANNs in TMVA are Multilayer Perceptrons
-    factory->BookMethod( TMVA::Types::kMLP, "MLP", "H:!V:NeuronType=tanh:VarTransform=N:NCycles=600:HiddenLayers=N+5:TestRate=5:!UseRegulator" );
-
-    factory->BookMethod( TMVA::Types::kMLP, "MLPBFGS", "H:!V:NeuronType=tanh:VarTransform=N:NCycles=600:HiddenLayers=N+5:TestRate=5:TrainingMethod=BFGS:!UseRegulator" );
-
-    factory->BookMethod( TMVA::Types::kMLP, "MLPBNN", "H:!V:NeuronType=tanh:VarTransform=N:NCycles=600:HiddenLayers=N+5:TestRate=5:TrainingMethod=BFGS:UseRegulator" ); // BFGS training with bayesian regulators
-
-    factory->BookMethod( TMVA::Types::kRSNNS, "RSNNS","!H:VarTransform=N:!V" );
+   factory->BookMethod( TMVA::Types::kSVM, "SVM", "Gamma=0.25:Tol=0.001:VarTransform=Norm" );
+   factory->BookMethod( TMVA::Types::kRSVM, "RSVM","!H:!V" );
    
 
    

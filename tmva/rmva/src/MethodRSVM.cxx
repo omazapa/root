@@ -4,11 +4,11 @@
 /**********************************************************************************
  * Project: TMVA - a Root-integrated toolkit for multivariate data analysis       *
  * Package: TMVA                                                                  *
- * Class  : MethodRSNNS                                                           *
+ * Class  : MethodRSVM-                                                           *
  * Web    : http://tmva.sourceforge.net                                           *
  *                                                                                *
  * Description:                                                                   *
- *      Neural Networks in R using the Stuttgart Neural Network Simulator         *
+ *       Support Vector Machines                                                  *
  *                                                                                *
  *                                                                                *
  * Redistribution and use in source and binary forms, with or without             *
@@ -26,7 +26,7 @@
 #include "TVectorD.h"
 
 #include "TMVA/VariableTransformBase.h"
-#include "TMVA/MethodRSNNS.h"
+#include "TMVA/MethodRSVM.h"
 #include "TMVA/Tools.h"
 #include "TMVA/Ranking.h"
 #include "TMVA/Types.h"
@@ -37,38 +37,39 @@
 
 using namespace TMVA;
 
-REGISTER_METHOD(RSNNS)
+REGISTER_METHOD(RSVM)
 
-ClassImp(MethodRSNNS)
+ClassImp(MethodRSVM)
 
 
 //_______________________________________________________________________
-MethodRSNNS::MethodRSNNS( const TString& jobName,
+MethodRSVM::MethodRSVM( const TString& jobName,
                       const TString& methodTitle,
                       DataSetInfo& dsi,
                       const TString& theOption,
                       TDirectory* theTargetDir ) :
-    RMethodBase( jobName, Types::kRSNNS, methodTitle, dsi, theOption, theTargetDir ),fMvaCounter(0)
+    RMethodBase( jobName, Types::kRSVM, methodTitle, dsi, theOption, theTargetDir ),fMvaCounter(0)
 {
-    // standard constructor for the RSNNS
+    // standard constructor for the RSVM
+
 
 }
 
 //_______________________________________________________________________
-MethodRSNNS::MethodRSNNS( DataSetInfo& theData, const TString& theWeightFile, TDirectory* theTargetDir )
-    : RMethodBase( Types::kRSNNS, theData, theWeightFile, theTargetDir ),fMvaCounter(0)
+MethodRSVM::MethodRSVM( DataSetInfo& theData, const TString& theWeightFile, TDirectory* theTargetDir )
+    : RMethodBase( Types::kRSVM, theData, theWeightFile, theTargetDir ),fMvaCounter(0)
 {
 
 }
 
 
 //_______________________________________________________________________
-MethodRSNNS::~MethodRSNNS( void )
+MethodRSVM::~MethodRSVM( void )
 {
 }
 
 //_______________________________________________________________________
-Bool_t MethodRSNNS::HasAnalysisType( Types::EAnalysisType type, UInt_t numberClasses, UInt_t numberTargets )
+Bool_t MethodRSVM::HasAnalysisType( Types::EAnalysisType type, UInt_t numberClasses, UInt_t numberTargets )
 {
     if (type == Types::kClassification && numberClasses == 2) return kTRUE;
     return kFALSE;
@@ -76,145 +77,117 @@ Bool_t MethodRSNNS::HasAnalysisType( Types::EAnalysisType type, UInt_t numberCla
 
 
 //_______________________________________________________________________
-void     MethodRSNNS::Init()
+void     MethodRSVM::Init()
 {
-    if(!r.Require("Rcpp"))
+    if(!r.IsInstalled("e1071"))
     {
-        Error("Init","R's package Rcpp can not be loaded.");
-        Log() << kFATAL << " R's package Rcpp can not be loaded."
-              << Endl;
-        return;
-    }
-    if(!r.IsInstalled("RSNNS"))
-    {
-        Error( "Init","R's package RSNNS is not installed.");
-        Log() << kFATAL << " R's package RSNNS is not installed."
+        Error( "Init","R's package e1071 is not installed.");
+        Log() << kFATAL << " R's package e1071 is not installed."
               << Endl;
         return;
     }
 
-    if(!r.Require("RSNNS"))
+    if(!r.Require("e1071"))
     {
-        Error("Init","R's package RSNNS can not be loaded.");
-        Log() << kFATAL << " R's package RSNNS can not be loaded."
-              << Endl;
-        return;
-    }
-    
-    if(!r.Require("caret"))
-    {
-        Error("Init","R's package caret can not be loaded.");
-        Log() << kFATAL << " R's package caret can not be loaded."
+        Error("Init","R's package e1071 can not be loaded.");
+        Log() << kFATAL << " R's package e1071 can not be loaded."
               << Endl;
         return;
     }
     //Paassing Data to R's environment
     //NOTE:need improved names in R's environment using JobName of TMVA
-    r["RMVA.RSNNS.fDfTrain"]=fDfTrain;
-    r["RMVA.RSNNS.fWeightTrain"]=fWeightTrain;
-    r<<"write.table(RMVA.RSNNS.fDfTrain,file='fDfTrain.txt')";
+    r["RMVA.RSVM.fDfTrain"]=fDfTrain;
+    r["RMVA.RSVM.fWeightTrain"]=fWeightTrain;
+    r<<"write.table(RMVA.RSVM.fDfTrain,file='fDfTrain.txt')";
 
-    r["RMVA.RSNNS.fDfTest"]=fDfTest;
-    r["RMVA.RSNNS.fWeightTest"]=fWeightTest;
-    r<<"write.table(RMVA.RSNNS.fDfTest,file='fDfTest.txt')";
+    r["RMVA.RSVM.fDfTest"]=fDfTest;
+    r["RMVA.RSVM.fWeightTest"]=fWeightTest;
+    r<<"write.table(RMVA.RSVM.fDfTest,file='fDfTest.txt')";
 
     //factors creations
-    //RSNNS mlp require a numeric factor then background=0 signal=1 from fFactorTrain/fFactorTest
-    UInt_t size=fFactorTrain.size();
-    std::vector<UInt_t>  fFactorNumeric(size);
-    
-    for(UInt_t i=0;i<size;i++)
-    {
-        if(fFactorTrain[i]=="signal") fFactorNumeric[i]=1;
-        else fFactorNumeric[i]=0;
-    }
-    r["RMVA.RSNNS.fFactorTrain"]=fFactorNumeric;
-    fFactorNumeric.clear();    
-    size=fFactorTest.size();
-    fFactorNumeric.resize(size);
-    for(UInt_t i=0;i<size;i++)
-    {
-        if(fFactorTest[i]=="signal") fFactorNumeric[i]=1;
-        else fFactorNumeric[i]=0;
-    }    
-    r["RMVA.RSNNS.fFactorTest"]=fFactorNumeric;
+    r["RMVA.RSVM.fFactorTrain"]=fFactorTrain;
+    r<<"RMVA.RSVM.fFactorTrain<-factor(RMVA.RSVM.fFactorTrain)";
+    r["RMVA.RSVM.fFactorTest"]=fFactorTest;
+    r<<"RMVA.RSVM.fFactorTest<-factor(RMVA.RSVM.fFactorTest)";
 
     //Spectator creation
-    r["RMVA.RSNNS.fDfSpectators"]=fDfSpectators;
+    r["RMVA.RSVM.fDfSpectators"]=fDfSpectators;
 
-    r["RMVA.RSNNS.fCounter"]=0;
-    
-    
+    r["RMVA.RSVM.fCounter"]=0;
+
+
+
 }
 
-void MethodRSNNS::Train()
+void MethodRSVM::Train()
 {
     if (Data()->GetNTrainingEvents()==0) Log() << kFATAL << "<Train> Data() has zero events" << Endl;
-    r<<"RMVA.RSNNS.Model<-mlp(x=RMVA.RSNNS.fDfTrain,y=RMVA.RSNNS.fFactorTrain,size = c(3,5),maxit = 200)";
-    r.SetVerbose(1);
-    r<<"RMVA.RSNNS.Model";
-    r.SetVerbose(0);
-//    r<<"RMVA.RSNNS.Predictor.Train.Prob<-predict(RMVA.RSNNS.Model,RMVA.RSNNS.fDfTrain,type='prob')";
+
+    r<<"RMVA.RSVM.Model<-svm( x             = RMVA.RSVM.fDfTrain, \
+                              y             = RMVA.RSVM.fFactorTrain)";
+//                              class.weights = RMVA.RSVM.fWeightTrain)";
+//    r.SetVerbose(1);
+    r<<"summary(RMVA.RSVM.Model)";
+   
+//    Log() << kWARNING << " RMVA.RSVM.Predictor.ClassResultForTest SIze. = "<<fClassResultForTest.size()<< Endl;        
+//    r.SetVerbose(0);
 }
 
 //_______________________________________________________________________
-void MethodRSNNS::DeclareOptions()
-{
-    //
-
-}
-
-//_______________________________________________________________________
-void MethodRSNNS::ProcessOptions()
+void MethodRSVM::DeclareOptions()
 {
 
 }
 
 //_______________________________________________________________________
-void MethodRSNNS::TestClassification()
+void MethodRSVM::ProcessOptions()
 {
-    Log()<<kINFO<<"Testing Classification RSNNS METHOD  "<<Endl;
-    gSystem->MakeDirectory("RSNNS");
-    gSystem->MakeDirectory("RSNNS/plots");
+
+}
+
+//_______________________________________________________________________
+void MethodRSVM::TestClassification()
+{
+    Log()<<kINFO<<"Testing Classification RSVM METHOD  "<<Endl;
+    
+    gSystem->MakeDirectory("RSVM");
+    gSystem->MakeDirectory("RSVM/plots");
 
     MethodBase::TestClassification();
 }
 
 
 //_______________________________________________________________________
-Double_t MethodRSNNS::GetMvaValue( Double_t* errLower, Double_t* errUpper)
+Double_t MethodRSVM::GetMvaValue( Double_t* errLower, Double_t* errUpper)
 {
     Double_t mvaValue;
     if(Data()->GetCurrentType()==Types::kTraining) 
     {
         if(fProbResultForTrainSig.size()==0)
         {
-           r<<"RMVA.RSNNS.Predictor.Train.Prob<-predict(RMVA.RSNNS.Model,RMVA.RSNNS.fDfTrain,type='prob')";
-           r["as.vector(RMVA.RSNNS.Predictor.Train.Prob[,1])"]>>fProbResultForTrainSig;
-
+           r<<"RMVA.RSVM.Predictor.Train.Prob<-predict(RMVA.RSVM.Model,RMVA.RSVM.fDfTrain,type='prob', decision.values = T, probability = T)";//pridiction type prob use for ROC curves
+           r["as.vector(attributes(RMVA.RSVM.Predictor.Train.Prob)$decision.values)"]>>fProbResultForTrainSig;
         }
-        mvaValue=fProbResultForTrainSig[fMvaCounter];
+          mvaValue=fProbResultForTrainSig[fMvaCounter];
+       
        if(fMvaCounter < Data()->GetNTrainingEvents()-1) fMvaCounter++;
        else fMvaCounter=0;
     }else
     {
         if(fProbResultForTestSig.size()==0)
         {
-        r<<"RMVA.RSNNS.Predictor.Test.Prob<-predict(RMVA.RSNNS.Model,RMVA.RSNNS.fDfTest,type='prob')";
-        r["as.vector(RMVA.RSNNS.Predictor.Test.Prob[,1])"]>>fProbResultForTestSig;
+        r<<"RMVA.RSVM.Predictor.Test.Prob <-predict(RMVA.RSVM.Model,RMVA.RSVM.fDfTest,type='prob', decision.values = T, probability = T)";
+        r["as.vector(attributes(RMVA.RSVM.Predictor.Test.Prob)$decision.values)"]>>fProbResultForTestSig;
         }
-        
-        mvaValue=fProbResultForTestSig[fMvaCounter];
-        
+       mvaValue=fProbResultForTestSig[fMvaCounter];
        if(fMvaCounter < Data()->GetNTestEvents()-1) fMvaCounter++;
        else fMvaCounter=0;
     }
        return mvaValue;
 }
 
-
 //_______________________________________________________________________
-void MethodRSNNS::GetHelpMessage() const
+void MethodRSVM::GetHelpMessage() const
 {
 // get help message text
 //

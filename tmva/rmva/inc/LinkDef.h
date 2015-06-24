@@ -12,6 +12,7 @@
 #pragma link C++ class TMVA::RMethodBase+;
 #pragma link C++ class TMVA::MethodC50+;
 #pragma link C++ class TMVA::MethodRSNNS+;
+#pragma link C++ class TMVA::MethodRSVM+;
 
 #endif
 
