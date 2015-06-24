@@ -250,7 +250,8 @@ void MethodC50::ProcessOptions()
 void MethodC50::TestClassification()
 {
     Log()<<kINFO<<"Testing Classification C50 METHOD  "<<Endl;
-    
+    r<<"RMVA.C50.Predictor.Test.Class <-predict.C5.0(RMVA.C50.Model,RMVA.C50.fDfTest,type='class')";
+
     gSystem->MakeDirectory("C50");
     gSystem->MakeDirectory("C50/plots");
 
@@ -307,11 +308,9 @@ Double_t MethodC50::GetMvaValue( Double_t* errLower, Double_t* errUpper)
     Double_t mvaValue;
     if(Data()->GetCurrentType()==Types::kTraining) 
     {
-        if(fClassResultForTrain.size()==0)
+        if(fProbResultForTrainSig.size()==0)
         {
-           r<<"RMVA.C50.Predictor.Train.Class<-predict.C5.0(RMVA.C50.Model,RMVA.C50.fDfTrain,type='class')";
-           r<<"RMVA.C50.Predictor.Train.Prob<-predict.C5.0(RMVA.C50.Model,RMVA.C50.fDfTrain,type='prob')";//pridiction type prob use for ROC curves
-           r["as.vector(RMVA.C50.Predictor.Train.Class)"]>>fClassResultForTrain;
+           r<<"RMVA.C50.Predictor.Train.Prob<-predict.C5.0(RMVA.C50.Model,RMVA.C50.fDfTrain,type='prob')";//pridiction type prob 
            r["as.vector(RMVA.C50.Predictor.Train.Prob[,2])"]>>fProbResultForTrainSig;
         }
           mvaValue=fProbResultForTrainSig[fMvaCounter];
@@ -320,11 +319,9 @@ Double_t MethodC50::GetMvaValue( Double_t* errLower, Double_t* errUpper)
        else fMvaCounter=0;
     }else
     {
-        if(fClassResultForTest.size()==0)
+        if(fProbResultForTestSig.size()==0)
         {
-        r<<"RMVA.C50.Predictor.Test.Class<-predict.C5.0(RMVA.C50.Model,RMVA.C50.fDfTest,type='class')";
         r<<"RMVA.C50.Predictor.Test.Prob <-predict.C5.0(RMVA.C50.Model,RMVA.C50.fDfTest,type='prob')";
-        r["as.vector(RMVA.C50.Predictor.Test.Class)"]>>fClassResultForTest;
         r["as.vector(RMVA.C50.Predictor.Test.Prob[,2])"]>>fProbResultForTestSig;
         }
        mvaValue=fProbResultForTestSig[fMvaCounter];

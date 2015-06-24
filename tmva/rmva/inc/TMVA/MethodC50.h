@@ -93,9 +93,7 @@ namespace TMVA {
        Bool_t fControlEarlyStopping;// logical to toggle whether the internal method for stopping boosting should be used.
        
        UInt_t fMvaCounter;
-       std::vector<std::string> fClassResultForTrain;//prediction result using type='class' in predict.C5.0(..)
-       std::vector<std::string> fClassResultForTest;//prediction result using type='class' in predict.C5.0(..)
-       
+       //prediction result using type='prob' in predict.C5.0(..)
        std::vector<Float_t> fProbResultForTrainSig;
        std::vector<Float_t> fProbResultForTestSig;
       // get help message text

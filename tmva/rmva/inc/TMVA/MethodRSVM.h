@@ -77,10 +77,7 @@ namespace TMVA {
       friend class Reader;                    // DSMTEST      
    protected:
        
-       UInt_t fMvaCounter;
-       std::vector<std::string> fClassResultForTrain;//prediction result using type='class' in predict.C5.0(..)
-       std::vector<std::string> fClassResultForTest;//prediction result using type='class' in predict.C5.0(..)
-       
+       UInt_t fMvaCounter;       
        std::vector<Float_t> fProbResultForTrainSig;
        std::vector<Float_t> fProbResultForTestSig;
       // get help message text
