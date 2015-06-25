@@ -82,25 +82,24 @@ namespace TMVA {
 
        TString fNetType;//default RMPL
        //RSNNS Options for all NN methods
-       TVectorF  fSize;//number of units in the hidden layer(s)
+       TString  fSize;//number of units in the hidden layer(s)
        UInt_t fMaxit;//maximum of iterations to learn
        
        TString fInitFunc;//the initialization function to use
-       Float_t *fInitFuncParams;//the parameters for the initialization function (type 6 see getSnnsRFunctionTable() in RSNNS package)
+       TString fInitFuncParams;//the parameters for the initialization function (type 6 see getSnnsRFunctionTable() in RSNNS package)
        
        TString fLearnFunc;//the learning function to use
-       Float_t *fLearnFuncParams;//the parameters for the learning function
+       TString fLearnFuncParams;//the parameters for the learning function
        
        TString fUpdateFunc;//the update function to use
-       TVectorF fUpdateFuncParams;//the parameters for the update function
+       TString fUpdateFuncParams;//the parameters for the update function
 
        TString fHiddenActFunc;//the activation function of all hidden units
        Bool_t fShufflePatterns;//should the patterns be shuffled?
        Bool_t fLinOut;//sets the activation function of the output units to linear or logistic
        
-       //The next function will not implemented yet because is not well documented.
        TString fPruneFunc;//the pruning function to use
-       TVectorF fPruneFuncParams;//the parameters for the pruning function. Unlike the
+       TString fPruneFuncParams;//the parameters for the pruning function. Unlike the
                                  //other functions, these have to be given in a named list. See
                                  //the pruning demos for further explanation.
        

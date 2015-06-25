@@ -50,7 +50,7 @@ MethodRSNNS::MethodRSNNS( const TString& jobName,
                       TDirectory* theTargetDir ) :
     RMethodBase( jobName, Types::kRSNNS, methodTitle, dsi, theOption, theTargetDir ),fMvaCounter(0)
 {
-    fNetType=this->GetMethodName();
+    fNetType=methodTitle;
     if(fNetType!="RMLP")
     {
         Log() << kFATAL << " Unknow Method"+fNetType
@@ -60,60 +60,56 @@ MethodRSNNS::MethodRSNNS( const TString& jobName,
 
     // standard constructor for the RSNNS
        //RSNNS Options for all NN methods
-       fSize.ResizeTo(1);
-       fSize[0]=5;
+       fSize="c(5)";
        fMaxit=100;
        
        fInitFunc="Randomize_Weights";
-       fInitFuncParams[0]=-0.3;
-       fInitFuncParams[1]=0.3;
+       fInitFuncParams="c(-0.3,0.3)";//the maximun number of pacameter is 5 see RSNNS::getSnnsRFunctionTable() type 6
        
-       fLearnFunc="Std_Backpropagation";
-       fLearnFuncParams[0]=0.2;
-       fLearnFuncParams[1]=0;
+       fLearnFunc="Std_Backpropagation";//
+       fLearnFuncParams="c(0.2,0)";
        
        fUpdateFunc="Topological_Order";
-       fUpdateFuncParams.ResizeTo(1);
-       fUpdateFuncParams[0]=0;
+       fUpdateFuncParams="c(0)";
 
        fHiddenActFunc="Act_Logistic";
        fShufflePatterns=kTRUE;
        fLinOut=kFALSE;
+       fPruneFunc="NULL";
+       fPruneFuncParams="NULL";
 }
 
 //_______________________________________________________________________
 MethodRSNNS::MethodRSNNS( DataSetInfo& theData, const TString& theWeightFile, TDirectory* theTargetDir )
     : RMethodBase( Types::kRSNNS, theData, theWeightFile, theTargetDir ),fMvaCounter(0)
 {
-    fNetType=this->GetMethodName();
+    fNetType="RMLP";//GetMethodName();//GetMethodName() is not returning RMLP is reting MethodBase why?
     if(fNetType!="RMLP")
     {
-        Log() << kFATAL << " Unknow Method"+fNetType
+        Log() << kFATAL << " Unknow Method = "+fNetType
               << Endl;
         return;        
     }
 
     // standard constructor for the RSNNS
        //RSNNS Options for all NN methods
-       fSize.ResizeTo(1);
-       fSize[0]=5;
+       fSize="c(5)";
        fMaxit=100;
        
        fInitFunc="Randomize_Weights";
-       fInitFuncParams[0]=-0.3;
-       fInitFuncParams[1]=0.3;
+       fInitFuncParams="c(-0.3,0.3)";//the maximun number of pacameter is 5 see RSNNS::getSnnsRFunctionTable() type 6
        
-       fLearnFunc="Std_Backpropagation";
-       fLearnFuncParams[0]=0.2;
-       fLearnFuncParams[1]=0;
+       fLearnFunc="Std_Backpropagation";//
+       fLearnFuncParams="c(0.2,0)";
        
        fUpdateFunc="Topological_Order";
-       fUpdateFuncParams.ResizeTo(1);
-       fUpdateFuncParams[0]=0;
+       fUpdateFuncParams="c(0)";
 
        fHiddenActFunc="Act_Logistic";
        fShufflePatterns=kTRUE;
        fLinOut=kFALSE;
+       fPruneFunc="NULL";
+       fPruneFuncParams="NULL";
 
 }
 
@@ -166,14 +162,14 @@ void     MethodRSNNS::Init()
     }
     //Paassing Data to R's environment
     //NOTE:need improved names in R's environment using JobName of TMVA
-    r["RMVA.RSNNS.fDfTrain"]=fDfTrain;
-    r["RMVA.RSNNS.fWeightTrain"]=fWeightTrain;
-    r<<"write.table(RMVA.RSNNS.fDfTrain,file='fDfTrain.txt')";
+    if(fNetType=="RMLP")
+    {
+    r["RMVA.RSNNSRMLP.fDfTrain"]=fDfTrain;
+    r["RMVA.RSNNSRMLP.fWeightTrain"]=fWeightTrain;
 
-    r["RMVA.RSNNS.fDfTest"]=fDfTest;
-    r["RMVA.RSNNS.fWeightTest"]=fWeightTest;
-    r<<"write.table(RMVA.RSNNS.fDfTest,file='fDfTest.txt')";
-
+    r["RMVA.RSNNSRMLP.fDfTest"]=fDfTest;
+    r["RMVA.RSNNSRMLP.fWeightTest"]=fWeightTest;
+    }
     //factors creations
     //RSNNS mlp require a numeric factor then background=0 signal=1 from fFactorTrain/fFactorTest
     UInt_t size=fFactorTrain.size();
@@ -184,7 +180,10 @@ void     MethodRSNNS::Init()
         if(fFactorTrain[i]=="signal") fFactorNumeric[i]=1;
         else fFactorNumeric[i]=0;
     }
-    r["RMVA.RSNNS.fFactorTrain"]=fFactorNumeric;
+    if(fNetType=="RMLP")
+    {
+    r["RMVA.RSNNSRMLP.fFactorTrain"]=fFactorNumeric;
+    }
     fFactorNumeric.clear();    
     size=fFactorTest.size();
     fFactorNumeric.resize(size);
@@ -193,22 +192,30 @@ void     MethodRSNNS::Init()
         if(fFactorTest[i]=="signal") fFactorNumeric[i]=1;
         else fFactorNumeric[i]=0;
     }    
-    r["RMVA.RSNNS.fFactorTest"]=fFactorNumeric;
+    if(fNetType=="RMLP")
+    {
+    r["RMVA.RSNNSRMLP.fFactorTest"]=fFactorNumeric;
 
     //Spectator creation
-    r["RMVA.RSNNS.fDfSpectators"]=fDfSpectators;
-
-    r["RMVA.RSNNS.fCounter"]=0;
-        
+    r["RMVA.RSNNSRMLP.fDfSpectators"]=fDfSpectators;
+    }
 }
 
 void MethodRSNNS::Train()
 {
     if (Data()->GetNTrainingEvents()==0) Log() << kFATAL << "<Train> Data() has zero events" << Endl;
-    r<<"RMVA.RSNNS.Model<-mlp(x=RMVA.RSNNS.fDfTrain,y=RMVA.RSNNS.fFactorTrain,size = c(3,5),maxit = 200)";
+    if(fNetType=="RMLP")
+    {
+    r<<"RMVA.RSNNSRMLP.Model<-mlp(x=RMVA.RSNNSRMLP.fDfTrain,y=RMVA.RSNNSRMLP.fFactorTrain,size = RMVA.RSNNSRMLP.Size,maxit = RMVA.RSNNSRMLP.Maxit,\
+                                  initFunc = RMVA.RSNNSRMLP.InitFunc,initFuncParams = RMVA.RSNNSRMLP.InitFuncParams,\
+                                  learnFunc = RMVA.RSNNSRMLP.LearnFunc,learnFuncParams = RMVA.RSNNSRMLP.LearnFuncParams,\
+                                  updateFunc = RMVA.RSNNSRMLP.UpdateFunc,updateFuncParams = RMVA.RSNNSRMLP.UpdateFuncParams,\
+                                  hiddenActFunc = RMVA.RSNNSRMLP.HiddenActFunc, shufflePatterns = RMVA.RSNNSRMLP.ShufflePatterns, linOut =RMVA.RSNNSRMLP.LinOut,\
+                                  pruneFunc = RMVA.RSNNSRMLP.PruneFunc, pruneFuncParams = RMVA.RSNNSRMLP.PruneFuncParams)";
     r.SetVerbose(1);
-    r<<"RMVA.RSNNS.Model";
+//    r<<"RMVA.RSNNSRMLP.Model";
     r.SetVerbose(0);
+    }
 //    r<<"RMVA.RSNNS.Predictor.Train.Prob<-predict(RMVA.RSNNS.Model,RMVA.RSNNS.fDfTrain,type='prob')";
 }
 
@@ -217,38 +224,69 @@ void MethodRSNNS::DeclareOptions()
 {
        //RSNNS Options for all NN methods
 //       TVectorF  fSize;//number of units in the hidden layer(s)
+    DeclareOptionRef(fSize, "Size", "number of units in the hidden layer(s)");
     DeclareOptionRef(fMaxit, "Maxit", "Maximum of iterations to learn");
     
     DeclareOptionRef(fInitFunc, "InitFunc", "the initialization function to use");
-
-    fInitFuncParams=new Float_t[5];//the maximun number of pacameter is 5 see RSNNS::getSnnsRFunctionTable() type 6
-    DeclareOptionRef(fInitFuncParams,5, "InitFuncParams", "the parameters for the initialization function"); 
+    DeclareOptionRef(fInitFuncParams, "InitFuncParams", "the parameters for the initialization function"); 
        
     DeclareOptionRef(fLearnFunc, "LearnFunc", "the learning function to use");
-    fLearnFuncParams=new Float_t[5];
-    DeclareOptionRef(fLearnFuncParams,5, "LearnFuncParams", "the parameters for the learning function"); 
+    DeclareOptionRef(fLearnFuncParams, "LearnFuncParams", "the parameters for the learning function"); 
 
     DeclareOptionRef(fUpdateFunc, "UpdateFunc", "the update function to use");  
-//    TVectorF fUpdateFuncParams;//the parameters for the update function
-
+    DeclareOptionRef(fUpdateFuncParams, "UpdateFuncParams", "the parameters for the update function");  
+    
     DeclareOptionRef(fHiddenActFunc, "HiddenActFunc", "the activation function of all hidden units");  
     DeclareOptionRef(fShufflePatterns, "ShufflePatterns", "should the patterns be shuffled?");  
     DeclareOptionRef(fLinOut, "LinOut", "sets the activation function of the output units to linear or logistic");
+
+    DeclareOptionRef(fPruneFunc, "PruneFunc", "the prune function to use");  
+    DeclareOptionRef(fPruneFuncParams, "PruneFuncParams", "the parameters for the pruning function. Unlike the\
+                                                     other functions, these have to be given in a named list. See\
+                                                     the pruning demos for further explanation.the update function to use");  
 
 }
 
 //_______________________________________________________________________
 void MethodRSNNS::ProcessOptions()
 {
+    if (fMaxit<=0) {
+        Log() << kERROR << " fMaxit <=0... that does not work !! "
+              << " I set it to 50 .. just so that the program does not crash"
+              << Endl;
+        fMaxit = 1;
+    }
+       // standard constructor for the RSNNS
+       //RSNNS Options for all NN methods
+    if(fNetType=="RMLP")
+    {
+       r<<"RMVA.RSNNSRMLP.Size<-"+fSize;
+       r["RMVA.RSNNSRMLP.Maxit"]=fMaxit;
+       
+       r["RMVA.RSNNSRMLP.InitFunc"]=fInitFunc;
+       r<<"RMVA.RSNNSRMLP.InitFuncParams<-"+fInitFuncParams;
+       
+       r["RMVA.RSNNSRMLP.LearnFunc"]=fLearnFunc;
+       r<<"RMVA.RSNNSRMLP.LearnFuncParams<-"+fLearnFuncParams;
+       
+       r["RMVA.RSNNSRMLP.UpdateFunc"]=fUpdateFunc;
+       r<<"RMVA.RSNNSRMLP.UpdateFuncParams<-"+fUpdateFuncParams;
+       
+       r["RMVA.RSNNSRMLP.HiddenActFunc"]=fHiddenActFunc;
+       r["RMVA.RSNNSRMLP.ShufflePatterns"]=fShufflePatterns;
+       r["RMVA.RSNNSRMLP.LinOut"]=fLinOut;
+       
+       r<<"RMVA.RSNNSRMLP.PruneFunc<-"+fPruneFunc;
+       r<<"RMVA.RSNNSRMLP.PruneFuncParams<-"+fPruneFuncParams;
+    }
+
 
 }
 
 //_______________________________________________________________________
 void MethodRSNNS::TestClassification()
 {
-    Log()<<kINFO<<"Testing Classification RSNNS METHOD  "<<Endl;
-    gSystem->MakeDirectory("RSNNS");
-    gSystem->MakeDirectory("RSNNS/plots");
+    Log()<<kINFO<<"Testing Classification "<<fNetType<<" METHOD  "<<Endl;
 
     MethodBase::TestClassification();
 }
@@ -262,9 +300,11 @@ Double_t MethodRSNNS::GetMvaValue( Double_t* errLower, Double_t* errUpper)
     {
         if(fProbResultForTrainSig.size()==0)
         {
-           r<<"RMVA.RSNNS.Predictor.Train.Prob<-predict(RMVA.RSNNS.Model,RMVA.RSNNS.fDfTrain,type='prob')";
-           r["as.vector(RMVA.RSNNS.Predictor.Train.Prob[,1])"]>>fProbResultForTrainSig;
-
+            if(fNetType=="RMLP")
+            {
+               r<<"RMVA.RSNNSRMLP.Predictor.Train.Prob<-predict(RMVA.RSNNSRMLP.Model,RMVA.RSNNSRMLP.fDfTrain,type='prob')";
+               r["as.vector(RMVA.RSNNSRMLP.Predictor.Train.Prob[,1])"]>>fProbResultForTrainSig;
+            }
         }
         mvaValue=fProbResultForTrainSig[fMvaCounter];
        if(fMvaCounter < Data()->GetNTrainingEvents()-1) fMvaCounter++;
@@ -273,8 +313,11 @@ Double_t MethodRSNNS::GetMvaValue( Double_t* errLower, Double_t* errUpper)
     {
         if(fProbResultForTestSig.size()==0)
         {
-        r<<"RMVA.RSNNS.Predictor.Test.Prob<-predict(RMVA.RSNNS.Model,RMVA.RSNNS.fDfTest,type='prob')";
-        r["as.vector(RMVA.RSNNS.Predictor.Test.Prob[,1])"]>>fProbResultForTestSig;
+            if(fNetType=="RMLP")
+            {
+                r<<"RMVA.RSNNSRMLP.Predictor.Test.Prob<-predict(RMVA.RSNNSRMLP.Model,RMVA.RSNNSRMLP.fDfTest,type='prob')";
+                r["as.vector(RMVA.RSNNSRMLP.Predictor.Test.Prob[,1])"]>>fProbResultForTestSig;
+            }
         }
         
         mvaValue=fProbResultForTestSig[fMvaCounter];
