@@ -51,7 +51,23 @@ MethodRSVM::MethodRSVM( const TString& jobName,
     RMethodBase( jobName, Types::kRSVM, methodTitle, dsi, theOption, theTargetDir ),fMvaCounter(0)
 {
     // standard constructor for the RSVM
-
+       //Booking options
+       fScale=kTRUE;
+       fType="NULL";
+       fKernel="radial";
+       fDegree=3;
+       
+       fGamma=(fDfTrain.GetNcols()==1)?1:1/fDfTrain.GetNcols();
+       fCoef0=0;
+       fCost=1;
+       fNu=0.5;
+       fCacheSize=40;
+       fTolerance=0.001;
+       fEpsilon=0.1;
+       fShrinking=kTRUE;
+       fCross=0;
+       fProbability=kTRUE;
+       fFitted=kTRUE;
 
 }
 
@@ -59,6 +75,24 @@ MethodRSVM::MethodRSVM( const TString& jobName,
 MethodRSVM::MethodRSVM( DataSetInfo& theData, const TString& theWeightFile, TDirectory* theTargetDir )
     : RMethodBase( Types::kRSVM, theData, theWeightFile, theTargetDir ),fMvaCounter(0)
 {
+   // standard constructor for the RSVM
+       //Booking options
+       fScale=kTRUE;
+       fType="NULL";
+       fKernel="radial";
+       fDegree=3;
+       
+       fGamma=(fDfTrain.GetNcols()==1)?1:1/fDfTrain.GetNcols();
+       fCoef0=0;
+       fCost=1;
+       fNu=0.5;
+       fCacheSize=40;
+       fTolerance=0.001;
+       fEpsilon=0.1;
+       fShrinking=kTRUE;
+       fCross=0;
+       fProbability=kTRUE;
+       fFitted=kTRUE;
 
 }
 
@@ -113,9 +147,6 @@ void     MethodRSVM::Init()
     //Spectator creation
     r["RMVA.RSVM.fDfSpectators"]=fDfSpectators;
 
-    r["RMVA.RSVM.fCounter"]=0;
-
-
 
 }
 
@@ -127,15 +158,48 @@ void MethodRSVM::Train()
                               y             = RMVA.RSVM.fFactorTrain)";
 //                              class.weights = RMVA.RSVM.fWeightTrain)";
 //    r.SetVerbose(1);
-    r<<"summary(RMVA.RSVM.Model)";
-   
-//    Log() << kWARNING << " RMVA.RSVM.Predictor.ClassResultForTest SIze. = "<<fClassResultForTest.size()<< Endl;        
+    r<<"summary(RMVA.RSVM.Model)";   
 //    r.SetVerbose(0);
 }
 
 //_______________________________________________________________________
 void MethodRSVM::DeclareOptions()
 {
+     DeclareOptionRef(fScale, "Scale", "A logical vector indicating the variables to be scaled. If\
+                                       ‘scale’ is of length 1, the value is recycled as many times \
+                                       as needed.  Per default, data are scaled internally (both ‘x’\
+                                       and ‘y’ variables) to zero mean and unit variance. The center \
+                                       and scale values are returned and used for later predictions.");
+     DeclareOptionRef(fType, "Type","‘svm’ can be used as a classification machine, as a \
+                                     regression machine, or for novelty detection.  Depending of\
+                                     whether ‘y’ is a factor or not, the default setting for\
+                                     ‘type’ is ‘C-classification’ or ‘eps-regression’,\
+                                     respectively, but may be overwritten by setting an explicit value.\
+                                     Valid options are:\
+                                      - ‘C-classification’\
+                                      - ‘nu-classification’\
+                                      - ‘one-classification’ (for novelty detection)\
+                                      - ‘eps-regression’\
+                                      - ‘nu-regression’"); 
+     DeclareOptionRef(fKernel, "Kernel","the kernel used in training and predicting. You might\
+                                        consider changing some of the following parameters, depending on the kernel type.\
+                                        linear: u'*v\
+                                        polynomial: (gamma*u'*v + coef0)^degree\
+                                        radial basis: exp(-gamma*|u-v|^2)\
+                                        sigmoid: tanh(gamma*u'*v + coef0)"); 
+     DeclareOptionRef(fDegree, "Degree","parameter needed for kernel of type ‘polynomial’ (default: 3)"); 
+     DeclareOptionRef(fGamma, "Gamma","parameter needed for all kernels except ‘linear’ (default:1/(data dimension))"); 
+     DeclareOptionRef(fCoef0, "Coef0","parameter needed for kernels of type ‘polynomial’ and ‘sigmoid’ (default: 0)"); 
+     DeclareOptionRef(fCost, "Cost","cost of constraints violation (default: 1)-it is the ‘C’-constant of the regularization term in the Lagrange formulation."); 
+     DeclareOptionRef(fNu, "Nu","parameter needed for ‘nu-classification’, ‘nu-regression’,and ‘one-classification’"); 
+     DeclareOptionRef(fCacheSize, "CacheSize","cache memory in MB (default 40)"); 
+     DeclareOptionRef(fTolerance, "Tolerance","tolerance of termination criterion (default: 0.001)"); 
+     DeclareOptionRef(fEpsilon, "Epsilon","epsilon in the insensitive-loss function (default: 0.1)"); 
+     DeclareOptionRef(fShrinking, "Shrinking","option whether to use the shrinking-heuristics (default:‘TRUE’)"); 
+     DeclareOptionRef(fCross, "Cross","if a integer value k>0 is specified, a k-fold cross validation on the training data is performed to assess the\
+                                       quality of the model: the accuracy rate for classification and the Mean Squared Error for regression"); 
+     DeclareOptionRef(fProbability, "Probability","logical indicating whether the model should allow for probability predictions."); 
+     DeclareOptionRef(fFitted, "Fitted","logical indicating whether the fitted values should be computed and included in the model or not (default: ‘TRUE’)"); 
 
 }
 
