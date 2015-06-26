@@ -53,7 +53,7 @@ MethodRSVM::MethodRSVM(const TString &jobName,
    // standard constructor for the RSVM
    //Booking options
    fScale = kTRUE;
-   fType = "NULL";
+   fType = "C-classification";
    fKernel = "radial";
    fDegree = 3;
 
@@ -78,7 +78,7 @@ MethodRSVM::MethodRSVM(DataSetInfo &theData, const TString &theWeightFile, TDire
    // standard constructor for the RSVM
    //Booking options
    fScale = kTRUE;
-   fType = "NULL";
+   fType = "C-classification";
    fKernel = "radial";
    fDegree = 3;
 
@@ -144,7 +144,10 @@ void     MethodRSVM::Init()
    r << "RMVA.RSVM.fFactorTest<-factor(RMVA.RSVM.fFactorTest)";
 
    //SVM require a named vector
-   r<<"names(RMVA.RSVM.fWeightTrain)<-RMVA.RSVM.fFactorTrain";   
+   ROOT::R::TRDataFrame ClassWeightsTrain;
+   ClassWeightsTrain["background"]=Data()->GetNEvtBkgdTrain();
+   ClassWeightsTrain["signal"]=Data()->GetNEvtSigTrain();
+   r["RMVA.RSVM.ClassWeightsTrain"]=ClassWeightsTrain;   
 
    //Spectator creation
    r["RMVA.RSVM.fDfSpectators"] = fDfSpectators;
@@ -166,6 +169,7 @@ void MethodRSVM::Train()
                                coef0         = RMVA.RSVM.Coef0,\
                                cost          = RMVA.RSVM.Cost,\
                                nu            = RMVA.RSVM.Nu,\
+                               class.weights = RMVA.RSVM.ClassWeightsTrain,\
                                cachesize     = RMVA.RSVM.CacheSize,\
                                tolerance     = RMVA.RSVM.Tolerance,\
                                epsilon       = RMVA.RSVM.Epsilon,\
@@ -173,7 +177,6 @@ void MethodRSVM::Train()
                                cross         = RMVA.RSVM.Cross,\
                                probability   = RMVA.RSVM.Probability,\
                                fitted        = RMVA.RSVM.Fitted)";
-//                               class.weights = RMVA.RSVM.fWeightTrain, //not implemented yet
    r.SetVerbose(1);
    r << "summary(RMVA.RSVM.Model)";
    r.SetVerbose(0);
@@ -224,7 +227,7 @@ void MethodRSVM::DeclareOptions()
 void MethodRSVM::ProcessOptions()
 {
    r["RMVA.RSVM.Scale"] = fScale;
-   r << "RMVA.RSVM.Type<-" + fType;
+   r["RMVA.RSVM.Type"] = fType;
    r["RMVA.RSVM.Kernel"] = fKernel;
    r["RMVA.RSVM.Degree"] = fDegree;
    r["RMVA.RSVM.Gamma"] = fGamma;
