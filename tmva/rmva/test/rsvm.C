@@ -107,7 +107,7 @@ void rsvm()
                                         "nTrain_Signal=0:nTrain_Background=0:nTest_Signal=0:nTest_Background=0:SplitMode=Random:NormMode=NumEvents:!V" );
    
    factory->BookMethod( TMVA::Types::kSVM, "SVM", "Gamma=0.25:Tol=0.001:VarTransform=Norm" );
-   factory->BookMethod( TMVA::Types::kRSVM, "RSVM","!H:VarTransform=Norm:!V" );
+   factory->BookMethod( TMVA::Types::kRSVM, "RSVM","!H:Kernel=linear:Type=C-classification:VarTransform=Norm:Probability=kTRUE:Tolerance=0.001:!V" );
    
 
    

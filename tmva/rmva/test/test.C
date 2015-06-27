@@ -110,9 +110,9 @@ void test()
    factory->BookMethod( TMVA::Types::kC50, "C50",
       "!H:NTrials=10:Rules=kFALSE:ControlSubSet=kFALSE:ControlBands=0:ControlWinnow=kFALSE:ControlNoGlobalPruning=kTRUE:ControlCF=0.25:ControlMinCases=2:ControlFuzzyThreshold=kTRUE:ControlSample=0:ControlEarlyStopping=kTRUE:!V" );
    
-   factory->BookMethod( TMVA::Types::kRSNNS, "RMLP","!H:VarTransform=N:!V" );
+   factory->BookMethod( TMVA::Types::kRSNNS, "RMLP","!H:VarTransform=N:Size=c(5):Maxit=800:InitFunc=Randomize_Weights:LearnFunc=Std_Backpropagation:LearnFuncParams=c(0.2,0):!V" );
     
-   factory->BookMethod( TMVA::Types::kRSVM, "RSVM","!H:!V" );
+   factory->BookMethod( TMVA::Types::kRSVM, "RSVM","!H:Kernel=linear:Type=C-classification:VarTransform=Norm:Probability=kTRUE:Tolerance=0.001:!V" );
 
    
       // Train MVAs using the set of training events
