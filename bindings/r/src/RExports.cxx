@@ -6,7 +6,7 @@
  * For the list of contributors see $ROOTSYS/README/CREDITS.             *
  *************************************************************************/
 #include<RExports.h>
-#include<TRFunction.h>
+#include<TRFunctionExport.h>
 #include<TRObjectProxy.h>
 #include<TRDataFrame.h>
 #include<Rcpp/Vector.h>
@@ -89,6 +89,17 @@ namespace Rcpp {
    template<> ROOT::R::TRDataFrame as(SEXP obj)
    {
       return ROOT::R::TRDataFrame(Rcpp::as<Rcpp::DataFrame>(obj));
+   }
+   
+//TRFunctionImport
+   template<> SEXP wrap(const ROOT::R::TRFunctionImport &obj)
+   {
+      return *obj.f;
+   }
+
+   template<> ROOT::R::TRFunctionImport as(SEXP obj)
+   {
+      return ROOT::R::TRFunctionImport(Rcpp::as<Rcpp::Function>(obj));
    }
 
 }
