@@ -36,10 +36,11 @@ void higgs()
    //Adding Training Data //
    /////////////////////////
    ROOT::R::TRDataFrame TrainData;
-   r<<"TrainData=read.csv('training.csv')";
+   r<<"HiggsData=read.csv('higgs.csv')";
    
    //TrainData is adataframe without the first colunm Event ID is not needed//
-   r<<"TrainData=TrainData[2:33]";
+   r<<"HiggsData=HiggsData[2:33]";
+   r<<"TrainData=HiggsData[1:200000:1:32]";//taking 200k events for training
    r["TrainData"]>>TrainData;
    UInt_t ncols=TrainData.GetNcols();
    UInt_t nrows=TrainData.GetNrows();
@@ -77,10 +78,10 @@ void higgs()
    //Adding Testing Data //
    ///////////////////////
    ROOT::R::TRDataFrame TestData;
-   r<<"TestData=read.csv('test.csv')";
+   r<<"TestData=HiggsData[200000:250000,1:32]";//taking 50k events for testing
    
    //TrainData is adataframe without the first colunm Event ID is not needed//
-   r<<"TestData=TestData[2:31]";
+   r<<"TestData=TestData[2:32]";
    r["TestData"]>>TestData;
    ncols=TestData.GetNcols();
    nrows=TestData.GetNrows();
@@ -91,13 +92,11 @@ void higgs()
    r["as.matrix(TestData[1:30])"]>>TestDataMat;
    
    
-   //weights no given  and labels given in random_submission.csv
-   r<<"RandomSubmission<-read.csv('random_submission.csv')";
-   ROOT::R::TRDataFrame Class;
-   r["RandomSubmission['Class']"]>>Class;
-   
    Rcpp::StringVector TestLabels(nrows);//ifis signal/background
-   Class["Class"]>>TestLabels;
+   TestData["Label"]>>TestLabels;
+   std::vector<Float_t> TestWeights(nrows);
+   TestData["Weight"]>>TestWeights;
+
    
    ////////////////////////////////////////////
    //Adding training Data every event at time//
@@ -107,9 +106,8 @@ void higgs()
        
        std::vector<Double_t> ev(30);//ncols -3 because last two are Eventid, weights and class(s/b))
        for(UInt_t j=0;j<30;j++) ev[j]=TestDataMat[i][j];
-       
-       if(TestLabels[i]=="s") factory->AddSignalTestEvent( ev ); //adding signals 
-       else factory->AddBackgroundTestEvent( ev); //adding background
+       if(TestLabels[i]=="s") factory->AddSignalTestEvent( ev, TestWeights[i] ); //adding signals 
+       else factory->AddBackgroundTestEvent( ev,TestWeights[i]); //adding background
    }
 
 
