@@ -140,7 +140,7 @@ TMVA::DataSet* TMVA::DataSetFactory::CreateDataSet( TMVA::DataSetInfo& dsi,
          dsi.SetCorrelationMatrix( className, CalcCorrelationMatrix( ds, cl ) );
          dsi.PrintCorrelationMatrix( className );
       }
-      Log() << kINFO << " " << Endl;
+      Log() << kINFO << Form("[%s] : ",dsi.GetName()) << " " << Endl;
    } 
 
    return ds;
@@ -224,16 +224,16 @@ TMVA::DataSetFactory::BuildInitialDataSet( DataSetInfo& dsi,
    const Bool_t showCollectedOutput = kFALSE;
    if (showCollectedOutput) {
       Int_t maxL = dsi.GetClassNameMaxLength();
-      Log() << kINFO << "Collected:" << Endl;
+      Log() << kINFO << Form("[%s] : ",dsi.GetName()) << "Collected:" << Endl;
       for (UInt_t cl = 0; cl < dsi.GetNClasses(); cl++) {
-         Log() << kINFO << "    "
+         Log() << kINFO << Form("[%s] : ",dsi.GetName()) << "    "
                << setiosflags(ios::left) << std::setw(maxL) << dsi.GetClassInfo(cl)->GetName()
                << " training entries: " << ds->GetNClassEvents( 0, cl ) << Endl;
-         Log() << kINFO << "    "
+         Log() << kINFO << Form("[%s] : ",dsi.GetName()) << "    "
                << setiosflags(ios::left) << std::setw(maxL) << dsi.GetClassInfo(cl)->GetName()
                << " testing  entries: " << ds->GetNClassEvents( 1, cl ) << Endl;
       }
-      Log() << kINFO << " " << Endl;
+      Log() << kINFO << Form("[%s] : ",dsi.GetName()) << " " << Endl;
    }
 
    return ds;
@@ -659,10 +659,10 @@ TMVA::DataSetFactory::InitOptions( TMVA::DataSetInfo& dsi,
    // put all to upper case
    splitMode.ToUpper(); mixMode.ToUpper(); normMode.ToUpper();
    // adjust mixmode if same as splitmode option has been set
-   Log() << kINFO << "Splitmode is: \"" << splitMode << "\" the mixmode is: \"" << mixMode << "\"" << Endl;
+   Log() << kINFO << Form("[%s] : ",dsi.GetName()) << "Splitmode is: \"" << splitMode << "\" the mixmode is: \"" << mixMode << "\"" << Endl;
    if (mixMode=="SAMEASSPLITMODE") mixMode = splitMode;
    else if (mixMode!=splitMode)
-      Log() << kINFO << "DataSet splitmode="<<splitMode
+      Log() << kINFO << Form("[%s] : ",dsi.GetName()) << "DataSet splitmode="<<splitMode
             <<" differs from mixmode="<<mixMode<<Endl;
 }
 
@@ -701,13 +701,13 @@ TMVA::DataSetFactory::BuildEventVector( TMVA::DataSetInfo& dsi,
    // the chain jumps to a new tree we have to reset the formulas
    for (UInt_t cl=0; cl<nclasses; cl++) {
 
-      Log() << kINFO << "Create training and testing trees -- looping over class \""
+      Log() << kINFO << Form("[%s] : ",dsi.GetName()) << "Create training and testing trees -- looping over class \""
             << dsi.GetClassInfo(cl)->GetName() << "\" ..." << Endl;
 
       EventStats& classEventCounts = eventCounts[cl];
 
       // info output for weights
-      Log() << kINFO << "Weight expression for class \'" << dsi.GetClassInfo(cl)->GetName() << "\': \""
+      Log() << kINFO << Form("[%s] : ",dsi.GetName()) << "Weight expression for class \'" << dsi.GetClassInfo(cl)->GetName() << "\': \""
             << dsi.GetClassInfo(cl)->GetWeight() << "\"" << Endl;
 
       // used for chains only
@@ -893,9 +893,9 @@ TMVA::DataSetFactory::BuildEventVector( TMVA::DataSetInfo& dsi,
    // for output format, get the maximum class name length
    Int_t maxL = dsi.GetClassNameMaxLength();
 
-   Log() << kINFO << "Number of events in input trees (after possible flattening of arrays):" << Endl;
+   Log() << kINFO << Form("[%s] : ",dsi.GetName()) << "Number of events in input trees (after possible flattening of arrays):" << Endl;
    for (UInt_t cl = 0; cl < dsi.GetNClasses(); cl++) {
-      Log() << kINFO << "    "
+      Log() << kINFO << Form("[%s] : ",dsi.GetName()) << "    "
             << setiosflags(ios::left) << std::setw(maxL) << dsi.GetClassInfo(cl)->GetName()
             << "      -- number of events       : "
             << std::setw(5) << eventCounts[cl].nEvBeforeCut
@@ -903,32 +903,32 @@ TMVA::DataSetFactory::BuildEventVector( TMVA::DataSetInfo& dsi,
    }
 
    for (UInt_t cl = 0; cl < dsi.GetNClasses(); cl++) {
-      Log() << kINFO << "    " << std::setw(maxL) << dsi.GetClassInfo(cl)->GetName()
+      Log() << kINFO << Form("[%s] : ",dsi.GetName()) << "    " << std::setw(maxL) << dsi.GetClassInfo(cl)->GetName()
             <<" tree -- total number of entries: "
             << std::setw(5) << dataInput.GetEntries(dsi.GetClassInfo(cl)->GetName()) << Endl;
    }
 
    if (fScaleWithPreselEff) 
-      Log() << kINFO << "Preselection: (will affect number of requested training and testing events)" << Endl;
+      Log() << kINFO << Form("[%s] : ",dsi.GetName()) << "Preselection: (will affect number of requested training and testing events)" << Endl;
    else
-      Log() << kINFO << "Preselection: (will NOT affect number of requested training and testing events)" << Endl;
+      Log() << kINFO << Form("[%s] : ",dsi.GetName()) << "Preselection: (will NOT affect number of requested training and testing events)" << Endl;
 
    if (dsi.HasCuts()) {
       for (UInt_t cl = 0; cl< dsi.GetNClasses(); cl++) {
-         Log() << kINFO << "    " << setiosflags(ios::left) << std::setw(maxL) << dsi.GetClassInfo(cl)->GetName()
+         Log() << kINFO << Form("[%s] : ",dsi.GetName()) << "    " << setiosflags(ios::left) << std::setw(maxL) << dsi.GetClassInfo(cl)->GetName()
                << " requirement: \"" << dsi.GetClassInfo(cl)->GetCut() << "\"" << Endl;
-         Log() << kINFO << "    "
+         Log() << kINFO << Form("[%s] : ",dsi.GetName()) << "    "
                << setiosflags(ios::left) << std::setw(maxL) << dsi.GetClassInfo(cl)->GetName()
                << "      -- number of events passed: "
                << std::setw(5) << eventCounts[cl].nEvAfterCut
                << "  / sum of weights: " << std::setw(5) << eventCounts[cl].nWeEvAfterCut << Endl;
-         Log() << kINFO << "    "
+         Log() << kINFO << Form("[%s] : ",dsi.GetName()) << "    "
                << setiosflags(ios::left) << std::setw(maxL) << dsi.GetClassInfo(cl)->GetName()
                << "      -- efficiency             : "
                << std::setw(6) << eventCounts[cl].nWeEvAfterCut/eventCounts[cl].nWeEvBeforeCut << Endl;
       }
    }
-   else Log() << kINFO << "    No preselection cuts applied on event classes" << Endl;
+   else Log() << kINFO << Form("[%s] : ",dsi.GetName()) << "    No preselection cuts applied on event classes" << Endl;
 
    delete[] varIsArray;
 
@@ -992,11 +992,11 @@ TMVA::DataSetFactory::MixEvents( DataSetInfo& dsi,
       if (fScaleWithPreselEff) {
          presel_scale = eventCounts[cls].cutScaling();
          if (presel_scale < 1)
-            Log() << kINFO << " you have opted for scaling the number of requested training/testing events\n to be scaled by the preselection efficiency"<< Endl;
+            Log() << kINFO << Form("[%s] : ",dsi.GetName()) << " you have opted for scaling the number of requested training/testing events\n to be scaled by the preselection efficiency"<< Endl;
       }else{
          presel_scale = 1.; // this scaling was tooo confusing to most people, including me! Sorry... (Helge)
          if (eventCounts[cls].cutScaling() < 1)
-            Log() << kINFO << " you have opted for interpreting the requested number of training/testing events\n to be the number of events AFTER your preselection cuts" <<  Endl;
+            Log() << kINFO << Form("[%s] : ",dsi.GetName()) << " you have opted for interpreting the requested number of training/testing events\n to be the number of events AFTER your preselection cuts" <<  Endl;
 
       }
       Int_t requestedTraining = Int_t(eventCounts[cls].nTrainingEventsRequested * presel_scale);
@@ -1260,10 +1260,10 @@ TMVA::DataSetFactory::MixEvents( DataSetInfo& dsi,
       // event classes with different number of events, this works but the alternation stops at the last event of the smaller class
       for( UInt_t cls = 1; cls < dsi.GetNClasses(); ++cls ){
          if (tmpEventVector[Types::kTraining].at(cls).size() != tmpEventVector[Types::kTraining].at(0).size()){
-            Log() << kINFO << "Training sample: You are trying to mix events in alternate mode although the classes have different event numbers. This works but the alternation stops at the last event of the smaller class."<<Endl;
+            Log() << kINFO << Form("[%s] : ",dsi.GetName()) << "Training sample: You are trying to mix events in alternate mode although the classes have different event numbers. This works but the alternation stops at the last event of the smaller class."<<Endl;
          }
          if (tmpEventVector[Types::kTesting].at(cls).size() != tmpEventVector[Types::kTesting].at(0).size()){
-            Log() << kINFO << "Testing sample: You are trying to mix events in alternate mode although the classes have different event numbers. This works but the alternation stops at the last event of the smaller class."<<Endl;
+            Log() << kINFO << Form("[%s] : ",dsi.GetName()) << "Testing sample: You are trying to mix events in alternate mode although the classes have different event numbers. This works but the alternation stops at the last event of the smaller class."<<Endl;
          }
       }
       typedef EventVector::iterator EvtVecIt;
@@ -1350,9 +1350,9 @@ TMVA::DataSetFactory::MixEvents( DataSetInfo& dsi,
    // create dataset
    DataSet* ds = new DataSet(dsi);
 
-   Log() << kINFO << "Create internal training tree" << Endl;
+   Log() << kINFO << Form("[%s] : ",dsi.GetName()) << "Create internal training tree" << Endl;
    ds->SetEventCollection(trainingEventVector, Types::kTraining );
-   Log() << kINFO << "Create internal testing tree" << Endl;
+   Log() << kINFO << Form("[%s] : ",dsi.GetName()) << "Create internal testing tree" << Endl;
    ds->SetEventCollection(testingEventVector,  Types::kTesting  );
 
    
@@ -1465,19 +1465,19 @@ TMVA::DataSetFactory::RenormEvents( TMVA::DataSetInfo& dsi,
 
 
    if (normMode == "NONE") {
-      Log() << kINFO << "No weight renormalisation applied: use original global and event weights" << Endl;
+      Log() << kINFO << Form("[%s] : ",dsi.GetName()) << "No weight renormalisation applied: use original global and event weights" << Endl;
       return;
    }
    //changed by Helge 27.5.2013     What on earth was done here before? I still remember the idea behind this which apparently was
    //NOT understood by the 'programmer' :)  .. the idea was to have SAME amount of effective TRAINING data for signal and background.
    // Testing events are totally irrelevant for this and might actually skew the whole normalisation!!
    else if (normMode == "NUMEVENTS") {
-      Log() << kINFO << "Weight renormalisation mode: \"NumEvents\": renormalises all event classes " << Endl;
-      Log() << kINFO << " such that the effective (weighted) number of events in each class equals the respective " << Endl;
-      Log() << kINFO << " number of events (entries) that you demanded in PrepareTrainingAndTestTree(\"\",\"nTrain_Signal=.. )" << Endl; 
-      Log() << kINFO << " ... i.e. such that Sum[i=1..N_j]{w_i} = N_j, j=0,1,2..." << Endl;
-      Log() << kINFO << " ... (note that N_j is the sum of TRAINING events (nTrain_j...with j=Signal,Background.." << Endl;
-      Log() << kINFO << " ..... Testing events are not renormalised nor included in the renormalisation factor! )"<< Endl;
+      Log() << kINFO << Form("[%s] : ",dsi.GetName()) << "Weight renormalisation mode: \"NumEvents\": renormalises all event classes " << Endl;
+      Log() << kINFO << Form("[%s] : ",dsi.GetName()) << " such that the effective (weighted) number of events in each class equals the respective " << Endl;
+      Log() << kINFO << Form("[%s] : ",dsi.GetName()) << " number of events (entries) that you demanded in PrepareTrainingAndTestTree(\"\",\"nTrain_Signal=.. )" << Endl; 
+      Log() << kINFO << Form("[%s] : ",dsi.GetName()) << " ... i.e. such that Sum[i=1..N_j]{w_i} = N_j, j=0,1,2..." << Endl;
+      Log() << kINFO << Form("[%s] : ",dsi.GetName()) << " ... (note that N_j is the sum of TRAINING events (nTrain_j...with j=Signal,Background.." << Endl;
+      Log() << kINFO << Form("[%s] : ",dsi.GetName()) << " ..... Testing events are not renormalised nor included in the renormalisation factor! )"<< Endl;
       
       for( UInt_t cls = 0, clsEnd = dsi.GetNClasses(); cls < clsEnd; ++cls ){
          //         renormFactor.at(cls) = ( (trainingSizePerClass.at(cls) + testingSizePerClass.at(cls))/
@@ -1493,12 +1493,12 @@ TMVA::DataSetFactory::RenormEvents( TMVA::DataSetInfo& dsi,
       //done here was something like having each data source normalized to its number of entries and this even for trainig+testing together.
       // what should this have been good for ???
       
-      Log() << kINFO << "Weight renormalisation mode: \"EqualNumEvents\": renormalises all event classes ..." << Endl;
-      Log() << kINFO << " such that the effective (weighted) number of events in each class is the same " << Endl;
-      Log() << kINFO << " (and equals the number of events (entries) given for class=0 )" << Endl; 
-      Log() << kINFO << "... i.e. such that Sum[i=1..N_j]{w_i} = N_classA, j=classA, classB, ..." << Endl;
-      Log() << kINFO << "... (note that N_j is the sum of TRAINING events" << Endl;
-      Log() << kINFO << " ..... Testing events are not renormalised nor included in the renormalisation factor!)" << Endl;
+      Log() << kINFO << Form("[%s] : ",dsi.GetName()) << "Weight renormalisation mode: \"EqualNumEvents\": renormalises all event classes ..." << Endl;
+      Log() << kINFO << Form("[%s] : ",dsi.GetName()) << " such that the effective (weighted) number of events in each class is the same " << Endl;
+      Log() << kINFO << Form("[%s] : ",dsi.GetName()) << " (and equals the number of events (entries) given for class=0 )" << Endl; 
+      Log() << kINFO << Form("[%s] : ",dsi.GetName()) << "... i.e. such that Sum[i=1..N_j]{w_i} = N_classA, j=classA, classB, ..." << Endl;
+      Log() << kINFO << Form("[%s] : ",dsi.GetName()) << "... (note that N_j is the sum of TRAINING events" << Endl;
+      Log() << kINFO << Form("[%s] : ",dsi.GetName()) << " ..... Testing events are not renormalised nor included in the renormalisation factor!)" << Endl;
 
       // normalize to size of first class
       UInt_t referenceClass = 0;
@@ -1515,7 +1515,7 @@ TMVA::DataSetFactory::RenormEvents( TMVA::DataSetInfo& dsi,
    // now apply the normalization factors
    Int_t maxL = dsi.GetClassNameMaxLength();
    for (UInt_t cls = 0, clsEnd = dsi.GetNClasses(); cls<clsEnd; ++cls) {
-      Log() << kINFO << "--> Rescale " << setiosflags(ios::left) << std::setw(maxL)
+      Log() << kINFO << Form("[%s] : ",dsi.GetName()) << "--> Rescale " << setiosflags(ios::left) << std::setw(maxL)
             << dsi.GetClassInfo(cls)->GetName() << " event weights by factor: " << renormFactor.at(cls) << Endl;
       for (EventVector::iterator it = tmpEventVector[Types::kTraining].at(cls).begin(),
               itEnd = tmpEventVector[Types::kTraining].at(cls).end(); it != itEnd; ++it){
@@ -1529,8 +1529,8 @@ TMVA::DataSetFactory::RenormEvents( TMVA::DataSetInfo& dsi,
    // (same code as before --> this can be done nicer )
    //
    
-   Log() << kINFO << "Number of training and testing events after rescaling:" << Endl;
-   Log() << kINFO << "------------------------------------------------------" << Endl;
+   Log() << kINFO << Form("[%s] : ",dsi.GetName()) << "Number of training and testing events after rescaling:" << Endl;
+   Log() << kINFO << Form("[%s] : ",dsi.GetName()) << "------------------------------------------------------" << Endl;
 
    trainingSumSignalWeights = 0;
    trainingSumBackgrWeights = 0; // Backgr. includes all clasess that are not signal
@@ -1564,24 +1564,24 @@ TMVA::DataSetFactory::RenormEvents( TMVA::DataSetInfo& dsi,
       
       // output statistics
       
-      Log() << kINFO << setiosflags(ios::left) << std::setw(maxL)
+      Log() << kINFO << Form("[%s] : ",dsi.GetName()) << setiosflags(ios::left) << std::setw(maxL)
             << dsi.GetClassInfo(cls)->GetName() << " -- "
             << "training events            : " << trainingSizePerClass.at(cls)
             <<  " (sum of weights: " << trainingSumWeightsPerClass.at(cls) << ")"
             <<  " - requested were " << eventCounts[cls].nTrainingEventsRequested << " events" << Endl;
-      Log() << kINFO << setiosflags(ios::left) << std::setw(maxL)
+      Log() << kINFO << Form("[%s] : ",dsi.GetName()) << setiosflags(ios::left) << std::setw(maxL)
             << dsi.GetClassInfo(cls)->GetName() << " -- "
             << "testing events             : " << testingSizePerClass.at(cls)
             <<  " (sum of weights: " << testingSumWeightsPerClass.at(cls) << ")"
             <<  " - requested were " << eventCounts[cls].nTestingEventsRequested << " events" << Endl;
-      Log() << kINFO << setiosflags(ios::left) << std::setw(maxL)
+      Log() << kINFO << Form("[%s] : ",dsi.GetName()) << setiosflags(ios::left) << std::setw(maxL)
             << dsi.GetClassInfo(cls)->GetName() << " -- "
             << "training and testing events: "
             << (trainingSizePerClass.at(cls)+testingSizePerClass.at(cls))
             << " (sum of weights: "
             << (trainingSumWeightsPerClass.at(cls)+testingSumWeightsPerClass.at(cls)) << ")" << Endl;
       if(eventCounts[cls].nEvAfterCut<eventCounts[cls].nEvBeforeCut) {
-         Log() << kINFO << setiosflags(ios::left) << std::setw(maxL)
+         Log() << kINFO << Form("[%s] : ",dsi.GetName()) << setiosflags(ios::left) << std::setw(maxL)
                << dsi.GetClassInfo(cls)->GetName() << " -- "
                << "due to the preselection a scaling factor has been applied to the numbers of requested events: "
                << eventCounts[cls].cutScaling() << Endl;
