@@ -236,7 +236,7 @@ namespace TMVA {
       // the beautiful greeting message
       void Greetings();
 
-      void WriteDataInformation();
+      void WriteDataInformation(TMVA::DataLoader *loader);
 
       DataInputHandler&        DataInput() { return *fDataInputHandler; }
       DataSetInfo&             DefaultDataSetInfo();

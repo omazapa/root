@@ -104,6 +104,7 @@
 #include "TMVA/TSpline1.h"
 #include "TMVA/Ranking.h"
 #include "TMVA/Factory.h"
+#include "TMVA/DataLoader.h"
 #include "TMVA/Tools.h"
 #include "TMVA/ResultsClassification.h"
 #include "TMVA/ResultsRegression.h"

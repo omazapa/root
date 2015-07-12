@@ -817,12 +817,11 @@ TMVA::MethodBase* TMVA::Factory::BookMethod( TMVA::DataLoader *loader, TString t
          Log() << kFATAL << "Method with type kBoost cannot be casted to MethodCategory. /Factory" << Endl; // DSMTEST
       methBoost->SetBoostedMethodName( theMethodName ); // DSMTEST divided into two lines
       methBoost->fDataSetManager = loader->fDataSetManager; // DSMTEST
-
    }
 
    MethodBase *method = dynamic_cast<MethodBase*>(im);
    if (method==0) return 0; // could not create method
-
+   
    // set fDataSetManager if MethodCategory (to enable Category to create datasetinfo objects) // DSMTEST
    if (method->GetMethodType() == Types::kCategory) { // DSMTEST
       MethodCategory *methCat = (dynamic_cast<MethodCategory*>(im)); // DSMTEST
@@ -848,7 +847,7 @@ TMVA::MethodBase* TMVA::Factory::BookMethod( TMVA::DataLoader *loader, TString t
       return 0;
    }
 
-
+   method->fDataLoader=loader;
    method->SetAnalysisType( fAnalysisType );
    method->SetupMethod();
    method->ParseOptions();
@@ -899,14 +898,18 @@ TMVA::IMethod* TMVA::Factory::GetMethod( const TString &methodTitle ) const
 }
 
 //_______________________________________________________________________
-void TMVA::Factory::WriteDataInformation()
+void TMVA::Factory::WriteDataInformation(TMVA::DataLoader *loader)
 {
    // put correlations of input data and a few (default + user
    // selected) transformations into the root file
 
    RootBaseDir()->cd();
-
-   DefaultDataSetInfo().GetDataSet(); // builds dataset (including calculation of correlation matrix)
+   
+   if(!RootBaseDir()->GetDirectory(loader->fName)) RootBaseDir()->mkdir(loader->fName);
+   else return; //loader is now in the output file, we dont need to save again
+   
+   RootBaseDir()->cd(loader->fName);
+   loader->DefaultDataSetInfo().GetDataSet(); // builds dataset (including calculation of correlation matrix)
 
 
    // correlation matrix of the default DS
@@ -914,10 +917,10 @@ void TMVA::Factory::WriteDataInformation()
    const TH2* h(0);
    
    if(fAnalysisType == Types::kMulticlass){
-      for (UInt_t cls = 0; cls < DefaultDataSetInfo().GetNClasses() ; cls++) {
-         m = DefaultDataSetInfo().CorrelationMatrix(DefaultDataSetInfo().GetClassInfo(cls)->GetName());
-         h = DefaultDataSetInfo().CreateCorrelationMatrixHist(m, TString("CorrelationMatrix")+DefaultDataSetInfo().GetClassInfo(cls)->GetName(),
-                                                              "Correlation Matrix ("+ DefaultDataSetInfo().GetClassInfo(cls)->GetName() +TString(")"));
+      for (UInt_t cls = 0; cls < loader->DefaultDataSetInfo().GetNClasses() ; cls++) {
+         m = loader->DefaultDataSetInfo().CorrelationMatrix(loader->DefaultDataSetInfo().GetClassInfo(cls)->GetName());
+         h = loader->DefaultDataSetInfo().CreateCorrelationMatrixHist(m, TString("CorrelationMatrix")+loader->DefaultDataSetInfo().GetClassInfo(cls)->GetName(),
+                                                              "Correlation Matrix ("+ loader->DefaultDataSetInfo().GetClassInfo(cls)->GetName() +TString(")"));
          if (h!=0) {
             h->Write();
             delete h;
@@ -925,22 +928,22 @@ void TMVA::Factory::WriteDataInformation()
       }
    }
    else{
-      m = DefaultDataSetInfo().CorrelationMatrix( "Signal" );
-      h = DefaultDataSetInfo().CreateCorrelationMatrixHist(m, "CorrelationMatrixS", "Correlation Matrix (signal)");
+      m = loader->DefaultDataSetInfo().CorrelationMatrix( "Signal" );
+      h = loader->DefaultDataSetInfo().CreateCorrelationMatrixHist(m, "CorrelationMatrixS", "Correlation Matrix (signal)");
       if (h!=0) {
          h->Write();
          delete h;
       }
       
-      m = DefaultDataSetInfo().CorrelationMatrix( "Background" );
-      h = DefaultDataSetInfo().CreateCorrelationMatrixHist(m, "CorrelationMatrixB", "Correlation Matrix (background)");
+      m = loader->DefaultDataSetInfo().CorrelationMatrix( "Background" );
+      h = loader->DefaultDataSetInfo().CreateCorrelationMatrixHist(m, "CorrelationMatrixB", "Correlation Matrix (background)");
       if (h!=0) {
          h->Write();
          delete h;
       }
       
-      m = DefaultDataSetInfo().CorrelationMatrix( "Regression" );
-      h = DefaultDataSetInfo().CreateCorrelationMatrixHist(m, "CorrelationMatrix", "Correlation Matrix");
+      m = loader->DefaultDataSetInfo().CorrelationMatrix( "Regression" );
+      h = loader->DefaultDataSetInfo().CreateCorrelationMatrixHist(m, "CorrelationMatrix", "Correlation Matrix");
       if (h!=0) { 
          h->Write();
          delete h;
@@ -961,27 +964,27 @@ void TMVA::Factory::WriteDataInformation()
    std::vector<TString> trfsDef = gTools().SplitString(processTrfs,';');
    std::vector<TString>::iterator trfsDefIt = trfsDef.begin();
    for (; trfsDefIt!=trfsDef.end(); trfsDefIt++) {
-      trfs.push_back(new TMVA::TransformationHandler(DefaultDataSetInfo(), "Factory"));
+      trfs.push_back(new TMVA::TransformationHandler(loader->DefaultDataSetInfo(), "Factory"));
       TString trfS = (*trfsDefIt);
 
       Log() << kINFO << Endl;
       Log() << kINFO << "current transformation string: '" << trfS.Data() << "'" << Endl;
       TMVA::MethodBase::CreateVariableTransforms( trfS, 
-                                                  DefaultDataSetInfo(),
+                                                  loader->DefaultDataSetInfo(),
                                                   *(trfs.back()),
                                                   Log() );
 
       if (trfS.BeginsWith('I')) identityTrHandler = trfs.back();
    }
 
-   const std::vector<Event*>& inputEvents = DefaultDataSetInfo().GetDataSet()->GetEventCollection();
+   const std::vector<Event*>& inputEvents = loader->DefaultDataSetInfo().GetDataSet()->GetEventCollection();
 
    // apply all transformations
    std::vector<TMVA::TransformationHandler*>::iterator trfIt = trfs.begin();
 
    for (;trfIt != trfs.end(); trfIt++) {
       // setting a Root dir causes the variables distributions to be saved to the root file
-      (*trfIt)->SetRootDir(RootBaseDir());
+      (*trfIt)->SetRootDir(RootBaseDir()->GetDirectory(loader->fName));// every dataloader have its own dir
       (*trfIt)->CalcTransformations(inputEvents);      
    }
    if(identityTrHandler) identityTrHandler->PrintVariableRanking();
@@ -1031,21 +1034,10 @@ void TMVA::Factory::OptimizeAllMethods(TString fomType, TString fitType)
 void TMVA::Factory::TrainAllMethods() 
 {  
    // iterates through all booked methods and calls training
-
-   if(fDataInputHandler->GetEntries() <=1) { // 0 entries --> 0 events, 1 entry --> dynamical dataset (or one entry)
-      Log() << kFATAL << "No input data for the training provided!" << Endl;
-   }
-   
-   if(fAnalysisType == Types::kRegression && DefaultDataSetInfo().GetNTargets() < 1 )
-      Log() << kFATAL << "You want to do regression training without specifying a target." << Endl;
-   else if( (fAnalysisType == Types::kMulticlass || fAnalysisType == Types::kClassification) 
-            && DefaultDataSetInfo().GetNClasses() < 2 ) 
-      Log() << kFATAL << "You want to do classification training, but specified less than two classes." << Endl;
+    
 
    // iterates over all MVAs that have been booked, and calls their training methods
 
-   // first print some information about the default dataset
-   WriteDataInformation();
 
    // don't do anything if no method booked
    if (fMethods.empty()) {
@@ -1065,8 +1057,23 @@ void TMVA::Factory::TrainAllMethods()
    for( itrMethod = fMethods.begin(); itrMethod != fMethods.end(); ++itrMethod ) {
       Event::SetIsTraining(kTRUE);
       MethodBase* mva = dynamic_cast<MethodBase*>(*itrMethod);
+      
       if(mva==0) continue;
+      
+      if(mva->fDataLoader->fDataInputHandler->GetEntries() <=1) { // 0 entries --> 0 events, 1 entry --> dynamical dataset (or one entry)
+          Log() << kFATAL << "No input data for the training provided!" << Endl;
+      }
+      
+      if(fAnalysisType == Types::kRegression && mva->fDataLoader->DefaultDataSetInfo().GetNTargets() < 1 )
+      Log() << kFATAL << "You want to do regression training without specifying a target." << Endl;
+      else if( (fAnalysisType == Types::kMulticlass || fAnalysisType == Types::kClassification) 
+            && mva->fDataLoader->DefaultDataSetInfo().GetNClasses() < 2 ) 
+      Log() << kFATAL << "You want to do classification training, but specified less than two classes." << Endl;
+      
+      // first print some information about the default dataset
+      WriteDataInformation(mva->fDataLoader);
 
+      
       if (mva->Data()->GetNTrainingEvents() < MinNoTrainingEvents) {
          Log() << kWARNING << "Method " << mva->GetMethodName()
                << " not trained (training tree has less entries ["
