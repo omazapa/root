@@ -86,7 +86,6 @@ TMVA::DataLoader::DataLoader( TString thedlName)
    //   DataSetManager::CreateInstance(*fDataInputHandler); // DSMTEST removed
    fDataSetManager = new DataSetManager( *fDataInputHandler ); // DSMTEST
 
-
    // render silent
 //    if (gTools().CheckForSilentOption( GetOptions() )) Log().InhibitOutput(); // make sure is silent if wanted to
 
@@ -442,7 +441,7 @@ void TMVA::DataLoader::AddSpectator( const TString& expression, const TString& t
 TMVA::DataSetInfo& TMVA::DataLoader::DefaultDataSetInfo() 
 { 
    // default creation
-   return AddDataSet( "Default" );
+   return AddDataSet( fName );
 }
 
 //_______________________________________________________________________
@@ -553,97 +552,3 @@ void TMVA::DataLoader::PrepareTrainingAndTestTree( TCut sigcut, TCut bkgcut, con
    DefaultDataSetInfo().SetSplitOptions( splitOpt );
 }
 
-#if 0
-//require reimplementation
-//_______________________________________________________________________
-void TMVA::DataLoader::WriteDataInformation()
-{
-   // put correlations of input data and a few (default + user
-   // selected) transformations into the root file
-
-   RootBaseDir()->cd();
-
-   DefaultDataSetInfo().GetDataSet(); // builds dataset (including calculation of correlation matrix)
-
-
-   // correlation matrix of the default DS
-   const TMatrixD* m(0);
-   const TH2* h(0);
-   
-   if(fAnalysisType == Types::kMulticlass){
-      for (UInt_t cls = 0; cls < DefaultDataSetInfo().GetNClasses() ; cls++) {
-         m = DefaultDataSetInfo().CorrelationMatrix(DefaultDataSetInfo().GetClassInfo(cls)->GetName());
-         h = DefaultDataSetInfo().CreateCorrelationMatrixHist(m, TString("CorrelationMatrix")+DefaultDataSetInfo().GetClassInfo(cls)->GetName(),
-                                                              "Correlation Matrix ("+ DefaultDataSetInfo().GetClassInfo(cls)->GetName() +TString(")"));
-         if (h!=0) {
-            h->Write();
-            delete h;
-         }
-      }
-   }
-   else{
-      m = DefaultDataSetInfo().CorrelationMatrix( "Signal" );
-      h = DefaultDataSetInfo().CreateCorrelationMatrixHist(m, "CorrelationMatrixS", "Correlation Matrix (signal)");
-      if (h!=0) {
-         h->Write();
-         delete h;
-      }
-      
-      m = DefaultDataSetInfo().CorrelationMatrix( "Background" );
-      h = DefaultDataSetInfo().CreateCorrelationMatrixHist(m, "CorrelationMatrixB", "Correlation Matrix (background)");
-      if (h!=0) {
-         h->Write();
-         delete h;
-      }
-      
-      m = DefaultDataSetInfo().CorrelationMatrix( "Regression" );
-      h = DefaultDataSetInfo().CreateCorrelationMatrixHist(m, "CorrelationMatrix", "Correlation Matrix");
-      if (h!=0) { 
-         h->Write();
-         delete h;
-      }
-   }
-   
-   // some default transformations to evaluate
-   // NOTE: all transformations are destroyed after this test
-   TString processTrfs = "I"; //"I;N;D;P;U;G,D;"
-
-   // plus some user defined transformations
-   processTrfs = fTransformations;
-
-   // remove any trace of identity transform - if given (avoid to apply it twice)
-   std::vector<TMVA::TransformationHandler*> trfs;
-   TransformationHandler* identityTrHandler = 0;
-
-   std::vector<TString> trfsDef = gTools().SplitString(processTrfs,';');
-   std::vector<TString>::iterator trfsDefIt = trfsDef.begin();
-   for (; trfsDefIt!=trfsDef.end(); trfsDefIt++) {
-      trfs.push_back(new TMVA::TransformationHandler(DefaultDataSetInfo(), "DataLoader"));
-      TString trfS = (*trfsDefIt);
-
-      Log() << kINFO << Endl;
-      Log() << kINFO << "current transformation string: '" << trfS.Data() << "'" << Endl;
-      TMVA::MethodBase::CreateVariableTransforms( trfS, 
-                                                  DefaultDataSetInfo(),
-                                                  *(trfs.back()),
-                                                  Log() );
-
-      if (trfS.BeginsWith('I')) identityTrHandler = trfs.back();
-   }
-
-   const std::vector<Event*>& inputEvents = DefaultDataSetInfo().GetDataSet()->GetEventCollection();
-
-   // apply all transformations
-   std::vector<TMVA::TransformationHandler*>::iterator trfIt = trfs.begin();
-
-   for (;trfIt != trfs.end(); trfIt++) {
-      // setting a Root dir causes the variables distributions to be saved to the root file
-      (*trfIt)->SetRootDir(RootBaseDir());
-      (*trfIt)->CalcTransformations(inputEvents);      
-   }
-   if(identityTrHandler) identityTrHandler->PrintVariableRanking();
-
-   // clean up
-   for (trfIt = trfs.begin(); trfIt != trfs.end(); trfIt++) delete *trfIt;
-}
-#endif

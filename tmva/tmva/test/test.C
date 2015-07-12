@@ -109,8 +109,8 @@ void test()
    factory->BookMethod( loader, TMVA::Types::kBDT, "BDT",
                            "!H:!V:NTrees=850:MinNodeSize=2.5%:MaxDepth=3:BoostType=AdaBoost:AdaBoostBeta=0.5:UseBaggedBoost:BaggedSampleFraction=0.5:SeparationType=GiniIndex:nCuts=20" );
 
-   factory->BookMethod( loader, TMVA::Types::kC50, "C50",
-      "!H:NTrials=10:Rules=kFALSE:ControlSubSet=kFALSE:ControlBands=0:ControlWinnow=kFALSE:ControlNoGlobalPruning=kTRUE:ControlCF=0.25:ControlMinCases=2:ControlFuzzyThreshold=kTRUE:ControlSample=0:ControlEarlyStopping=kTRUE:!V" );
+//    factory->BookMethod( loader, TMVA::Types::kC50, "C50",
+//       "!H:NTrials=10:Rules=kFALSE:ControlSubSet=kFALSE:ControlBands=0:ControlWinnow=kFALSE:ControlNoGlobalPruning=kTRUE:ControlCF=0.25:ControlMinCases=2:ControlFuzzyThreshold=kTRUE:ControlSample=0:ControlEarlyStopping=kTRUE:!V" );
    
 //    factory->BookMethod(loader, TMVA::Types::kRSNNS, "RMLP","!H:VarTransform=N:Size=c(5):Maxit=800:InitFunc=Randomize_Weights:LearnFunc=Std_Backpropagation:LearnFuncParams=c(0.2,0):!V" );
 //     
@@ -121,10 +121,10 @@ void test()
    factory->TrainAllMethods();
 
    // ---- Evaluate all MVAs using the set of test events
-//    factory->TestAllMethods();
+   factory->TestAllMethods();
 
    // ----- Evaluate and compare performance of all configured MVAs
-//    factory->EvaluateAllMethods();
+   factory->EvaluateAllMethods();
    // --------------------------------------------------------------
 
    // Save the output

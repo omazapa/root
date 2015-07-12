@@ -87,7 +87,6 @@ namespace TMVA {
    class MethodCuts;
    class MethodBoost;
    class DataSetInfo;
-   class DataLoader;
 
    class MethodBase : virtual public IMethod, public Configurable {
 
@@ -519,7 +518,6 @@ namespace TMVA {
       std::vector<Float_t>* fRegressionReturnVal;  // holds the return-values for the regression
       std::vector<Float_t>* fMulticlassReturnVal;  // holds the return-values for the multiclass classification
 
-      DataLoader *fDataLoader;      
    private:
 
       // MethodCuts redefines some of the evaluation variables and histograms -> must access private members

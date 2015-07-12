@@ -58,9 +58,13 @@ namespace TMVA {
 
    class Ranking;
    class MethodBoost;
+   class DataLoader;
 
    class IMethod {
-
+   
+   protected:
+      DataLoader *fDataLoader;//DataLoader
+      
    public:
 
       // default constructur

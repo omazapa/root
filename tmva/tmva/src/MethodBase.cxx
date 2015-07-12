@@ -1894,7 +1894,7 @@ TDirectory* TMVA::MethodBase::MethodBaseDir() const
 
    Log()<<kDEBUG<<" Base Directory for " << GetMethodTypeName() << " not set yet --> check if already there.." <<Endl;
 
-   const TString dirName(Form("%s/Method_%s",fDataLoader->GetName(),GetMethodTypeName().Data()));
+   const TString dirName(Form("%s/Method_%s",DataInfo().GetName(),GetMethodTypeName().Data()));
 
    TDirectory * dir = Factory::RootBaseDir()->GetDirectory(dirName);
    if (dir != 0) {
@@ -1945,6 +1945,7 @@ void TMVA::MethodBase::WriteEvaluationHistosToFile(Types::ETreeType treetype)
 {
    // writes all MVA evaluation histograms to file
    BaseDir()->cd();
+
 
    // write MVA PDFs to file - if exist
    if (0 != fMVAPdfS) {

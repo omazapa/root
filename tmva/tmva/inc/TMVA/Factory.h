@@ -89,103 +89,10 @@ namespace TMVA {
 
       virtual const char*  GetName() const { return "Factory"; }
 
-      // add events to training and testing trees
-      void AddSignalTrainingEvent    ( const std::vector<Double_t>& event, Double_t weight = 1.0 );
-      void AddBackgroundTrainingEvent( const std::vector<Double_t>& event, Double_t weight = 1.0 );
-      void AddSignalTestEvent        ( const std::vector<Double_t>& event, Double_t weight = 1.0 );
-      void AddBackgroundTestEvent    ( const std::vector<Double_t>& event, Double_t weight = 1.0 );
-      void AddTrainingEvent( const TString& className, const std::vector<Double_t>& event, Double_t weight );
-      void AddTestEvent    ( const TString& className, const std::vector<Double_t>& event, Double_t weight );
-      void AddEvent        ( const TString& className, Types::ETreeType tt, const std::vector<Double_t>& event, Double_t weight );
-      Bool_t UserAssignEvents(UInt_t clIndex);
-      TTree* CreateEventAssignTrees( const TString& name );
 
-      DataSetInfo& AddDataSet( DataSetInfo& );
-      DataSetInfo& AddDataSet( const TString&  );
-
-      // special case: signal/background
-
-      // Data input related
-      void SetInputTrees( const TString& signalFileName, const TString& backgroundFileName, 
-                          Double_t signalWeight=1.0, Double_t backgroundWeight=1.0 );
-      void SetInputTrees( TTree* inputTree, const TCut& SigCut, const TCut& BgCut );
-      // Set input trees  at once
-      void SetInputTrees( TTree* signal, TTree* background, 
-                          Double_t signalWeight=1.0, Double_t backgroundWeight=1.0) ;
-
-      void AddSignalTree( TTree* signal,    Double_t weight=1.0, Types::ETreeType treetype = Types::kMaxTreeType );
-      void AddSignalTree( TString datFileS, Double_t weight=1.0, Types::ETreeType treetype = Types::kMaxTreeType );
-      void AddSignalTree( TTree* signal, Double_t weight, const TString& treetype );      
-
-      // ... depreciated, kept for backwards compatibility
-      void SetSignalTree( TTree* signal, Double_t weight=1.0);
-
-      void AddBackgroundTree( TTree* background, Double_t weight=1.0, Types::ETreeType treetype = Types::kMaxTreeType );
-      void AddBackgroundTree( TString datFileB,  Double_t weight=1.0, Types::ETreeType treetype = Types::kMaxTreeType );
-      void AddBackgroundTree( TTree* background, Double_t weight, const TString & treetype );
-
-      // ... depreciated, kept for backwards compatibility
-      void SetBackgroundTree( TTree* background, Double_t weight=1.0 );
-
-      void SetSignalWeightExpression( const TString& variable );
-      void SetBackgroundWeightExpression( const TString& variable );
-
-      // special case: regression
-      void AddRegressionTree( TTree* tree, Double_t weight = 1.0,  
-                              Types::ETreeType treetype = Types::kMaxTreeType ) { 
-         AddTree( tree, "Regression", weight, "", treetype ); 
-      }
-
-      // general
-
-      // Data input related
-      void SetTree( TTree* tree, const TString& className, Double_t weight ); // depreciated
-      void AddTree( TTree* tree, const TString& className, Double_t weight=1.0,
-                    const TCut& cut = "",
-                    Types::ETreeType tt = Types::kMaxTreeType );
-      void AddTree( TTree* tree, const TString& className, Double_t weight, const TCut& cut, const TString& treeType );
-
-      // set input variable
-      void SetInputVariables  ( std::vector<TString>* theVariables ); // depreciated
-      void AddVariable        ( const TString& expression, const TString& title, const TString& unit,
-                                char type='F', Double_t min = 0, Double_t max = 0 );
-      void AddVariable        ( const TString& expression, char type='F',
-                                Double_t min = 0, Double_t max = 0 );
-      void AddTarget          ( const TString& expression, const TString& title = "", const TString& unit = "",
-                                Double_t min = 0, Double_t max = 0 );
-      void AddRegressionTarget( const TString& expression, const TString& title = "", const TString& unit = "",
-                                Double_t min = 0, Double_t max = 0 )
-      {
-         AddTarget( expression, title, unit, min, max );
-      }
-      void AddSpectator         ( const TString& expression, const TString& title = "", const TString& unit = "",
-                                Double_t min = 0, Double_t max = 0 );
-
-      // set weight for class
-      void SetWeightExpression( const TString& variable, const TString& className = "" );
-
-      // set cut for class
-      void SetCut( const TString& cut, const TString& className = "" );
-      void SetCut( const TCut& cut, const TString& className = "" );
-      void AddCut( const TString& cut, const TString& className = "" );
-      void AddCut( const TCut& cut, const TString& className = "" );
-
-
-      //  prepare input tree for training
-      void PrepareTrainingAndTestTree( const TCut& cut, const TString& splitOpt );
-      void PrepareTrainingAndTestTree( TCut sigcut, TCut bkgcut, const TString& splitOpt );
-
-      // ... deprecated, kept for backwards compatibility 
-      void PrepareTrainingAndTestTree( const TCut& cut, Int_t Ntrain, Int_t Ntest = -1 );
-
-      void PrepareTrainingAndTestTree( const TCut& cut, Int_t NsigTrain, Int_t NbkgTrain, Int_t NsigTest, Int_t NbkgTest, 
-                                       const TString& otherOpt="SplitMode=Random:!V" );
-
-      MethodBase* BookMethod( TString theMethodName, TString methodTitle, TString theOption = "" );
       MethodBase* BookMethod( DataLoader *loader, TString theMethodName, TString methodTitle, TString theOption = "" );
-      MethodBase* BookMethod( Types::EMVA theMethod,  TString methodTitle, TString theOption = "" );
       MethodBase* BookMethod( DataLoader *loader, Types::EMVA theMethod,  TString methodTitle, TString theOption = "" );
-      MethodBase* BookMethod( TMVA::Types::EMVA /*theMethod*/, 
+      MethodBase* BookMethod( DataLoader *, TMVA::Types::EMVA /*theMethod*/, 
                               TString /*methodTitle*/, 
                               TString /*methodOption*/, 
                               TMVA::Types::EMVA /*theComposite*/, 
@@ -206,7 +113,7 @@ namespace TMVA {
 
       // performance evaluation
       void EvaluateAllMethods( void );
-      void EvaluateAllVariables( TString options = "" ); 
+//       void EvaluateAllVariables( TString options = "" ); 
   
       // delete all methods and reset the method vector
       void DeleteAllMethods( void );
@@ -238,8 +145,6 @@ namespace TMVA {
 
       void WriteDataInformation(TMVA::DataLoader *loader);
 
-      DataInputHandler&        DataInput() { return *fDataInputHandler; }
-      DataSetInfo&             DefaultDataSetInfo();
       void                     SetInputTreesFromEventAssignTrees();
 
 
@@ -247,12 +152,8 @@ namespace TMVA {
 
       // data members
 
-
-      DataSetManager* fDataSetManager; // DSMTEST
-
       static TFile*                             fgTargetFile;     //! ROOT output file
 
-      DataInputHandler*                         fDataInputHandler;
 
       std::vector<TMVA::VariableTransformBase*> fDefaultTrfs;     //! list of transformations on default DataSet
 
