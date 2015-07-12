@@ -551,7 +551,7 @@ namespace TMVA {
 
       TString          fParentDir;           // method parent name, like booster name
 
-      TString          fFileDir;             // unix sub-directory for weight files (default: "weights")
+      TString          fFileDir;             // unix sub-directory for weight files (default: DataLoader's Name + "weights")
       TString          fWeightFile;          // weight file name
 
    private:

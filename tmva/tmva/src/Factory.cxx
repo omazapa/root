@@ -52,6 +52,7 @@
 #include "TPrincipal.h"
 #include "TMath.h"
 #include "TObjString.h"
+#include "TSystem.h"
 
 #include "TMVA/Factory.h"
 #include "TMVA/ClassifierFactory.h"
@@ -762,7 +763,8 @@ TMVA::MethodBase* TMVA::Factory::BookMethod( TString theMethodName, TString meth
 TMVA::MethodBase* TMVA::Factory::BookMethod( TMVA::DataLoader *loader, TString theMethodName, TString methodTitle, TString theOption )
 {
    // Book a classifier or regression method
-
+   gSystem->MakeDirectory(loader->GetName());//creating directory for DataLoader output
+   
    if( fAnalysisType == Types::kNoAnalysisType ){
       if( loader->DefaultDataSetInfo().GetNClasses()==2
           && loader->DefaultDataSetInfo().GetClassInfo("Signal") != NULL
@@ -846,7 +848,8 @@ TMVA::MethodBase* TMVA::Factory::BookMethod( TMVA::DataLoader *loader, TString t
       }
       return 0;
    }
-
+   
+   method->SetWeightFileDir(Form("%s/%s",loader->GetName(),method->GetWeightFileDir().Data()));//setting up weight file dir
    method->fDataLoader=loader;
    method->SetAnalysisType( fAnalysisType );
    method->SetupMethod();

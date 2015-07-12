@@ -71,7 +71,6 @@ namespace TMVA {
 
    class DataLoader : public Configurable {
      friend class Factory;
-     TString fName;
    public:
 
       // no default  constructor
@@ -201,7 +200,7 @@ namespace TMVA {
       TString                                   fTransformations; //! List of transformations to test
       Bool_t                                    fVerbose;         //! verbose mode
 
-//       TString                                   fJobName;         //! jobname, used as extension in weight file names
+      TString                                   fName;         //! name, used as directory in output
 
       // flag determining the way training and test data are assigned to DataLoader
       enum DataAssignType { kUndefined = 0, 

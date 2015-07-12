@@ -184,10 +184,9 @@ TMVA::MethodBase::MethodBase( const TString& jobName,
 {
    // standard constructur
    SetTestvarName();
-
    // default extension for weight files
-   SetWeightFileDir( gConfig().GetIONames().fWeightFileDir );
-   gSystem->MakeDirectory( GetWeightFileDir() );
+   fFileDir=gConfig().GetIONames().fWeightFileDir;
+//    SetWeightFileDir( gConfig().GetIONames().fWeightFileDir );
 }
 
 //_______________________________________________________________________
@@ -1895,7 +1894,7 @@ TDirectory* TMVA::MethodBase::MethodBaseDir() const
 
    Log()<<kDEBUG<<" Base Directory for " << GetMethodTypeName() << " not set yet --> check if already there.." <<Endl;
 
-   const TString dirName(Form("Method_%s",GetMethodTypeName().Data()));
+   const TString dirName(Form("%s/Method_%s",fDataLoader->GetName(),GetMethodTypeName().Data()));
 
    TDirectory * dir = Factory::RootBaseDir()->GetDirectory(dirName);
    if (dir != 0) {
