@@ -45,21 +45,29 @@ void test()
    TMVA::Factory *factory = new TMVA::Factory( "TMVAClassification", outputFile,
                                                "!V:!Silent:Color:DrawProgressBar:Transformations=I;D;P;G,D:AnalysisType=Classification" );
    
-   TMVA::DataLoader *loader=new TMVA::DataLoader("dataset1");
+   TMVA::DataLoader *loader1=new TMVA::DataLoader("dataset1");
+   TMVA::DataLoader *loader2=new TMVA::DataLoader("dataset2");
     // Define the input variables that shall be used for the MVA training
    // note that you may also use variable expressions, such as: "3*var1/var2*abs(var3)"
    // [all types of expressions that can also be parsed by TTree::Draw( "expression" )]
-   loader->AddVariable( "myvar1 := var1+var2", 'F' );
-   loader->AddVariable( "myvar2 := var1-var2", "Expression 2", "", 'F' );
-   loader->AddVariable( "var3",                "Variable 3", "units", 'F' );
-   loader->AddVariable( "var4",                "Variable 4", "units", 'F' );
+   loader1->AddVariable( "myvar1 := var1+var2", 'F' );
+   loader1->AddVariable( "myvar2 := var1-var2", "Expression 2", "", 'F' );
+   loader1->AddVariable( "var3",                "Variable 3", "units", 'F' );
+   loader1->AddVariable( "var4",                "Variable 4", "units", 'F' );
+
+   loader2->AddVariable( "myvar1 := var1+var2", 'F' );
+   loader2->AddVariable( "myvar2 := var1-var2", "Expression 2", "", 'F' );
+   loader2->AddVariable( "var3",                "Variable 3", "units", 'F' );
+   loader2->AddVariable( "var4",                "Variable 4", "units", 'F' );
 
    // You can add so-called "Spectator variables", which are not used in the MVA training,
    // but will appear in the final "TestTree" produced by TMVA. This TestTree will contain the
    // input variables, the response values of all trained MVAs, and the spectator variables
-   loader->AddSpectator( "spec1 := var1*2",  "Spectator 1", "units", 'F' );
-   loader->AddSpectator( "spec2 := var1*3",  "Spectator 2", "units", 'F' );
+   loader1->AddSpectator( "spec1 := var1*2",  "Spectator 1", "units", 'F' );
+   loader1->AddSpectator( "spec2 := var1*3",  "Spectator 2", "units", 'F' );
 
+   loader2->AddSpectator( "spec1 := var1*3",  "Spectator 1", "units", 'F' );
+   loader2->AddSpectator( "spec2 := var1*4",  "Spectator 2", "units", 'F' );
      // Read training and test data
    // (it is also possible to use ASCII format as input -> see TMVA Users Guide)
    TString fname = "./tmva_class_example.root";
@@ -81,15 +89,19 @@ void test()
    Double_t backgroundWeight = 1.0;
    
    // You can add an arbitrary number of signal or background trees
-   loader->AddSignalTree    ( tsignal,     signalWeight     );
-   loader->AddBackgroundTree( tbackground, backgroundWeight );
+   loader1->AddSignalTree    ( tsignal,     signalWeight     );
+   loader1->AddBackgroundTree( tbackground, backgroundWeight );
  
+   // You can add an arbitrary number of signal or background trees
+   loader2->AddSignalTree    ( tsignal,     signalWeight     );
+   loader2->AddBackgroundTree( tbackground, backgroundWeight );
    
     // Set individual event weights (the variables must exist in the original TTree)
    //    for signal    : factory->SetSignalWeightExpression    ("weight1*weight2");
    //    for background: factory->SetBackgroundWeightExpression("weight1*weight2");
-   loader->SetBackgroundWeightExpression( "weight" );
+   loader1->SetBackgroundWeightExpression( "weight" );
    
+   loader2->SetBackgroundWeightExpression( "weight" );
    
       // Apply additional cuts on the signal and background samples (can be different)
    TCut mycuts = ""; // for example: TCut mycuts = "abs(var1)<0.5 && abs(var2-0.5)<1";
@@ -103,14 +115,17 @@ void test()
    // To also specify the number of testing events, use:
    //    factory->PrepareTrainingAndTestTree( mycut,
    //                                         "NSigTrain=3000:NBkgTrain=3000:NSigTest=3000:NBkgTest=3000:SplitMode=Random:!V" );
-   loader->PrepareTrainingAndTestTree( mycuts, mycutb,
+   loader1->PrepareTrainingAndTestTree( mycuts, mycutb,
                                         "nTrain_Signal=0:nTrain_Background=0:nTest_Signal=0:nTest_Background=0:SplitMode=Random:NormMode=NumEvents:!V" );
+
+   loader2->PrepareTrainingAndTestTree( mycuts, mycutb,
+                                        "nTrain_Signal=1000:nTrain_Background=1000:nTest_Signal=1000:nTest_Background=1000:SplitMode=Random:NormMode=NumEvents:!V" );
    // Boosted Decision Trees
-   factory->BookMethod( loader, TMVA::Types::kBDT, "BDT",
+   factory->BookMethod( loader1, TMVA::Types::kBDT, "BDT",
                            "!H:!V:NTrees=850:MinNodeSize=2.5%:MaxDepth=3:BoostType=AdaBoost:AdaBoostBeta=0.5:UseBaggedBoost:BaggedSampleFraction=0.5:SeparationType=GiniIndex:nCuts=20" );
 
-//    factory->BookMethod( loader, TMVA::Types::kC50, "C50",
-//       "!H:NTrials=10:Rules=kFALSE:ControlSubSet=kFALSE:ControlBands=0:ControlWinnow=kFALSE:ControlNoGlobalPruning=kTRUE:ControlCF=0.25:ControlMinCases=2:ControlFuzzyThreshold=kTRUE:ControlSample=0:ControlEarlyStopping=kTRUE:!V" );
+   factory->BookMethod( loader2, TMVA::Types::kC50, "C50",
+      "!H:NTrials=10:Rules=kFALSE:ControlSubSet=kFALSE:ControlBands=0:ControlWinnow=kFALSE:ControlNoGlobalPruning=kTRUE:ControlCF=0.25:ControlMinCases=2:ControlFuzzyThreshold=kTRUE:ControlSample=0:ControlEarlyStopping=kTRUE:!V" );
    
 //    factory->BookMethod(loader, TMVA::Types::kRSNNS, "RMLP","!H:VarTransform=N:Size=c(5):Maxit=800:InitFunc=Randomize_Weights:LearnFunc=Std_Backpropagation:LearnFuncParams=c(0.2,0):!V" );
 //     

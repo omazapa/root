@@ -1100,127 +1100,145 @@ void TMVA::Factory::EvaluateAllMethods( void )
    // --> output
    // ----------------------------------------------------------------------- 
 
-//    if (doRegression) {
-// 
-//       Log() << kINFO << Endl;
-//       TString hLine = "-------------------------------------------------------------------------";
-//       Log() << kINFO << "Evaluation results ranked by smallest RMS on test sample:" << Endl;
-//       Log() << kINFO << "(\"Bias\" quotes the mean deviation of the regression from true target." << Endl;
-//       Log() << kINFO << " \"MutInf\" is the \"Mutual Information\" between regression and target." << Endl;
-//       Log() << kINFO << " Indicated by \"_T\" are the corresponding \"truncated\" quantities ob-" << Endl;
-//       Log() << kINFO << " tained when removing events deviating more than 2sigma from average.)" << Endl;
-//       Log() << kINFO << hLine << Endl;
-//       Log() << kINFO << "MVA Method:        <Bias>   <Bias_T>    RMS    RMS_T  |  MutInf MutInf_T" << Endl;
-//       Log() << kINFO << hLine << Endl;
-// 
-//       for (Int_t i=0; i<nmeth_used[0]; i++) {
-//          Log() << kINFO << Form("%-15s:%#9.3g%#9.3g%#9.3g%#9.3g  |  %#5.3f  %#5.3f",
-//                                 (const char*)mname[0][i], 
-//                                 biastest[0][i], biastestT[0][i], 
-//                                 rmstest[0][i], rmstestT[0][i], 
-//                                 minftest[0][i], minftestT[0][i] )
-//                << Endl;
-//       }
-//       Log() << kINFO << hLine << Endl;
-//       Log() << kINFO << Endl;
-//       Log() << kINFO << "Evaluation results ranked by smallest RMS on training sample:" << Endl;
-//       Log() << kINFO << "(overtraining check)" << Endl;
-//       Log() << kINFO << hLine << Endl;
-//       Log() << kINFO << "MVA Method:        <Bias>   <Bias_T>    RMS    RMS_T  |  MutInf MutInf_T" << Endl;
-//       Log() << kINFO << hLine << Endl;
-// 
-//       for (Int_t i=0; i<nmeth_used[0]; i++) {
-//          Log() << kINFO << Form("%-15s:%#9.3g%#9.3g%#9.3g%#9.3g  |  %#5.3f  %#5.3f",
-//                                 (const char*)mname[0][i], 
-//                                 biastrain[0][i], biastrainT[0][i], 
-//                                 rmstrain[0][i], rmstrainT[0][i], 
-//                                 minftrain[0][i], minftrainT[0][i] )
-//                << Endl;
-//       }
-//       Log() << kINFO << hLine << Endl;
-//       Log() << kINFO << Endl;
-//    }
-//    else if( doMulticlass ){
-//       Log() << Endl;
-//       TString hLine = "--------------------------------------------------------------------------------";
-//       Log() << kINFO << "Evaluation results ranked by best signal efficiency times signal purity " << Endl;
-//       Log() << kINFO << hLine << Endl;
-//       TString header= "MVA Method     "; 
-//       for(UInt_t icls = 0; icls<DefaultDataSetInfo().GetNClasses(); ++icls){
-//          header += Form("%-12s ",DefaultDataSetInfo().GetClassInfo(icls)->GetName().Data());
-//       }
-//       Log() << kINFO << header << Endl;
-//       Log() << kINFO << hLine << Endl;
-//       for (Int_t i=0; i<nmeth_used[0]; i++) {
-//          TString res =  Form("%-15s",(const char*)mname[0][i]);
-//          for(UInt_t icls = 0; icls<DefaultDataSetInfo().GetNClasses(); ++icls){
-//             res += Form("%#1.3f        ",(multiclass_testEff[i][icls])*(multiclass_testPur[i][icls]));
-//          }
-//          Log() << kINFO << res << Endl;
-//       }
-//       Log() << kINFO << hLine << Endl;
-//       Log() << kINFO << Endl;
-// 
-//    } 
-//    else {
-//       Log() << Endl;
-//       TString hLine = "--------------------------------------------------------------------------------";
-//       Log() << kINFO << "Evaluation results ranked by best signal efficiency and purity (area)" << Endl;
-//       Log() << kINFO << hLine << Endl;
-//       Log() << kINFO << "MVA              Signal efficiency at bkg eff.(error):       | Sepa-    Signifi- "   << Endl;
-//       Log() << kINFO << "Method:          @B=0.01    @B=0.10    @B=0.30    ROC-integ. | ration:  cance:   "   << Endl;
-//       Log() << kINFO << hLine << Endl;
-//       for (Int_t k=0; k<2; k++) {
-//          if (k == 1 && nmeth_used[k] > 0) {
-//             Log() << kINFO << hLine << Endl;
-//             Log() << kINFO << "Input Variables: " << Endl << hLine << Endl;
-//          }
-//          for (Int_t i=0; i<nmeth_used[k]; i++) {
-//             if (k == 1) mname[k][i].ReplaceAll( "Variable_", "" );
-//             if (sep[k][i] < 0 || sig[k][i] < 0) {
-//                // cannot compute separation/significance -> no MVA (usually for Cuts)
-//                Log() << kINFO << Form("%-15s: %#1.3f(%02i)  %#1.3f(%02i)  %#1.3f(%02i)    %#1.3f    | --       --",
-//                                       (const char*)mname[k][i], 
-//                                       eff01[k][i], Int_t(1000*eff01err[k][i]), 
-//                                       eff10[k][i], Int_t(1000*eff10err[k][i]), 
-//                                       eff30[k][i], Int_t(1000*eff30err[k][i]), 
-//                                       effArea[k][i]) << Endl;
-//             }
-//             else {
-//                Log() << kINFO << Form("%-15s: %#1.3f(%02i)  %#1.3f(%02i)  %#1.3f(%02i)    %#1.3f    | %#1.3f    %#1.3f",
-//                                       (const char*)mname[k][i], 
-//                                       eff01[k][i], Int_t(1000*eff01err[k][i]), 
-//                                       eff10[k][i], Int_t(1000*eff10err[k][i]), 
-//                                       eff30[k][i], Int_t(1000*eff30err[k][i]), 
-//                                       effArea[k][i], 
-//                                       sep[k][i], sig[k][i]) << Endl;
-//             }
-//          }
-//       }
-//       Log() << kINFO << hLine << Endl;
-//       Log() << kINFO << Endl;
-//       Log() << kINFO << "Testing efficiency compared to training efficiency (overtraining check)" << Endl;
-//       Log() << kINFO << hLine << Endl;
-//       Log() << kINFO << "MVA              Signal efficiency: from test sample (from training sample) "   << Endl;
-//       Log() << kINFO << "Method:          @B=0.01             @B=0.10            @B=0.30   "   << Endl;
-//       Log() << kINFO << hLine << Endl;
-//       for (Int_t k=0; k<2; k++) {
-//          if (k == 1 && nmeth_used[k] > 0) {
-//             Log() << kINFO << hLine << Endl;
-//             Log() << kINFO << "Input Variables: " << Endl << hLine << Endl;
-//          }
-//          for (Int_t i=0; i<nmeth_used[k]; i++) {
-//             if (k == 1) mname[k][i].ReplaceAll( "Variable_", "" );
-//             Log() << kINFO << Form("%-15s: %#1.3f (%#1.3f)       %#1.3f (%#1.3f)      %#1.3f (%#1.3f)",
-//                                    (const char*)mname[k][i], 
-//                                    eff01[k][i],trainEff01[k][i], 
-//                                    eff10[k][i],trainEff10[k][i],
-//                                    eff30[k][i],trainEff30[k][i]) << Endl;
-//          }
-//       }
-//       Log() << kINFO << hLine << Endl;
-//       Log() << kINFO << Endl; 
-//    }
+   if (doRegression) {
+
+      Log() << kINFO << Endl;
+      TString hLine = "-------------------------------------------------------------------------";
+      Log() << kINFO << "Evaluation results ranked by smallest RMS on test sample:" << Endl;
+      Log() << kINFO << "(\"Bias\" quotes the mean deviation of the regression from true target." << Endl;
+      Log() << kINFO << " \"MutInf\" is the \"Mutual Information\" between regression and target." << Endl;
+      Log() << kINFO << " Indicated by \"_T\" are the corresponding \"truncated\" quantities ob-" << Endl;
+      Log() << kINFO << " tained when removing events deviating more than 2sigma from average.)" << Endl;
+      Log() << kINFO << hLine << Endl;
+      Log() << kINFO << "MVA Method:        <Bias>   <Bias_T>    RMS    RMS_T  |  MutInf MutInf_T" << Endl;
+      Log() << kINFO << hLine << Endl;
+
+      for (Int_t i=0; i<nmeth_used[0]; i++) {
+         Log() << kINFO << Form("%-15s:%#9.3g%#9.3g%#9.3g%#9.3g  |  %#5.3f  %#5.3f",
+                                (const char*)mname[0][i], 
+                                biastest[0][i], biastestT[0][i], 
+                                rmstest[0][i], rmstestT[0][i], 
+                                minftest[0][i], minftestT[0][i] )
+               << Endl;
+      }
+      Log() << kINFO << hLine << Endl;
+      Log() << kINFO << Endl;
+      Log() << kINFO << "Evaluation results ranked by smallest RMS on training sample:" << Endl;
+      Log() << kINFO << "(overtraining check)" << Endl;
+      Log() << kINFO << hLine << Endl;
+      Log() << kINFO << "MVA Method:        <Bias>   <Bias_T>    RMS    RMS_T  |  MutInf MutInf_T" << Endl;
+      Log() << kINFO << hLine << Endl;
+
+      for (Int_t i=0; i<nmeth_used[0]; i++) {
+         Log() << kINFO << Form("%-15s:%#9.3g%#9.3g%#9.3g%#9.3g  |  %#5.3f  %#5.3f",
+                                (const char*)mname[0][i], 
+                                biastrain[0][i], biastrainT[0][i], 
+                                rmstrain[0][i], rmstrainT[0][i], 
+                                minftrain[0][i], minftrainT[0][i] )
+               << Endl;
+      }
+      Log() << kINFO << hLine << Endl;
+      Log() << kINFO << Endl;
+   }
+   else if( doMulticlass ){
+      Log() << Endl;
+      TString hLine = "--------------------------------------------------------------------------------";
+      Log() << kINFO << "Evaluation results ranked by best signal efficiency times signal purity " << Endl;
+      Log() << kINFO << hLine << Endl;
+      // iterate over methods and evaluate
+      MVector::iterator itrMethod    = fMethods.begin();
+      MVector::iterator itrMethodEnd = fMethods.end();
+      for (; itrMethod != itrMethodEnd; itrMethod++) {
+	  MethodBase* theMethod = dynamic_cast<MethodBase*>(*itrMethod);
+          if(theMethod==0) continue;
+
+	  TString header= "MVA Method     "; 
+	  for(UInt_t icls = 0; icls<theMethod->fDataSetInfo.GetNClasses(); ++icls){
+	      header += Form("%-12s ",theMethod->fDataSetInfo.GetClassInfo(icls)->GetName().Data());
+	  }
+	  Log() << kINFO << header << Endl;
+	  Log() << kINFO << hLine << Endl;
+	  for (Int_t i=0; i<nmeth_used[0]; i++) {
+	    TString res =  Form("%-15s",(const char*)mname[0][i]);
+	    for(UInt_t icls = 0; icls<theMethod->fDataSetInfo.GetNClasses(); ++icls){
+		res += Form("%#1.3f        ",(multiclass_testEff[i][icls])*(multiclass_testPur[i][icls]));
+	    }
+	    Log() << kINFO << res << Endl;
+	  }
+	  Log() << kINFO << hLine << Endl;
+	  Log() << kINFO << Endl;
+      }
+   } 
+   else {
+      Log() << Endl;
+      TString hLine = "--------------------------------------------------------------------------------";
+      Log() << kINFO << "Evaluation results ranked by best signal efficiency and purity (area)" << Endl;
+      Log() << kINFO << hLine << Endl;
+      Log() << kINFO << "DataSet              MVA              Signal efficiency at bkg eff.(error):       | Sepa-    Signifi- "   << Endl;
+      Log() << kINFO << "Name:                Method:          @B=0.01    @B=0.10    @B=0.30    ROC-integ. | ration:  cance:   "   << Endl;
+      Log() << kINFO << hLine << Endl;
+      for (Int_t k=0; k<2; k++) {
+         if (k == 1 && nmeth_used[k] > 0) {
+            Log() << kINFO << hLine << Endl;
+            Log() << kINFO << "Input Variables: " << Endl << hLine << Endl;
+         }
+         for (Int_t i=0; i<nmeth_used[k]; i++) {
+            if (k == 1) mname[k][i].ReplaceAll( "Variable_", "" );
+	    
+	    MethodBase* theMethod = dynamic_cast<MethodBase*>(fMethods[i]);
+	    if(theMethod==0) continue;
+            
+	    if (sep[k][i] < 0 || sig[k][i] < 0) {
+               // cannot compute separation/significance -> no MVA (usually for Cuts)
+	       
+               Log() << kINFO << Form("%-20s %-15s: %#1.3f(%02i)  %#1.3f(%02i)  %#1.3f(%02i)    %#1.3f    | --       --",
+                                      theMethod->fDataSetInfo.GetName(), 
+                                      (const char*)mname[k][i], 
+                                      eff01[k][i], Int_t(1000*eff01err[k][i]), 
+                                      eff10[k][i], Int_t(1000*eff10err[k][i]), 
+                                      eff30[k][i], Int_t(1000*eff30err[k][i]), 
+                                      effArea[k][i]) << Endl;
+            }
+            else {
+               Log() << kINFO << Form("%-20s %-15s: %#1.3f(%02i)  %#1.3f(%02i)  %#1.3f(%02i)    %#1.3f    | %#1.3f    %#1.3f",
+                                      theMethod->fDataSetInfo.GetName(), 
+                                      (const char*)mname[k][i], 
+                                      eff01[k][i], Int_t(1000*eff01err[k][i]), 
+                                      eff10[k][i], Int_t(1000*eff10err[k][i]), 
+                                      eff30[k][i], Int_t(1000*eff30err[k][i]), 
+                                      effArea[k][i], 
+                                      sep[k][i], sig[k][i]) << Endl;
+            }
+         }
+      }
+      Log() << kINFO << hLine << Endl;
+      Log() << kINFO << Endl;
+      Log() << kINFO << "Testing efficiency compared to training efficiency (overtraining check)" << Endl;
+      Log() << kINFO << hLine << Endl;
+      Log() << kINFO << "DataSet              MVA              Signal efficiency: from test sample (from training sample) "   << Endl;
+      Log() << kINFO << "Name:                Method:          @B=0.01             @B=0.10            @B=0.30   "   << Endl;
+      Log() << kINFO << hLine << Endl;
+      for (Int_t k=0; k<2; k++) {
+         if (k == 1 && nmeth_used[k] > 0) {
+            Log() << kINFO << hLine << Endl;
+            Log() << kINFO << "Input Variables: " << Endl << hLine << Endl;
+         }
+         for (Int_t i=0; i<nmeth_used[k]; i++) {
+            if (k == 1) mname[k][i].ReplaceAll( "Variable_", "" );
+	    MethodBase* theMethod = dynamic_cast<MethodBase*>(fMethods[i]);
+	    if(theMethod==0) continue;
+
+            Log() << kINFO << Form("%-20s %-15s: %#1.3f (%#1.3f)       %#1.3f (%#1.3f)      %#1.3f (%#1.3f)",
+                                   theMethod->fDataSetInfo.GetName(), 
+                                   (const char*)mname[k][i], 
+                                   eff01[k][i],trainEff01[k][i], 
+                                   eff10[k][i],trainEff10[k][i],
+                                   eff30[k][i],trainEff30[k][i]) << Endl;
+         }
+      }
+      Log() << kINFO << hLine << Endl;
+      Log() << kINFO << Endl; 
+   }
 
    // write test tree
 //    RootBaseDir()->cd();
