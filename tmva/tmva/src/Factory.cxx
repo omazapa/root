@@ -873,6 +873,17 @@ TMVA::MethodBase* TMVA::Factory::BookMethod( Types::EMVA theMethod, TString meth
    return BookMethod( Types::Instance().GetMethodName( theMethod ), methodTitle, theOption );
 }
 
+
+//_______________________________________________________________________
+TMVA::MethodBase* TMVA::Factory::BookMethod(TMVA::DataLoader *loader, Types::EMVA theMethod, TString methodTitle, TString theOption )
+{
+   // books MVA method; the option configuration string is custom for each MVA
+   // the TString field "theNameAppendix" serves to define (and distinguish)
+   // several instances of a given MVA, eg, when one wants to compare the
+   // performance of various configurations
+   return BookMethod(loader, Types::Instance().GetMethodName( theMethod ), methodTitle, theOption );
+}
+
 //_______________________________________________________________________
 TMVA::IMethod* TMVA::Factory::GetMethod( const TString &methodTitle ) const
 {

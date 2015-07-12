@@ -184,6 +184,7 @@ namespace TMVA {
       MethodBase* BookMethod( TString theMethodName, TString methodTitle, TString theOption = "" );
       MethodBase* BookMethod( DataLoader *loader, TString theMethodName, TString methodTitle, TString theOption = "" );
       MethodBase* BookMethod( Types::EMVA theMethod,  TString methodTitle, TString theOption = "" );
+      MethodBase* BookMethod( DataLoader *loader, Types::EMVA theMethod,  TString methodTitle, TString theOption = "" );
       MethodBase* BookMethod( TMVA::Types::EMVA /*theMethod*/, 
                               TString /*methodTitle*/, 
                               TString /*methodOption*/, 
