@@ -78,6 +78,7 @@
 #include "TMVA/ResultsClassification.h"
 #include "TMVA/ResultsRegression.h"
 #include "TMVA/ResultsMulticlass.h"
+#include <list>
 
 const Int_t  MinNoTrainingEvents = 10;
 //const Int_t  MinNoTestEvents     = 1;
@@ -340,18 +341,18 @@ TMVA::IMethod* TMVA::Factory::GetMethod( const TString &methodTitle ) const
 }
 
 //_______________________________________________________________________
-void TMVA::Factory::WriteDataInformation(TMVA::DataLoader *loader)
+void TMVA::Factory::WriteDataInformation(DataSetInfo&     fDataSetInfo)
 {
    // put correlations of input data and a few (default + user
    // selected) transformations into the root file
 
    RootBaseDir()->cd();
    
-   if(!RootBaseDir()->GetDirectory(loader->fName)) RootBaseDir()->mkdir(loader->fName);
+   if(!RootBaseDir()->GetDirectory(fDataSetInfo.GetName())) RootBaseDir()->mkdir(fDataSetInfo.GetName());
    else return; //loader is now in the output file, we dont need to save again
    
-   RootBaseDir()->cd(loader->fName);
-   loader->DefaultDataSetInfo().GetDataSet(); // builds dataset (including calculation of correlation matrix)
+   RootBaseDir()->cd(fDataSetInfo.GetName());
+   fDataSetInfo.GetDataSet(); // builds dataset (including calculation of correlation matrix)
 
 
    // correlation matrix of the default DS
@@ -359,10 +360,10 @@ void TMVA::Factory::WriteDataInformation(TMVA::DataLoader *loader)
    const TH2* h(0);
    
    if(fAnalysisType == Types::kMulticlass){
-      for (UInt_t cls = 0; cls < loader->DefaultDataSetInfo().GetNClasses() ; cls++) {
-         m = loader->DefaultDataSetInfo().CorrelationMatrix(loader->DefaultDataSetInfo().GetClassInfo(cls)->GetName());
-         h = loader->DefaultDataSetInfo().CreateCorrelationMatrixHist(m, TString("CorrelationMatrix")+loader->DefaultDataSetInfo().GetClassInfo(cls)->GetName(),
-                                                              "Correlation Matrix ("+ loader->DefaultDataSetInfo().GetClassInfo(cls)->GetName() +TString(")"));
+      for (UInt_t cls = 0; cls < fDataSetInfo.GetNClasses() ; cls++) {
+         m = fDataSetInfo.CorrelationMatrix(fDataSetInfo.GetClassInfo(cls)->GetName());
+         h = fDataSetInfo.CreateCorrelationMatrixHist(m, TString("CorrelationMatrix")+fDataSetInfo.GetClassInfo(cls)->GetName(),
+                                                              "Correlation Matrix ("+ fDataSetInfo.GetClassInfo(cls)->GetName() +TString(")"));
          if (h!=0) {
             h->Write();
             delete h;
@@ -370,22 +371,22 @@ void TMVA::Factory::WriteDataInformation(TMVA::DataLoader *loader)
       }
    }
    else{
-      m = loader->DefaultDataSetInfo().CorrelationMatrix( "Signal" );
-      h = loader->DefaultDataSetInfo().CreateCorrelationMatrixHist(m, "CorrelationMatrixS", "Correlation Matrix (signal)");
+      m = fDataSetInfo.CorrelationMatrix( "Signal" );
+      h = fDataSetInfo.CreateCorrelationMatrixHist(m, "CorrelationMatrixS", "Correlation Matrix (signal)");
       if (h!=0) {
          h->Write();
          delete h;
       }
       
-      m = loader->DefaultDataSetInfo().CorrelationMatrix( "Background" );
-      h = loader->DefaultDataSetInfo().CreateCorrelationMatrixHist(m, "CorrelationMatrixB", "Correlation Matrix (background)");
+      m = fDataSetInfo.CorrelationMatrix( "Background" );
+      h = fDataSetInfo.CreateCorrelationMatrixHist(m, "CorrelationMatrixB", "Correlation Matrix (background)");
       if (h!=0) {
          h->Write();
          delete h;
       }
       
-      m = loader->DefaultDataSetInfo().CorrelationMatrix( "Regression" );
-      h = loader->DefaultDataSetInfo().CreateCorrelationMatrixHist(m, "CorrelationMatrix", "Correlation Matrix");
+      m = fDataSetInfo.CorrelationMatrix( "Regression" );
+      h = fDataSetInfo.CreateCorrelationMatrixHist(m, "CorrelationMatrix", "Correlation Matrix");
       if (h!=0) { 
          h->Write();
          delete h;
@@ -406,27 +407,27 @@ void TMVA::Factory::WriteDataInformation(TMVA::DataLoader *loader)
    std::vector<TString> trfsDef = gTools().SplitString(processTrfs,';');
    std::vector<TString>::iterator trfsDefIt = trfsDef.begin();
    for (; trfsDefIt!=trfsDef.end(); trfsDefIt++) {
-      trfs.push_back(new TMVA::TransformationHandler(loader->DefaultDataSetInfo(), "Factory"));
+      trfs.push_back(new TMVA::TransformationHandler(fDataSetInfo, "Factory"));
       TString trfS = (*trfsDefIt);
 
       Log() << kINFO << Endl;
       Log() << kINFO << "current transformation string: '" << trfS.Data() << "'" << Endl;
       TMVA::MethodBase::CreateVariableTransforms( trfS, 
-                                                  loader->DefaultDataSetInfo(),
+                                                  fDataSetInfo,
                                                   *(trfs.back()),
                                                   Log() );
 
       if (trfS.BeginsWith('I')) identityTrHandler = trfs.back();
    }
 
-   const std::vector<Event*>& inputEvents = loader->DefaultDataSetInfo().GetDataSet()->GetEventCollection();
+   const std::vector<Event*>& inputEvents = fDataSetInfo.GetDataSet()->GetEventCollection();
 
    // apply all transformations
    std::vector<TMVA::TransformationHandler*>::iterator trfIt = trfs.begin();
 
    for (;trfIt != trfs.end(); trfIt++) {
       // setting a Root dir causes the variables distributions to be saved to the root file
-      (*trfIt)->SetRootDir(RootBaseDir()->GetDirectory(loader->fName));// every dataloader have its own dir
+      (*trfIt)->SetRootDir(RootBaseDir()->GetDirectory(fDataSetInfo.GetName()));// every dataloader have its own dir
       (*trfIt)->CalcTransformations(inputEvents);      
    }
    if(identityTrHandler) identityTrHandler->PrintVariableRanking();
@@ -513,7 +514,7 @@ void TMVA::Factory::TrainAllMethods()
       Log() << kFATAL << "You want to do classification training, but specified less than two classes." << Endl;
       
       // first print some information about the default dataset
-      WriteDataInformation(mva->fDataLoader);
+      WriteDataInformation(mva->fDataSetInfo);
 
       
       if (mva->Data()->GetNTrainingEvents() < MinNoTrainingEvents) {
@@ -1234,17 +1235,27 @@ void TMVA::Factory::EvaluateAllMethods( void )
                                    eff01[k][i],trainEff01[k][i], 
                                    eff10[k][i],trainEff10[k][i],
                                    eff30[k][i],trainEff30[k][i]) << Endl;
-            // write test/training trees
-            RootBaseDir()->cd(theMethod->fDataSetInfo.GetName());
-            theMethod->fDataSetInfo.GetDataSet()->GetTree(Types::kTesting) ->Write( "", TObject::kOverwrite );
-            theMethod->fDataSetInfo.GetDataSet()->GetTree(Types::kTraining)->Write( "", TObject::kOverwrite );	   
          }
       }
       Log() << kINFO << hLine << Endl;
       Log() << kINFO << Endl; 
    }
-
-	 
+      
+      std::list<TString> datasets;
+      for (Int_t k=0; k<2; k++) {
+         for (Int_t i=0; i<nmeth_used[k]; i++) {
+	    MethodBase* theMethod = dynamic_cast<MethodBase*>(fMethods[i]);
+	    if(theMethod==0) continue;
+            // write test/training trees
+            RootBaseDir()->cd(theMethod->fDataSetInfo.GetName());
+	    if(std::find(datasets.begin(), datasets.end(), theMethod->fDataSetInfo.GetName()) == datasets.end())
+	    {
+	      theMethod->fDataSetInfo.GetDataSet()->GetTree(Types::kTesting)->Write( "", TObject::kOverwrite );
+              theMethod->fDataSetInfo.GetDataSet()->GetTree(Types::kTraining)->Write( "", TObject::kOverwrite );
+	      datasets.push_back(theMethod->fDataSetInfo.GetName());
+	    }
+	 }
+      }
    // references for citation
    gTools().TMVACitation( Log(), Tools::kHtmlLink );
 }

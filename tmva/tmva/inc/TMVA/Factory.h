@@ -143,7 +143,7 @@ namespace TMVA {
       // the beautiful greeting message
       void Greetings();
 
-      void WriteDataInformation(TMVA::DataLoader *loader);
+      void WriteDataInformation(DataSetInfo&     fDataSetInfo);
 
       void                     SetInputTreesFromEventAssignTrees();
 
