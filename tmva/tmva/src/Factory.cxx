@@ -1234,17 +1234,17 @@ void TMVA::Factory::EvaluateAllMethods( void )
                                    eff01[k][i],trainEff01[k][i], 
                                    eff10[k][i],trainEff10[k][i],
                                    eff30[k][i],trainEff30[k][i]) << Endl;
+            // write test/training trees
+            RootBaseDir()->cd(theMethod->fDataSetInfo.GetName());
+            theMethod->fDataSetInfo.GetDataSet()->GetTree(Types::kTesting) ->Write( "", TObject::kOverwrite );
+            theMethod->fDataSetInfo.GetDataSet()->GetTree(Types::kTraining)->Write( "", TObject::kOverwrite );	   
          }
       }
       Log() << kINFO << hLine << Endl;
       Log() << kINFO << Endl; 
    }
 
-   // write test tree
-//    RootBaseDir()->cd();
-//    DefaultDataSetInfo().GetDataSet()->GetTree(Types::kTesting) ->Write( "", TObject::kOverwrite );
-//    DefaultDataSetInfo().GetDataSet()->GetTree(Types::kTraining)->Write( "", TObject::kOverwrite );
-
+	 
    // references for citation
    gTools().TMVACitation( Log(), Tools::kHtmlLink );
 }
