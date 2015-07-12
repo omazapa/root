@@ -19,7 +19,7 @@ ROOT_USE_PACKAGE(tree/treeplayer)
 ROOT_USE_PACKAGE(io/xml) 
 #ROOT_USE_PACKAGE(gui/gui) 
 
-set(headers1 Configurable.h Event.h Factory.h MethodBase.h MethodCompositeBase.h
+set(headers1 Configurable.h Event.h Factory.h DataLoader.h MethodBase.h MethodCompositeBase.h
 	     MethodANNBase.h MethodTMlpANN.h MethodRuleFit.h MethodCuts.h MethodFisher.h
 	     MethodKNN.h MethodCFMlpANN.h MethodCFMlpANN_Utils.h MethodLikelihood.h
 	     MethodHMatrix.h MethodPDERS.h MethodBDT.h MethodDT.h MethodSVM.h MethodBayesClassifier.h
