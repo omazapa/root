@@ -64,6 +64,7 @@
 #include "TMVA/DataInputHandler.h"
 #include "TMVA/DataSetManager.h"
 #include "TMVA/DataSetInfo.h"
+#include "TMVA/DataLoader.h"
 #include "TMVA/MethodBoost.h"
 #include "TMVA/MethodCategory.h"
 
@@ -756,6 +757,111 @@ TMVA::MethodBase* TMVA::Factory::BookMethod( TString theMethodName, TString meth
 
    return method;
 }
+
+//_______________________________________________________________________
+TMVA::MethodBase* TMVA::Factory::BookMethod( TMVA::DataLoader *loader, TString theMethodName, TString methodTitle, TString theOption )
+{
+   // Book a classifier or regression method
+
+   if( fAnalysisType == Types::kNoAnalysisType ){
+      if( loader->DefaultDataSetInfo().GetNClasses()==2
+          && loader->DefaultDataSetInfo().GetClassInfo("Signal") != NULL
+          && loader->DefaultDataSetInfo().GetClassInfo("Background") != NULL
+          ){
+         fAnalysisType = Types::kClassification; // default is classification
+      } else if( loader->DefaultDataSetInfo().GetNClasses() >= 2 ){
+         fAnalysisType = Types::kMulticlass;    // if two classes, but not named "Signal" and "Background"
+      } else
+         Log() << kFATAL << "No analysis type for " << loader->DefaultDataSetInfo().GetNClasses() << " classes and "
+               << loader->DefaultDataSetInfo().GetNTargets() << " regression targets." << Endl;
+   }
+
+   // booking via name; the names are translated into enums and the
+   // corresponding overloaded BookMethod is called
+   if (GetMethod( methodTitle ) != 0) {
+      Log() << kFATAL << "Booking failed since method with title <"
+            << methodTitle <<"> already exists"
+            << Endl;
+   }
+
+   Log() << kINFO << "Booking method: " << gTools().Color("bold") << methodTitle 
+         << gTools().Color("reset") << Endl;
+
+   // interpret option string with respect to a request for boosting (i.e., BostNum > 0)
+   Int_t    boostNum = 0;
+   TMVA::Configurable* conf = new TMVA::Configurable( theOption );
+   conf->DeclareOptionRef( boostNum = 0, "Boost_num",
+                           "Number of times the classifier will be boosted" );
+   conf->ParseOptions();
+   delete conf;
+
+   // initialize methods
+   IMethod* im;
+   if (!boostNum) {
+      im = ClassifierFactory::Instance().Create( std::string(theMethodName),
+                                                 fJobName,
+                                                 methodTitle,
+                                                 loader->DefaultDataSetInfo(),
+                                                 theOption );
+   }
+   else {
+      // boosted classifier, requires a specific definition, making it transparent for the user
+      Log() << "Boost Number is " << boostNum << " > 0: train boosted classifier" << Endl;
+      im = ClassifierFactory::Instance().Create( std::string("Boost"),
+                                                 fJobName,
+                                                 methodTitle,
+                                                 loader->DefaultDataSetInfo(),
+                                                 theOption );
+      MethodBoost* methBoost = dynamic_cast<MethodBoost*>(im); // DSMTEST divided into two lines
+      if (!methBoost) // DSMTEST
+         Log() << kFATAL << "Method with type kBoost cannot be casted to MethodCategory. /Factory" << Endl; // DSMTEST
+      methBoost->SetBoostedMethodName( theMethodName ); // DSMTEST divided into two lines
+      methBoost->fDataSetManager = loader->fDataSetManager; // DSMTEST
+
+   }
+
+   MethodBase *method = dynamic_cast<MethodBase*>(im);
+   if (method==0) return 0; // could not create method
+
+   // set fDataSetManager if MethodCategory (to enable Category to create datasetinfo objects) // DSMTEST
+   if (method->GetMethodType() == Types::kCategory) { // DSMTEST
+      MethodCategory *methCat = (dynamic_cast<MethodCategory*>(im)); // DSMTEST
+      if (!methCat) // DSMTEST
+         Log() << kFATAL << "Method with type kCategory cannot be casted to MethodCategory. /Factory" << Endl; // DSMTEST
+      methCat->fDataSetManager = loader->fDataSetManager; // DSMTEST
+   } // DSMTEST
+
+
+   if (!method->HasAnalysisType( fAnalysisType,
+                                 loader->DefaultDataSetInfo().GetNClasses(),
+                                 loader->DefaultDataSetInfo().GetNTargets() )) {
+      Log() << kWARNING << "Method " << method->GetMethodTypeName() << " is not capable of handling " ;
+      if (fAnalysisType == Types::kRegression) {
+         Log() << "regression with " << loader->DefaultDataSetInfo().GetNTargets() << " targets." << Endl;
+      } 
+      else if (fAnalysisType == Types::kMulticlass ) {
+         Log() << "multiclass classification with " << loader->DefaultDataSetInfo().GetNClasses() << " classes." << Endl;
+      } 
+      else {
+         Log() << "classification with " << loader->DefaultDataSetInfo().GetNClasses() << " classes." << Endl;
+      }
+      return 0;
+   }
+
+
+   method->SetAnalysisType( fAnalysisType );
+   method->SetupMethod();
+   method->ParseOptions();
+   method->ProcessSetup();
+
+   // check-for-unused-options is performed; may be overridden by derived classes
+   method->CheckSetup();
+
+   fMethods.push_back( method );
+
+   return method;
+}
+
 
 //_______________________________________________________________________
 TMVA::MethodBase* TMVA::Factory::BookMethod( Types::EMVA theMethod, TString methodTitle, TString theOption )

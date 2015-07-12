@@ -72,7 +72,9 @@ namespace TMVA {
    class DataInputHandler;
    class DataSetInfo;
    class DataSetManager;
+   class DataLoader;
    class VariableTransformBase;
+   
 
    class Factory : public Configurable {
    public:
@@ -180,6 +182,7 @@ namespace TMVA {
                                        const TString& otherOpt="SplitMode=Random:!V" );
 
       MethodBase* BookMethod( TString theMethodName, TString methodTitle, TString theOption = "" );
+      MethodBase* BookMethod( DataLoader *loader, TString theMethodName, TString methodTitle, TString theOption = "" );
       MethodBase* BookMethod( Types::EMVA theMethod,  TString methodTitle, TString theOption = "" );
       MethodBase* BookMethod( TMVA::Types::EMVA /*theMethod*/, 
                               TString /*methodTitle*/, 
