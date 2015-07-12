@@ -149,7 +149,7 @@ TMVA::DataSet* TMVA::DataSetFactory::CreateDataSet( TMVA::DataSetInfo& dsi,
 //_______________________________________________________________________
 TMVA::DataSet* TMVA::DataSetFactory::BuildDynamicDataSet( TMVA::DataSetInfo& dsi )
 {
-   Log() << kDEBUG << "Build DataSet consisting of one Event with dynamically changing variables" << Endl;
+   Log() << kDEBUG << Form("[%s] : ",dsi.GetName()) << "Build DataSet consisting of one Event with dynamically changing variables" << Endl;
    DataSet* ds = new DataSet(dsi);
 
    // create a DataSet with one Event which uses dynamic variables
@@ -164,13 +164,13 @@ TMVA::DataSet* TMVA::DataSetFactory::BuildDynamicDataSet( TMVA::DataSetInfo& dsi
    std::vector<VariableInfo>& varinfos = dsi.GetVariableInfos();
 
    if (varinfos.empty())
-      Log() << kFATAL << "Dynamic data set cannot be built, since no variable informations are present. Apparently no variables have been set. This should not happen, please contact the TMVA authors." << Endl;
+      Log() << kFATAL << Form("[%s] : ",dsi.GetName()) << "Dynamic data set cannot be built, since no variable informations are present. Apparently no variables have been set. This should not happen, please contact the TMVA authors." << Endl;
 
    std::vector<VariableInfo>::iterator it = varinfos.begin(), itEnd=varinfos.end();
    for (;it!=itEnd;++it) {
       Float_t* external=(Float_t*)(*it).GetExternalLink();
       if (external==0)
-         Log() << kDEBUG << "The link to the external variable is NULL while I am trying to build a dynamic data set. In this case fTmpEvent from MethodBase HAS TO BE USED in the method to get useful values in variables." << Endl;
+         Log() << kDEBUG << Form("[%s] : ",dsi.GetName()) << "The link to the external variable is NULL while I am trying to build a dynamic data set. In this case fTmpEvent from MethodBase HAS TO BE USED in the method to get useful values in variables." << Endl;
       evdyn->push_back (external);
    }
 
@@ -292,7 +292,7 @@ void TMVA::DataSetFactory::ChangeToNewTree( TreeInfo& tinfo, const DataSetInfo &
    Bool_t hasDollar = kFALSE;
 
    // 1) the input variable formulas
-   Log() << kDEBUG << "transform input variables" << Endl;
+   Log() << kDEBUG << Form("[%s] : ",dsi.GetName()) << "transform input variables" << Endl;
    std::vector<TTreeFormula*>::const_iterator formIt, formItEnd;
    for (formIt = fInputFormulas.begin(), formItEnd=fInputFormulas.end(); formIt!=formItEnd; formIt++) if (*formIt) delete *formIt;
    fInputFormulas.clear();
@@ -308,7 +308,7 @@ void TMVA::DataSetFactory::ChangeToNewTree( TreeInfo& tinfo, const DataSetInfo &
    //
    // targets
    //
-   Log() << kDEBUG << "transform regression targets" << Endl;
+   Log() << kDEBUG << Form("[%s] : ",dsi.GetName()) << "transform regression targets" << Endl;
    for (formIt = fTargetFormulas.begin(), formItEnd = fTargetFormulas.end(); formIt!=formItEnd; formIt++) if (*formIt) delete *formIt;
    fTargetFormulas.clear();
    for (UInt_t i=0; i<dsi.GetNTargets(); i++) {
@@ -321,7 +321,7 @@ void TMVA::DataSetFactory::ChangeToNewTree( TreeInfo& tinfo, const DataSetInfo &
    //
    // spectators
    //
-   Log() << kDEBUG << "transform spectator variables" << Endl;
+   Log() << kDEBUG << Form("[%s] : ",dsi.GetName()) << "transform spectator variables" << Endl;
    for (formIt = fSpectatorFormulas.begin(), formItEnd = fSpectatorFormulas.end(); formIt!=formItEnd; formIt++) if (*formIt) delete *formIt;
    fSpectatorFormulas.clear();
    for (UInt_t i=0; i<dsi.GetNSpectators(); i++) {
@@ -334,7 +334,7 @@ void TMVA::DataSetFactory::ChangeToNewTree( TreeInfo& tinfo, const DataSetInfo &
    //
    // the cuts (one per class, if non-existent: formula pointer = 0)
    //
-   Log() << kDEBUG << "transform cuts" << Endl;
+   Log() << kDEBUG << Form("[%s] : ",dsi.GetName()) << "transform cuts" << Endl;
    for (formIt = fCutFormulas.begin(), formItEnd = fCutFormulas.end(); formIt!=formItEnd; formIt++) if (*formIt) delete *formIt;
    fCutFormulas.clear();
    for (UInt_t clIdx=0; clIdx<dsi.GetNClasses(); clIdx++) {
@@ -355,7 +355,7 @@ void TMVA::DataSetFactory::ChangeToNewTree( TreeInfo& tinfo, const DataSetInfo &
    //
    // the weights (one per class, if non-existent: formula pointer = 0)
    //
-   Log() << kDEBUG << "transform weights" << Endl;
+   Log() << kDEBUG << Form("[%s] : ",dsi.GetName()) << "transform weights" << Endl;
    for (formIt = fWeightFormula.begin(), formItEnd = fWeightFormula.end(); formIt!=formItEnd; formIt++) if (*formIt) delete *formIt;
    fWeightFormula.clear();
    for (UInt_t clIdx=0; clIdx<dsi.GetNClasses(); clIdx++) {
@@ -371,7 +371,7 @@ void TMVA::DataSetFactory::ChangeToNewTree( TreeInfo& tinfo, const DataSetInfo &
          ttf = new TTreeFormula( "FormulaWeight", tmpWeight, tr );
          Bool_t worked = CheckTTreeFormula( ttf, tmpWeight, hasDollar );
          if( !worked ){
-            Log() << kWARNING << "Please check class \"" << dsi.GetClassInfo(clIdx)->GetName()
+            Log() << kWARNING << Form("[%s] : ",dsi.GetName()) << "Please check class \"" << dsi.GetClassInfo(clIdx)->GetName()
                   << "\" weight \"" << dsi.GetClassInfo(clIdx)->GetWeight() << Endl;
          }
       }
@@ -380,12 +380,12 @@ void TMVA::DataSetFactory::ChangeToNewTree( TreeInfo& tinfo, const DataSetInfo &
       }
       fWeightFormula.push_back( ttf );
    }
-   Log() << kDEBUG << "enable branches" << Endl;
+   Log() << kDEBUG << Form("[%s] : ",dsi.GetName()) << "enable branches" << Endl;
    // now enable only branches that are needed in any input formula, target, cut, weight
 
    if (!hasDollar) {
       tr->SetBranchStatus("*",0);
-      Log() << kDEBUG << "enable branches: input variables" << Endl;
+      Log() << kDEBUG << Form("[%s] : ",dsi.GetName()) << "enable branches: input variables" << Endl;
       // input vars
       for (formIt = fInputFormulas.begin(); formIt!=fInputFormulas.end(); formIt++) {
          ttf = *formIt;
@@ -394,21 +394,21 @@ void TMVA::DataSetFactory::ChangeToNewTree( TreeInfo& tinfo, const DataSetInfo &
          }
       }
       // targets
-      Log() << kDEBUG << "enable branches: targets" << Endl;
+      Log() << kDEBUG << Form("[%s] : ",dsi.GetName()) << "enable branches: targets" << Endl;
       for (formIt = fTargetFormulas.begin(); formIt!=fTargetFormulas.end(); formIt++) {
          ttf = *formIt;
          for (Int_t bi = 0; bi<ttf->GetNcodes(); bi++)
             tr->SetBranchStatus( ttf->GetLeaf(bi)->GetBranch()->GetName(), 1 );
       }
       // spectators
-      Log() << kDEBUG << "enable branches: spectators" << Endl;
+      Log() << kDEBUG << Form("[%s] : ",dsi.GetName()) << "enable branches: spectators" << Endl;
       for (formIt = fSpectatorFormulas.begin(); formIt!=fSpectatorFormulas.end(); formIt++) {
          ttf = *formIt;
          for (Int_t bi = 0; bi<ttf->GetNcodes(); bi++)
             tr->SetBranchStatus( ttf->GetLeaf(bi)->GetBranch()->GetName(), 1 );
       }
       // cuts
-      Log() << kDEBUG << "enable branches: cuts" << Endl;
+      Log() << kDEBUG << Form("[%s] : ",dsi.GetName()) << "enable branches: cuts" << Endl;
       for (formIt = fCutFormulas.begin(); formIt!=fCutFormulas.end(); formIt++) {
          ttf = *formIt;
          if (!ttf) continue;
@@ -416,7 +416,7 @@ void TMVA::DataSetFactory::ChangeToNewTree( TreeInfo& tinfo, const DataSetInfo &
             tr->SetBranchStatus( ttf->GetLeaf(bi)->GetBranch()->GetName(), 1 );
       }
       // weights
-      Log() << kDEBUG << "enable branches: weights" << Endl;
+      Log() << kDEBUG << Form("[%s] : ",dsi.GetName()) << "enable branches: weights" << Endl;
       for (formIt = fWeightFormula.begin(); formIt!=fWeightFormula.end(); formIt++) {
          ttf = *formIt;
          if (!ttf) continue;
@@ -424,7 +424,7 @@ void TMVA::DataSetFactory::ChangeToNewTree( TreeInfo& tinfo, const DataSetInfo &
             tr->SetBranchStatus( ttf->GetLeaf(bi)->GetBranch()->GetName(), 1 );
       }
    }
-   Log() << kDEBUG << "tree initialized" << Endl;
+   Log() << kDEBUG << Form("[%s] : ",dsi.GetName()) << "tree initialized" << Endl;
    return;
 }
 
@@ -472,13 +472,13 @@ void TMVA::DataSetFactory::CalcMinMax( DataSet* ds, TMVA::DataSetInfo& dsi )
       dsi.GetVariableInfo(ivar).SetMin(min[ivar]);
       dsi.GetVariableInfo(ivar).SetMax(max[ivar]);
       if( TMath::Abs(max[ivar]-min[ivar]) <= FLT_MIN )
-         Log() << kFATAL << "Variable " << dsi.GetVariableInfo(ivar).GetExpression().Data() << " is constant. Please remove the variable." << Endl;
+         Log() << kFATAL << Form("[%s] : ",dsi.GetName()) << "Variable " << dsi.GetVariableInfo(ivar).GetExpression().Data() << " is constant. Please remove the variable." << Endl;
    }
    for (UInt_t ivar=0; ivar<ntgts; ivar++) {
       dsi.GetTargetInfo(ivar).SetMin(tgmin[ivar]);
       dsi.GetTargetInfo(ivar).SetMax(tgmax[ivar]);
       if( TMath::Abs(tgmax[ivar]-tgmin[ivar]) <= FLT_MIN )
-         Log() << kFATAL << "Target " << dsi.GetTargetInfo(ivar).GetExpression().Data() << " is constant. Please remove the variable." << Endl;
+         Log() << kFATAL << Form("[%s] : ",dsi.GetName()) << "Target " << dsi.GetTargetInfo(ivar).GetExpression().Data() << " is constant. Please remove the variable." << Endl;
    }
    for (UInt_t ivar=0; ivar<nvis; ivar++) {
       dsi.GetSpectatorInfo(ivar).SetMin(vmin[ivar]);

@@ -121,7 +121,7 @@ TMVA::ClassInfo* TMVA::DataSetInfo::AddClass( const TString& className )
    fClasses.push_back( new ClassInfo(className) );
    fClasses.back()->SetNumber(fClasses.size()-1);
 
-   Log() << kINFO << "Added class \"" << className << "\"\t with internal class number " 
+   Log() << kINFO << Form("[%s] : ",fName.Data()) << "Added class \"" << className << "\"\t with internal class number " 
          << fClasses.back()->GetNumber() << Endl;
 
    if (className == "Signal") fSignalClass = fClasses.size()-1;  // store the signal class index ( for comparison reasons )
@@ -153,7 +153,7 @@ TMVA::ClassInfo* TMVA::DataSetInfo::GetClassInfo( Int_t cls ) const
 void TMVA::DataSetInfo::PrintClasses() const 
 {
    for (UInt_t cls = 0; cls < GetNClasses() ; cls++) {
-      Log() << kINFO << "Class index : " << cls << "  name : " << GetClassInfo(cls)->GetName() << Endl;
+      Log() << kINFO << Form("[%s] : ",fName.Data()) << "Class index : " << cls << "  name : " << GetClassInfo(cls)->GetName() << Endl;
    }
 }
 
@@ -279,9 +279,9 @@ Int_t TMVA::DataSetInfo::FindVarIndex(const TString& var) const
       if (var == GetVariableInfo(ivar).GetInternalName()) return ivar;
    
    for (UInt_t ivar=0; ivar<GetNVariables(); ivar++) 
-      Log() << kINFO  <<  GetVariableInfo(ivar).GetInternalName() << Endl;
+      Log() << kINFO  << Form("[%s] : ",fName.Data()) <<  GetVariableInfo(ivar).GetInternalName() << Endl;
    
-   Log() << kFATAL << "<FindVarIndex> Variable \'" << var << "\' not found." << Endl;
+   Log() << kFATAL << Form("[%s] : ",fName.Data()) << "<FindVarIndex> Variable \'" << var << "\' not found." << Endl;
  
    return -1;
 }
@@ -300,7 +300,7 @@ void TMVA::DataSetInfo::SetWeightExpression( const TString& expr, const TString&
    else {
       // no class name specified, set weight for all classes
       if (fClasses.empty()) {
-         Log() << kWARNING << "No classes registered yet, cannot specify weight expression!" << Endl;
+         Log() << kWARNING << Form("[%s] : ",fName.Data()) << "No classes registered yet, cannot specify weight expression!" << Endl;
       }
       for (std::vector<ClassInfo*>::iterator it = fClasses.begin(); it < fClasses.end(); it++) {
          (*it)->SetWeight( expr );
@@ -361,7 +361,7 @@ void TMVA::DataSetInfo::PrintCorrelationMatrix( const TString& className )
 {
    // calculates the correlation matrices for signal and background, 
    // prints them to standard output, and fills 2D histograms
-   Log() << kINFO << "Correlation matrix (" << className << "):" << Endl;
+   Log() << kINFO << Form("[%s] : ",fName.Data()) << "Correlation matrix (" << className << "):" << Endl;
    gTools().FormattedOutput( *CorrelationMatrix( className ), GetListOfVariables(), Log() );
 }
 
@@ -422,7 +422,7 @@ TH2* TMVA::DataSetInfo::CreateCorrelationMatrixHist( const TMatrixD* m,
    //                   = (TPaletteAxis*)h2->GetListOfFunctions()->FindObject( "palette" );
    // -------------------------------------------------------------------------------------
 
-   Log() << kDEBUG << "Created correlation matrix as 2D histogram: " << h2->GetName() << Endl;
+   Log() << kDEBUG << Form("[%s] : ",fName.Data()) << "Created correlation matrix as 2D histogram: " << h2->GetName() << Endl;
 
    return h2;
 }
@@ -435,7 +435,7 @@ TMVA::DataSet* TMVA::DataSetInfo::GetDataSet() const
       if(fDataSet!=0) ClearDataSet();
 //      fDataSet = DataSetManager::Instance().CreateDataSet(GetName()); //DSMTEST replaced by following lines
       if( !fDataSetManager )
-         Log() << kFATAL << "DataSetManager has not been set in DataSetInfo (GetDataSet() )." << Endl;
+         Log() << kFATAL << Form("[%s] : ",fName.Data()) << "DataSetManager has not been set in DataSetInfo (GetDataSet() )." << Endl;
       fDataSet = fDataSetManager->CreateDataSet(GetName());
 
       fNeedsRebuilding = kFALSE;
@@ -468,19 +468,19 @@ Int_t TMVA::DataSetInfo::GetClassNameMaxLength() const
 
 
 Double_t TMVA::DataSetInfo::GetTrainingSumSignalWeights(){
-   if (fTrainingSumSignalWeights<0) Log() << kFATAL << " asking for the sum of training signal event weights which is not initicalised yet" << Endl;
+   if (fTrainingSumSignalWeights<0) Log() << kFATAL << Form("[%s] : ",fName.Data()) << " asking for the sum of training signal event weights which is not initicalised yet" << Endl;
    return fTrainingSumSignalWeights;
 }
 Double_t TMVA::DataSetInfo::GetTrainingSumBackgrWeights(){
-   if (fTrainingSumBackgrWeights<0) Log() << kFATAL << " asking for the sum of training backgr event weights which is not initicalised yet" << Endl;
+   if (fTrainingSumBackgrWeights<0) Log() << kFATAL << Form("[%s] : ",fName.Data()) << " asking for the sum of training backgr event weights which is not initicalised yet" << Endl;
    return fTrainingSumBackgrWeights;
 }
 Double_t TMVA::DataSetInfo::GetTestingSumSignalWeights (){
-   if (fTestingSumSignalWeights<0) Log() << kFATAL << " asking for the sum of testing signal event weights which is not initicalised yet" << Endl;
+   if (fTestingSumSignalWeights<0) Log() << kFATAL << Form("[%s] : ",fName.Data()) << " asking for the sum of testing signal event weights which is not initicalised yet" << Endl;
    return fTestingSumSignalWeights ;
 }
 Double_t TMVA::DataSetInfo::GetTestingSumBackgrWeights (){
-   if (fTestingSumBackgrWeights<0) Log() << kFATAL << " asking for the sum of testing backgr event weights which is not initicalised yet" << Endl;
+   if (fTestingSumBackgrWeights<0) Log() << kFATAL << Form("[%s] : ",fName.Data()) << " asking for the sum of testing backgr event weights which is not initicalised yet" << Endl;
    return fTestingSumBackgrWeights ;
 }
 
