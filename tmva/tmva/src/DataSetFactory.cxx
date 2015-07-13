@@ -1530,7 +1530,7 @@ TMVA::DataSetFactory::RenormEvents( TMVA::DataSetInfo& dsi,
    //
    
    Log() << kINFO << Form("[%s] : ",dsi.GetName()) << "Number of training and testing events after rescaling:" << Endl;
-   Log() << kINFO << Form("[%s] : ",dsi.GetName()) << "------------------------------------------------------" << Endl;
+   Log() << kINFO << Form("[%s] : ",dsi.GetName()) << "---------------------------------------------------------------------------" << Endl;
 
    trainingSumSignalWeights = 0;
    trainingSumBackgrWeights = 0; // Backgr. includes all clasess that are not signal

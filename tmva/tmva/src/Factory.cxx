@@ -1104,18 +1104,22 @@ void TMVA::Factory::EvaluateAllMethods( void )
    if (doRegression) {
 
       Log() << kINFO << Endl;
-      TString hLine = "-------------------------------------------------------------------------";
+      TString hLine = "--------------------------------------------------------------------------------------------------";
       Log() << kINFO << "Evaluation results ranked by smallest RMS on test sample:" << Endl;
       Log() << kINFO << "(\"Bias\" quotes the mean deviation of the regression from true target." << Endl;
       Log() << kINFO << " \"MutInf\" is the \"Mutual Information\" between regression and target." << Endl;
       Log() << kINFO << " Indicated by \"_T\" are the corresponding \"truncated\" quantities ob-" << Endl;
       Log() << kINFO << " tained when removing events deviating more than 2sigma from average.)" << Endl;
       Log() << kINFO << hLine << Endl;
-      Log() << kINFO << "MVA Method:        <Bias>   <Bias_T>    RMS    RMS_T  |  MutInf MutInf_T" << Endl;
+      Log() << kINFO << "DataSet Name:        MVA Method:        <Bias>   <Bias_T>    RMS    RMS_T  |  MutInf MutInf_T" << Endl;
       Log() << kINFO << hLine << Endl;
 
       for (Int_t i=0; i<nmeth_used[0]; i++) {
-         Log() << kINFO << Form("%-15s:%#9.3g%#9.3g%#9.3g%#9.3g  |  %#5.3f  %#5.3f",
+         MethodBase* theMethod = dynamic_cast<MethodBase*>(fMethods[i]);
+         if(theMethod==0) continue;
+
+         Log() << kINFO << Form("%-20s %-15s:%#9.3g%#9.3g%#9.3g%#9.3g  |  %#5.3f  %#5.3f",
+                                theMethod->fDataSetInfo.GetName(), 
                                 (const char*)mname[0][i], 
                                 biastest[0][i], biastestT[0][i], 
                                 rmstest[0][i], rmstestT[0][i], 
@@ -1127,11 +1131,14 @@ void TMVA::Factory::EvaluateAllMethods( void )
       Log() << kINFO << "Evaluation results ranked by smallest RMS on training sample:" << Endl;
       Log() << kINFO << "(overtraining check)" << Endl;
       Log() << kINFO << hLine << Endl;
-      Log() << kINFO << "MVA Method:        <Bias>   <Bias_T>    RMS    RMS_T  |  MutInf MutInf_T" << Endl;
+      Log() << kINFO << "DataSet Name:         MVA Method:        <Bias>   <Bias_T>    RMS    RMS_T  |  MutInf MutInf_T" << Endl;
       Log() << kINFO << hLine << Endl;
 
       for (Int_t i=0; i<nmeth_used[0]; i++) {
-         Log() << kINFO << Form("%-15s:%#9.3g%#9.3g%#9.3g%#9.3g  |  %#5.3f  %#5.3f",
+         MethodBase* theMethod = dynamic_cast<MethodBase*>(fMethods[i]);
+         if(theMethod==0) continue;
+         Log() << kINFO << Form("%-20s %-15s:%#9.3g%#9.3g%#9.3g%#9.3g  |  %#5.3f  %#5.3f",
+                                theMethod->fDataSetInfo.GetName(), 
                                 (const char*)mname[0][i], 
                                 biastrain[0][i], biastrainT[0][i], 
                                 rmstrain[0][i], rmstrainT[0][i], 
@@ -1143,7 +1150,7 @@ void TMVA::Factory::EvaluateAllMethods( void )
    }
    else if( doMulticlass ){
       Log() << Endl;
-      TString hLine = "--------------------------------------------------------------------------------";
+      TString hLine = "-------------------------------------------------------------------------------------------------------";
       Log() << kINFO << "Evaluation results ranked by best signal efficiency times signal purity " << Endl;
       Log() << kINFO << hLine << Endl;
       // iterate over methods and evaluate
@@ -1172,7 +1179,7 @@ void TMVA::Factory::EvaluateAllMethods( void )
    } 
    else {
       Log() << Endl;
-      TString hLine = "--------------------------------------------------------------------------------";
+      TString hLine = "--------------------------------------------------------------------------------------------------------";
       Log() << kINFO << "Evaluation results ranked by best signal efficiency and purity (area)" << Endl;
       Log() << kINFO << hLine << Endl;
       Log() << kINFO << "DataSet              MVA              Signal efficiency at bkg eff.(error):       | Sepa-    Signifi- "   << Endl;

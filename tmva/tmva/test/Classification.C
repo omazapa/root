@@ -18,7 +18,7 @@
 #include "TMVA/MethodC50.h"
 #include "TRInterface.h"
 
-void test()
+void Classification()
 {
    // This loads the library
    TMVA::Tools::Instance();
