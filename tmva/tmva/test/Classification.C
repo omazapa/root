@@ -128,8 +128,6 @@ void Classification()
       "!H:NTrials=10:Rules=kFALSE:ControlSubSet=kFALSE:ControlBands=0:ControlWinnow=kFALSE:ControlNoGlobalPruning=kTRUE:ControlCF=0.25:ControlMinCases=2:ControlFuzzyThreshold=kTRUE:ControlSample=0:ControlEarlyStopping=kTRUE:!V" );
    
    factory->BookMethod(loader2, TMVA::Types::kRSNNS, "RMLP","!H:VarTransform=N:Size=c(5):Maxit=800:InitFunc=Randomize_Weights:LearnFunc=Std_Backpropagation:LearnFuncParams=c(0.2,0):!V" );
-//     
-//    factory->BookMethod(loader, TMVA::Types::kRSVM, "RSVM","!H:Kernel=linear:Type=C-classification:VarTransform=Norm:Probability=kTRUE:Tolerance=0.001:!V" );
 
    
       // Train MVAs using the set of training events
@@ -148,7 +146,7 @@ void Classification()
    std::cout << "==> Wrote root file: " << outputFile->GetName() << std::endl;
    std::cout << "==> TMVAClassification is done!" << std::endl;
 
-//   delete factory;
-    r.SetVerbose(1);
-
+    delete factory;
+    delete loader1;
+    delete loader2;
 }

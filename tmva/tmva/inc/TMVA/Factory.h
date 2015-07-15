@@ -80,6 +80,7 @@ namespace TMVA {
    public:
 
       typedef std::vector<IMethod*> MVector;
+      std::map<TString,MVector>  fMethodsMap;//all methods for every dataset with the same name
 
       // no default  constructor
       Factory( TString theJobName, TFile* theTargetFile, TString theOption = "" );
@@ -119,7 +120,7 @@ namespace TMVA {
       void DeleteAllMethods( void );
 
       // accessors
-      IMethod* GetMethod( const TString& title ) const;
+      IMethod* GetMethod( const TString& datasetname, const TString& title )const;
 
       Bool_t Verbose( void ) const { return fVerbose; }
       void SetVerbose( Bool_t v=kTRUE );
@@ -128,13 +129,13 @@ namespace TMVA {
       // (classifier-specific implementation)
       // If no classifier name is given, help messages for all booked 
       // classifiers are printed
-      virtual void MakeClass( const TString& methodTitle = "" ) const;
+      virtual void MakeClass(const TString& datasetname , const TString& methodTitle = "" ) const;
 
       // prints classifier-specific hepl messages, dedicated to 
       // help with the optimisation and configuration options tuning.
       // If no classifier name is given, help messages for all booked 
       // classifiers are printed
-      void PrintHelpMessage( const TString& methodTitle = "" ) const;
+      void PrintHelpMessage(const TString& datasetname , const TString& methodTitle = "" ) const;
 
       static TDirectory* RootBaseDir() { return (TDirectory*)fgTargetFile; }
 
@@ -162,7 +163,6 @@ namespace TMVA {
       TString                                   fTransformations; //! List of transformations to test
       Bool_t                                    fVerbose;         //! verbose mode
 
-      MVector                                   fMethods;         //! all MVA methods
       TString                                   fJobName;         //! jobname, used as extension in weight file names
 
       // flag determining the way training and test data are assigned to Factory
