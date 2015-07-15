@@ -38,6 +38,7 @@
 
 #include "TMVA/Tools.h"
 #include "TMVA/Factory.h"
+#include "TMVA/DataLoader.h"
 #include "TMVA/TMVARegGui.h"
 
 

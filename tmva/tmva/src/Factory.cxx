@@ -196,18 +196,19 @@ TMVA::Factory::~Factory( void )
 //_______________________________________________________________________
 void TMVA::Factory::DeleteAllMethods( void )
 {
-   std::map<TString,MVector>::iterator itrMap;
+   std::map<TString,MVector*>::iterator itrMap;
    
-   for(itrMap = fMethodsMap.begin();itrMap != fMethodsMap.end();++itrMap)
+   for(itrMap = fMethodsMap.begin();itrMap != fMethodsMap.end();itrMap++)
    {
-      MVector methods=itrMap->second;
+      MVector *methods=itrMap->second;
       // delete methods
-      MVector::iterator itrMethod = methods.begin();
-      for (; itrMethod != methods.end(); itrMethod++) {
+      MVector::iterator itrMethod = methods->begin();
+      for (; itrMethod != methods->end(); itrMethod++) {
 	  Log() << kDEBUG << "Delete method: " << (*itrMethod)->GetName() << Endl;
 	  delete (*itrMethod);
       }
-      methods.clear();
+      methods->clear();
+      delete methods;
    }
 }
 
@@ -324,10 +325,10 @@ TMVA::MethodBase* TMVA::Factory::BookMethod( TMVA::DataLoader *loader, TString t
    
    if(fMethodsMap.find(datasetname)==fMethodsMap.end())
    {
-	MVector mvector;
+	MVector *mvector=new MVector;
 	fMethodsMap[datasetname]=mvector;
    }
-   fMethodsMap[datasetname].push_back( method );
+   fMethodsMap[datasetname]->push_back( method );
    return method;
 }
 
@@ -348,12 +349,11 @@ TMVA::IMethod* TMVA::Factory::GetMethod(const TString& datasetname,  const TStri
     
    if(fMethodsMap.find(datasetname)==fMethodsMap.end()) return 0;
    
-   const MVector methods=fMethodsMap.find(datasetname)->second;
+   MVector *methods=fMethodsMap.find(datasetname)->second;
 
-   MVector::const_iterator itrMethod    = methods.begin();
-   MVector::const_iterator itrMethodEnd = methods.end();
+   MVector::const_iterator itrMethod;
    //
-   for (; itrMethod != itrMethodEnd; itrMethod++) {
+   for (itrMethod    = methods->begin(); itrMethod != methods->end(); itrMethod++) {
       MethodBase* mva = dynamic_cast<MethodBase*>(*itrMethod);
       if ( (mva->GetMethodName())==methodTitle ) return mva;
    }
@@ -464,16 +464,16 @@ void TMVA::Factory::OptimizeAllMethods(TString fomType, TString fitType)
    // keeps in mind the "optimal one"... and that's the one that will later on be used
    // in the main training loop.
 
-   std::map<TString,MVector>::iterator itrMap;
+   std::map<TString,MVector*>::iterator itrMap;
    
-   for(itrMap = fMethodsMap.begin();itrMap != fMethodsMap.end();++itrMap)
+   for(itrMap = fMethodsMap.begin();itrMap != fMethodsMap.end();itrMap++)
    {
-      MVector methods=itrMap->second;
+      MVector *methods=itrMap->second;
 
       MVector::iterator itrMethod;
 
       // iterate over methods and optimize
-      for( itrMethod = methods.begin(); itrMethod != methods.end(); ++itrMethod ) {
+      for( itrMethod = methods->begin(); itrMethod != methods->end(); itrMethod++ ) {
 	  Event::SetIsTraining(kTRUE);
 	  MethodBase* mva = dynamic_cast<MethodBase*>(*itrMethod);
 	  if (!mva) {
@@ -520,15 +520,15 @@ void TMVA::Factory::TrainAllMethods()
          << (fAnalysisType == Types::kRegression ? "Regression" : 
              (fAnalysisType == Types::kMulticlass ? "Multiclass" : "Classification") ) << " ..." << Endl;
      
-   std::map<TString,MVector>::iterator itrMap;
+   std::map<TString,MVector*>::iterator itrMap;
    
-   for(itrMap = fMethodsMap.begin();itrMap != fMethodsMap.end();++itrMap)
+   for(itrMap = fMethodsMap.begin();itrMap != fMethodsMap.end();itrMap++)
    {
-      MVector methods=itrMap->second;
+      MVector *methods=itrMap->second;
       MVector::iterator itrMethod;
 
       // iterate over methods and train
-      for( itrMethod = methods.begin(); itrMethod != methods.end(); ++itrMethod ) {
+      for( itrMethod = methods->begin(); itrMethod != methods->end(); itrMethod++ ) {
 	  Event::SetIsTraining(kTRUE);
 	  MethodBase* mva = dynamic_cast<MethodBase*>(*itrMethod);
 	  
@@ -568,7 +568,7 @@ void TMVA::Factory::TrainAllMethods()
 	  // variable ranking
 	  Log() << Endl;
 	  Log() << kINFO << "Ranking input variables (method specific)..." << Endl;
-	  for (itrMethod = methods.begin(); itrMethod != methods.end(); itrMethod++) {
+	  for (itrMethod = methods->begin(); itrMethod != methods->end(); itrMethod++) {
 	    MethodBase* mva = dynamic_cast<MethodBase*>(*itrMethod);
 	    if (mva && mva->Data()->GetNTrainingEvents() >= MinNoTrainingEvents) {
 
@@ -592,9 +592,9 @@ void TMVA::Factory::TrainAllMethods()
 	  RootBaseDir()->cd();
 
 	  // iterate through all booked methods
-	  for (UInt_t i=0; i<methods.size(); i++) {
+	  for (UInt_t i=0; i<methods->size(); i++) {
 
-	    MethodBase* m = dynamic_cast<MethodBase*>(methods[i]);
+	    MethodBase* m = dynamic_cast<MethodBase*>((*methods)[i]);
 	    if(m==0) continue;
 
 	    TMVA::Types::EMVA methodType = m->GetMethodType();
@@ -624,7 +624,7 @@ void TMVA::Factory::TrainAllMethods()
 	    m->SetTestvarName(testvarName);
 
 	    // replace trained method by newly created one (from weight file) in methods vector
-	    methods[i] = m;
+	    (*methods)[i] = m;
 	  }
       }
    }
@@ -640,17 +640,15 @@ void TMVA::Factory::TestAllMethods()
       Log() << kINFO << "...nothing found to test" << Endl;
       return;
    }
-   std::map<TString,MVector>::iterator itrMap;
+   std::map<TString,MVector*>::iterator itrMap;
    
    for(itrMap = fMethodsMap.begin();itrMap != fMethodsMap.end();itrMap++)
    {
-      MVector methods=itrMap->second;
+      MVector *methods=itrMap->second;
+      MVector::iterator itrMethod;
 
-      // iterates over all MVAs that have been booked, and calls their testing methods
       // iterate over methods and test
-      MVector::iterator itrMethod    = methods.begin();
-      MVector::iterator itrMethodEnd = methods.end();
-      for (; itrMethod != itrMethodEnd; itrMethod++) {
+      for( itrMethod = methods->begin(); itrMethod != methods->end(); itrMethod++ ) {
 	  Event::SetIsTraining(kFALSE);
 	  MethodBase* mva = dynamic_cast<MethodBase*>(*itrMethod);
 	  if(mva==0) continue;
@@ -679,10 +677,9 @@ void TMVA::Factory::MakeClass(const TString& datasetname , const TString& method
    else {
 
       // no classifier specified, print all hepl messages
-      const MVector methods=fMethodsMap.find(datasetname)->second;
-      MVector::const_iterator itrMethod    = methods.begin();
-      MVector::const_iterator itrMethodEnd = methods.end();
-      for (; itrMethod != itrMethodEnd; itrMethod++) {
+      MVector *methods=fMethodsMap.find(datasetname)->second;
+      MVector::const_iterator itrMethod;
+      for (itrMethod    = methods->begin(); itrMethod != methods->end(); itrMethod++) {
          MethodBase* method = dynamic_cast<MethodBase*>(*itrMethod);
          if(method==0) continue;
          Log() << kINFO << "Make response class for classifier: " << method->GetMethodName() << Endl;
@@ -707,10 +704,9 @@ void TMVA::Factory::PrintHelpMessage(const TString& datasetname , const TString&
    else {
 
       // no classifier specified, print all hepl messages
-      const MVector methods=fMethodsMap.find(datasetname)->second;
-      MVector::const_iterator itrMethod    = methods.begin();
-      MVector::const_iterator itrMethodEnd = methods.end();
-      for (; itrMethod != itrMethodEnd; itrMethod++) {
+      MVector *methods=fMethodsMap.find(datasetname)->second;
+      MVector::const_iterator itrMethod ;
+      for (itrMethod    = methods->begin(); itrMethod != methods->end(); itrMethod++) {
          MethodBase* method = dynamic_cast<MethodBase*>(*itrMethod);
          if(method==0) continue;
          Log() << kINFO << "Print help message for classifier: " << method->GetMethodName() << Endl;
@@ -744,11 +740,11 @@ void TMVA::Factory::EvaluateAllMethods( void )
       Log() << kINFO << "...nothing found to evaluate" << Endl;
       return;
    }
-   std::map<TString,MVector>::iterator itrMap;
+   std::map<TString,MVector*>::iterator itrMap;
    
-   for(itrMap = fMethodsMap.begin();itrMap != fMethodsMap.end();++itrMap)
+   for(itrMap = fMethodsMap.begin();itrMap != fMethodsMap.end();itrMap++)
    {
-      MVector methods=itrMap->second;
+      MVector *methods=itrMap->second;
 
       // -----------------------------------------------------------------------
       // First part of evaluation process
@@ -799,9 +795,8 @@ void TMVA::Factory::EvaluateAllMethods( void )
       Bool_t doMulticlass = kFALSE;
 
       // iterate over methods and evaluate
-      MVector::iterator itrMethod    = methods.begin();
-      MVector::iterator itrMethodEnd = methods.end();
-      for (; itrMethod != itrMethodEnd; itrMethod++) {
+      MVector::iterator itrMethod ;
+      for (itrMethod =methods->begin(); itrMethod != methods->end(); itrMethod++) {
 	  Event::SetIsTraining(kFALSE);
 	  MethodBase* theMethod = dynamic_cast<MethodBase*>(*itrMethod);
 	  if(theMethod==0) continue;
@@ -1160,7 +1155,7 @@ void TMVA::Factory::EvaluateAllMethods( void )
 	  Log() << kINFO << hLine << Endl;
 
 	  for (Int_t i=0; i<nmeth_used[0]; i++) {
-	    MethodBase* theMethod = dynamic_cast<MethodBase*>(methods[i]);
+	    MethodBase* theMethod = dynamic_cast<MethodBase*>((*methods)[i]);
 	    if(theMethod==0) continue;
 
 	    Log() << kINFO << Form("%-20s %-15s:%#9.3g%#9.3g%#9.3g%#9.3g  |  %#5.3f  %#5.3f",
@@ -1180,7 +1175,7 @@ void TMVA::Factory::EvaluateAllMethods( void )
 	  Log() << kINFO << hLine << Endl;
 
 	  for (Int_t i=0; i<nmeth_used[0]; i++) {
-	    MethodBase* theMethod = dynamic_cast<MethodBase*>(methods[i]);
+	    MethodBase* theMethod = dynamic_cast<MethodBase*>((*methods)[i]);
 	    if(theMethod==0) continue;
 	    Log() << kINFO << Form("%-20s %-15s:%#9.3g%#9.3g%#9.3g%#9.3g  |  %#5.3f  %#5.3f",
 				    theMethod->fDataSetInfo.GetName(), 
@@ -1199,9 +1194,8 @@ void TMVA::Factory::EvaluateAllMethods( void )
 	  Log() << kINFO << "Evaluation results ranked by best signal efficiency times signal purity " << Endl;
 	  Log() << kINFO << hLine << Endl;
 	  // iterate over methods and evaluate
-	  MVector::iterator itrMethod    = methods.begin();
-	  MVector::iterator itrMethodEnd = methods.end();
-	  for (; itrMethod != itrMethodEnd; itrMethod++) {
+	  MVector::iterator itrMethod;
+	  for (itrMethod    = methods->begin(); itrMethod != methods->end(); itrMethod++) {
 	      MethodBase* theMethod = dynamic_cast<MethodBase*>(*itrMethod);
 	      if(theMethod==0) continue;
 
@@ -1238,7 +1232,7 @@ void TMVA::Factory::EvaluateAllMethods( void )
 	    for (Int_t i=0; i<nmeth_used[k]; i++) {
 		if (k == 1) mname[k][i].ReplaceAll( "Variable_", "" );
 		
-		MethodBase* theMethod = dynamic_cast<MethodBase*>(methods[i]);
+		MethodBase* theMethod = dynamic_cast<MethodBase*>((*methods)[i]);
 		if(theMethod==0) continue;
 		
 		if (sep[k][i] < 0 || sig[k][i] < 0) {
@@ -1278,7 +1272,7 @@ void TMVA::Factory::EvaluateAllMethods( void )
 	    }
 	    for (Int_t i=0; i<nmeth_used[k]; i++) {
 		if (k == 1) mname[k][i].ReplaceAll( "Variable_", "" );
-		MethodBase* theMethod = dynamic_cast<MethodBase*>(methods[i]);
+		MethodBase* theMethod = dynamic_cast<MethodBase*>((*methods)[i]);
 		if(theMethod==0) continue;
 
 		Log() << kINFO << Form("%-20s %-15s: %#1.3f (%#1.3f)       %#1.3f (%#1.3f)      %#1.3f (%#1.3f)",
@@ -1295,7 +1289,7 @@ void TMVA::Factory::EvaluateAllMethods( void )
 	  std::list<TString> datasets;
 	  for (Int_t k=0; k<2; k++) {
 	    for (Int_t i=0; i<nmeth_used[k]; i++) {
-		MethodBase* theMethod = dynamic_cast<MethodBase*>(methods[i]);
+		MethodBase* theMethod = dynamic_cast<MethodBase*>((*methods)[i]);
 		if(theMethod==0) continue;
 		// write test/training trees
 		RootBaseDir()->cd(theMethod->fDataSetInfo.GetName());

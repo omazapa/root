@@ -80,7 +80,7 @@ namespace TMVA {
    public:
 
       typedef std::vector<IMethod*> MVector;
-      std::map<TString,MVector>  fMethodsMap;//all methods for every dataset with the same name
+      std::map<TString,MVector*>  fMethodsMap;//all methods for every dataset with the same name
 
       // no default  constructor
       Factory( TString theJobName, TFile* theTargetFile, TString theOption = "" );
