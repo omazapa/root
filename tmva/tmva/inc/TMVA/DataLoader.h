@@ -1,6 +1,5 @@
-// @(#)root/tmva $Id$   
-// Author: Omar Zapata
-// Mentors: Lorenzo Moneta, Sergei Gleyzer
+// @(#)root/tmva $Id$
+// Author: Andreas Hoecker, Peter Speckmayer, Joerg Stelzer, Helge Voss, Kai Voss, Eckhard von Toerne, Jan Therhaag, Omar Zapata, Lorenzo Moneta, Sergei Gleyzer
 //NOTE: Based on TMVA::Factory
 
 /**********************************************************************************
@@ -14,7 +13,7 @@
  *                                                                                *
  * Authors (alphabetical):                                                        *
  *      Lorenzo Moneta <Lorenzo.Moneta@cern.ch> - CERN, Switzerland               *
- *      Omar Zapata <andresete.chaos@gmail.com>  - ITM/UdeA                       *
+ *      Omar Zapata <andresete.chaos@gmail.com>  - ITM/UdeA, Colombia             *
  *      Sergei Gleyzer<sergei.gleyzer@cern.ch> - CERN, Switzerland                *
  *                                                                                *
  * Copyright (c) 2005-2011:                                                       *
@@ -29,15 +28,6 @@
 #ifndef ROOT_TMVA_DataLoader
 #define ROOT_TMVA_DataLoader
 
-//////////////////////////////////////////////////////////////////////////
-//                                                                      //
-// DataLoader                                                              //
-//                                                                      //
-// This is the main MVA steering class: it creates all MVA methods,     //
-// and guides them through the training, testing and evaluation         //
-// phases                                                               //
-//                                                                      //
-//////////////////////////////////////////////////////////////////////////
 
 #include <string>
 #include <vector>
