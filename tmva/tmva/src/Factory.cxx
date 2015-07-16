@@ -243,15 +243,18 @@ TMVA::MethodBase* TMVA::Factory::BookMethod( TMVA::DataLoader *loader, TString t
    // booking via name; the names are translated into enums and the
    // corresponding overloaded BookMethod is called
 
-   
-   if (GetMethod( datasetname,methodTitle ) != 0) {
-      Log() << kFATAL << "Booking failed since method with title <"
-            << methodTitle <<"> already exists"
-            << Endl;
-   }
+  if(fMethodsMap.find(datasetname)!=fMethodsMap.end())
+   {
+      if (GetMethod( datasetname,methodTitle ) != 0) {
+	    Log() << kFATAL << "Booking failed since method with title <"
+		  << methodTitle <<"> already exists "<< "in with DataSet Name <"<< loader->GetName()<<">  "
+		  << Endl;
+	  }
+   } 
 
    Log() << kINFO << "Booking method: " << gTools().Color("bold") << methodTitle 
-         << gTools().Color("reset") << Endl;
+         << gTools().Color("reset")<<" DataSet Name: "<<gTools().Color("bold")<<loader->GetName()
+	 << gTools().Color("reset") << Endl;
 
    // interpret option string with respect to a request for boosting (i.e., BostNum > 0)
    Int_t    boostNum = 0;
