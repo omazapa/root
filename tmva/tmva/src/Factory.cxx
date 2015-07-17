@@ -1090,43 +1090,43 @@ void TMVA::Factory::EvaluateAllMethods( void )
     
                 if (nmeth > 1) {
                    Log() << kINFO << Endl;
-                   Log() << kINFO << "Inter-MVA correlation matrix (signal):" << Endl;
+                   Log() << kINFO <<Form("Dataset[%s] : ",method->fDataSetInfo.GetName())<< "Inter-MVA correlation matrix (signal):" << Endl;
                    gTools().FormattedOutput( mvaMatS, *theVars, Log() );
                    Log() << kINFO << Endl;
     
-                   Log() << kINFO << "Inter-MVA correlation matrix (background):" << Endl;
+                   Log() << kINFO <<Form("Dataset[%s] : ",method->fDataSetInfo.GetName())<< "Inter-MVA correlation matrix (background):" << Endl;
                    gTools().FormattedOutput( mvaMatB, *theVars, Log() );
                    Log() << kINFO << Endl;   
                 }
     
-                Log() << kINFO << "Correlations between input variables and MVA response (signal):" << Endl;
+                Log() << kINFO <<Form("Dataset[%s] : ",method->fDataSetInfo.GetName())<< "Correlations between input variables and MVA response (signal):" << Endl;
                 gTools().FormattedOutput( varmvaMatS, theInputVars, *theVars, Log() );
                 Log() << kINFO << Endl;
     
-                Log() << kINFO << "Correlations between input variables and MVA response (background):" << Endl;
+                Log() << kINFO <<Form("Dataset[%s] : ",method->fDataSetInfo.GetName())<< "Correlations between input variables and MVA response (background):" << Endl;
                 gTools().FormattedOutput( varmvaMatB, theInputVars, *theVars, Log() );
                 Log() << kINFO << Endl;
              }
-             else Log() << kWARNING << "<TestAllMethods> cannot compute correlation matrices" << Endl;
+             else Log() << kWARNING <<Form("Dataset[%s] : ",method->fDataSetInfo.GetName())<< "<TestAllMethods> cannot compute correlation matrices" << Endl;
     
 //              print overlap matrices
-             Log() << kINFO << "The following \"overlap\" matrices contain the fraction of events for which " << Endl;
-             Log() << kINFO << "the MVAs 'i' and 'j' have returned conform answers about \"signal-likeness\"" << Endl;
-             Log() << kINFO << "An event is signal-like, if its MVA output exceeds the following value:" << Endl;
+             Log() << kINFO <<Form("Dataset[%s] : ",method->fDataSetInfo.GetName())<< "The following \"overlap\" matrices contain the fraction of events for which " << Endl;
+             Log() << kINFO <<Form("Dataset[%s] : ",method->fDataSetInfo.GetName())<< "the MVAs 'i' and 'j' have returned conform answers about \"signal-likeness\"" << Endl;
+             Log() << kINFO <<Form("Dataset[%s] : ",method->fDataSetInfo.GetName())<< "An event is signal-like, if its MVA output exceeds the following value:" << Endl;
              gTools().FormattedOutput( rvec, *theVars, "Method" , "Cut value", Log() );
-             Log() << kINFO << "which correspond to the working point: eff(signal) = 1 - eff(background)" << Endl;
+             Log() << kINFO <<Form("Dataset[%s] : ",method->fDataSetInfo.GetName())<< "which correspond to the working point: eff(signal) = 1 - eff(background)" << Endl;
     
 //              give notice that cut method has been excluded from this test
              if (nmeth != (Int_t)methods->size()) 
-                Log() << kINFO << "Note: no correlations and overlap with cut method are provided at present" << Endl;
+                Log() << kINFO <<Form("Dataset[%s] : ",method->fDataSetInfo.GetName())<< "Note: no correlations and overlap with cut method are provided at present" << Endl;
     
              if (nmeth > 1) {
                 Log() << kINFO << Endl;
-                Log() << kINFO << "Inter-MVA overlap matrix (signal):" << Endl;
+                Log() << kINFO <<Form("Dataset[%s] : ",method->fDataSetInfo.GetName())<< "Inter-MVA overlap matrix (signal):" << Endl;
                 gTools().FormattedOutput( *overlapS, *theVars, Log() );
                 Log() << kINFO << Endl;
           
-                Log() << kINFO << "Inter-MVA overlap matrix (background):" << Endl;
+                Log() << kINFO <<Form("Dataset[%s] : ",method->fDataSetInfo.GetName())<< "Inter-MVA overlap matrix (background):" << Endl;
                 gTools().FormattedOutput( *overlapB, *theVars, Log() );
              }
     
