@@ -185,7 +185,9 @@ TMVA::MethodBase::MethodBase( const TString& jobName,
    // standard constructur
    SetTestvarName();
    // default extension for weight files
-   fFileDir=gConfig().GetIONames().fWeightFileDir;
+   fFileDir=fDataSetInfo.GetName();
+   fFileDir+="/"+gConfig().GetIONames().fWeightFileDir;
+   SetWeightFileDir(fFileDir);
 //    SetWeightFileDir( gConfig().GetIONames().fWeightFileDir );
 }
 
@@ -243,6 +245,9 @@ TMVA::MethodBase::MethodBase( Types::EMVA methodType,
 {
    // constructor used for Testing + Application of the MVA,
    // only (no training), using given WeightFiles
+   fFileDir=fDataSetInfo.GetName();
+   fFileDir+="/"+gConfig().GetIONames().fWeightFileDir;
+   SetWeightFileDir(fFileDir);
 }
 
 //_______________________________________________________________________
@@ -648,7 +653,7 @@ void TMVA::MethodBase::TrainMethod()
 
    // train the MVA method
    if (Help()) PrintHelpMessage();
-
+	  
    // all histograms should be created in the method's subdirectory
    BaseDir()->cd();
 

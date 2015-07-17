@@ -318,7 +318,7 @@ TMVA::MethodBase* TMVA::Factory::BookMethod( TMVA::DataLoader *loader, TString t
       return 0;
    }
    
-   method->SetWeightFileDir(Form("%s/%s",loader->GetName(),method->GetWeightFileDir().Data()));//setting up weight file dir
+//    method->SetWeightFileDir(Form("%s/%s",loader->GetName(),method->GetWeightFileDir().Data()));//setting up weight file dir
    method->fDataLoader=loader;
    method->SetAnalysisType( fAnalysisType );
    method->SetupMethod();
@@ -564,8 +564,8 @@ void TMVA::Factory::TrainAllMethods()
 	  Log() << kINFO << "Train method: " << mva->GetMethodName() << " for "
 		<< (fAnalysisType == Types::kRegression ? "Regression" :
 		    (fAnalysisType == Types::kMulticlass ? "Multiclass classification" : "Classification")) << Endl;
-	  mva->TrainMethod();
-	  Log() << kINFO << "Training finished" << Endl;
+          mva->TrainMethod();
+          Log() << kINFO << "Training finished" << Endl;
       }
 
       if (fAnalysisType != Types::kRegression) {
@@ -593,7 +593,6 @@ void TMVA::Factory::TrainAllMethods()
       if (RECREATE_METHODS) {
 
 	  Log() << kINFO << "=== Destroy and recreate all methods via weight files for testing ===" << Endl << Endl;
-
 	  RootBaseDir()->cd();
 
 	  // iterate through all booked methods
