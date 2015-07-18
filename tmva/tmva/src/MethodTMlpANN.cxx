@@ -345,8 +345,9 @@ void TMVA::MethodTMlpANN::AddWeightsXMLTo( void* parent ) const
    gTools().AddAttr( arch, "BuildOptions", fMLPBuildOptions.Data() );
 
    // dump weights first in temporary txt file, read from there into xml
-   fMLP->DumpWeights( GetWeightFileDir()+"/TMlp.nn.weights.temp" );
-   std::ifstream inf( GetWeightFileDir()+"/TMlp.nn.weights.temp" );
+   const TString tmpfile=GetWeightFileDir()+"/TMlp.nn.weights.temp";
+   fMLP->DumpWeights( tmpfile.Data() );
+   std::ifstream inf( tmpfile.Data() );
    char temp[256];
    TString data("");
    void *ch=NULL;
@@ -377,8 +378,8 @@ void  TMVA::MethodTMlpANN::ReadWeightsFromXML( void* wghtnode )
    gTools().ReadAttr( ch, "BuildOptions", fMLPBuildOptions );
 
    ch = gTools().GetNextChild(ch);
-   const char* fname = GetWeightFileDir()+"/TMlp.nn.weights.temp";
-   std::ofstream fout( fname );
+   const TString fname = GetWeightFileDir()+"/TMlp.nn.weights.temp";
+   std::ofstream fout( fname.Data() );
    double temp1=0,temp2=0;
    while (ch) {
       const char* nodecontent = gTools().GetContent(ch);
