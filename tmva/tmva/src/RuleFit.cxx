@@ -40,6 +40,7 @@
 #include "TMVA/Timer.h"
 #include "TMVA/Tools.h"
 #include "TMVA/Factory.h" // for root base dir
+#include "TMVA/DataSetInfo.h"
 
 ClassImp(TMVA::RuleFit)
 
@@ -759,7 +760,7 @@ void TMVA::RuleFit::MakeVisHists()
       return;
    }
    while (!done) {
-      varDir = (TDirectory*)rootDir->Get( directories[type] );
+      varDir = (TDirectory*)rootDir->GetDirectory(fMethodBase->DataInfo().GetName())->Get( directories[type] );
       type++;
       done = ((varDir!=0) || (type>4));
    }
