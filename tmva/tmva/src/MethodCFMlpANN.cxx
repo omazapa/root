@@ -90,7 +90,7 @@ namespace TMVA {
    Int_t MethodCFMlpANN_nsel = 0;
 }
 
-TMVA::MethodCFMlpANN* TMVA::MethodCFMlpANN::fgThis = 0;
+// TMVA::MethodCFMlpANN* TMVA::MethodCFMlpANN::fgThis = 0;
 
 //_______________________________________________________________________
 TMVA::MethodCFMlpANN::MethodCFMlpANN( const TString& jobName,

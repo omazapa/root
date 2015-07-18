@@ -99,12 +99,19 @@ namespace TMVA {
 
    protected:
 
-      static Int_t             fg_100;          // constant
-      static Int_t             fg_0;            // constant
-      static const Int_t       fg_max_nVar_;    // static maximum number of input variables
-      static const Int_t       fg_max_nNodes_;  // maximum number of nodes per variable
-      static Int_t             fg_999;          // constant
-      static const char* const fg_MethodName;   // method name for print
+//       static Int_t             fg_100;          // constant
+//       static Int_t             fg_0;            // constant
+//       static const Int_t       fg_max_nVar_;    // static maximum number of input variables
+//       static const Int_t       fg_max_nNodes_;  // maximum number of nodes per variable
+//       static Int_t             fg_999;          // constant
+//       static const char* const fg_MethodName;   // method name for print
+      //NOTE: static produce segfault using multiples DataLoaders
+      Int_t             fg_100=100;          // constant
+      Int_t             fg_0=0;            // constant
+      const Int_t       fg_max_nVar_=max_nVar_;    // static maximum number of input variables
+      const Int_t       fg_max_nNodes_=max_nNodes_;  // maximum number of nodes per variable
+      Int_t             fg_999=999;          // constant
+      const char* const fg_MethodName="--- CFMlpANN                 ";   // method name for print
 
       Double_t W_ref(const Double_t wNN[], Int_t a_1, Int_t a_2, Int_t a_3) const {
          return wNN [(a_3*max_nNodes_ + a_2)*max_nLayers_ + a_1 - 187];
