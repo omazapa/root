@@ -513,7 +513,7 @@ TMatrixD* TMVA::DataSetFactory::CalcCorrelationMatrix( DataSet* ds, const UInt_t
             Double_t d = (*mat)(ivar, ivar)*(*mat)(jvar, jvar);
             if (d > 0) (*mat)(ivar, jvar) /= sqrt(d);
             else {
-               Log() << kWARNING << "<GetCorrelationMatrix> Zero variances for variables "
+               Log() << kWARNING << Form("Dataset[%s] : ",DataSetInfo().GetName())<< "<GetCorrelationMatrix> Zero variances for variables "
                      << "(" << ivar << ", " << jvar << ") = " << d
                      << Endl;
                (*mat)(ivar, jvar) = 0;
@@ -763,16 +763,16 @@ TMVA::DataSetFactory::BuildEventVector( TMVA::DataSetInfo& dsi,
                   prevArrExpr = ivar;
                }
                else if (sizeOfArrays!=ndata) {
-                  Log() << kERROR << "ERROR while preparing training and testing trees:" << Endl;
-                  Log() << "   multiple array-type expressions of different length were encountered" << Endl;
-                  Log() << "   location of error: event " << evtIdx
+                  Log() << kERROR << Form("Dataset[%s] : ",dsi.GetName())<< "ERROR while preparing training and testing trees:" << Endl;
+                  Log() << Form("Dataset[%s] : ",dsi.GetName())<< "   multiple array-type expressions of different length were encountered" << Endl;
+                  Log() << Form("Dataset[%s] : ",dsi.GetName())<< "   location of error: event " << evtIdx
                         << " in tree " << currentInfo.GetTree()->GetName()
                         << " of file " << currentInfo.GetTree()->GetCurrentFile()->GetName() << Endl;
-                  Log() << "   expression " << fInputFormulas[ivar]->GetTitle() << " has "
-                        << ndata << " entries, while" << Endl;
-                  Log() << "   expression " << fInputFormulas[prevArrExpr]->GetTitle() << " has "
-                        << fInputFormulas[prevArrExpr]->GetNdata() << " entries" << Endl;
-                  Log() << kFATAL << "Need to abort" << Endl;
+                  Log() << Form("Dataset[%s] : ",dsi.GetName())<< "   expression " << fInputFormulas[ivar]->GetTitle() << " has "
+                        << Form("Dataset[%s] : ",dsi.GetName()) << ndata << " entries, while" << Endl;
+                  Log() << Form("Dataset[%s] : ",dsi.GetName())<< "   expression " << fInputFormulas[prevArrExpr]->GetTitle() << " has "
+                        << Form("Dataset[%s] : ",dsi.GetName())<< fInputFormulas[prevArrExpr]->GetNdata() << " entries" << Endl;
+                  Log() << kFATAL << Form("Dataset[%s] : ",dsi.GetName())<< "Need to abort" << Endl;
                }
             }
 
@@ -792,7 +792,7 @@ TMVA::DataSetFactory::BuildEventVector( TMVA::DataSetInfo& dsi,
                             formula->EvalInstance(idata));
                   if (TMath::IsNaN(cutVal)) {
                      containsNaN = kTRUE;
-                     Log() << kWARNING << "Cut expression resolves to infinite value (NaN): "
+                     Log() << kWARNING << Form("Dataset[%s] : ",dsi.GetName())<< "Cut expression resolves to infinite value (NaN): "
                            << formula->GetTitle() << Endl;
                   }
                }
@@ -806,7 +806,7 @@ TMVA::DataSetFactory::BuildEventVector( TMVA::DataSetInfo& dsi,
                                 formula->EvalInstance(idata));
                   if (TMath::IsNaN(vars[ivar])) {
                      containsNaN = kTRUE;
-                     Log() << kWARNING << "Input expression resolves to infinite value (NaN): "
+                     Log() << kWARNING << Form("Dataset[%s] : ",dsi.GetName())<< "Input expression resolves to infinite value (NaN): "
                            << formula->GetTitle() << Endl;
                   }
                }
@@ -820,7 +820,7 @@ TMVA::DataSetFactory::BuildEventVector( TMVA::DataSetInfo& dsi,
                                  formula->EvalInstance(idata));
                   if (TMath::IsNaN(tgts[itrgt])) {
                      containsNaN = kTRUE;
-                     Log() << kWARNING << "Target expression resolves to infinite value (NaN): "
+                     Log() << kWARNING << Form("Dataset[%s] : ",dsi.GetName())<< "Target expression resolves to infinite value (NaN): "
                            << formula->GetTitle() << Endl;
                   }
                }
@@ -834,7 +834,7 @@ TMVA::DataSetFactory::BuildEventVector( TMVA::DataSetInfo& dsi,
                                 formula->EvalInstance(idata));
                   if (TMath::IsNaN(vis[itVis])) {
                      containsNaN = kTRUE;
-                     Log() << kWARNING << "Spectator expression resolves to infinite value (NaN): "
+                     Log() << kWARNING << Form("Dataset[%s] : ",dsi.GetName())<< "Spectator expression resolves to infinite value (NaN): "
                            << formula->GetTitle() << Endl;
                   }
                }
@@ -850,7 +850,7 @@ TMVA::DataSetFactory::BuildEventVector( TMVA::DataSetInfo& dsi,
                              formula->EvalInstance(idata));
                   if (TMath::IsNaN(weight)) {
                      containsNaN = kTRUE;
-                     Log() << kWARNING << "Weight expression resolves to infinite value (NaN): "
+                     Log() << kWARNING << Form("Dataset[%s] : ",dsi.GetName())<< "Weight expression resolves to infinite value (NaN): "
                            << formula->GetTitle() << Endl;
                   }
                }
@@ -872,8 +872,8 @@ TMVA::DataSetFactory::BuildEventVector( TMVA::DataSetInfo& dsi,
                // now read the event-values (variables and regression targets)
 
                if (containsNaN) {
-                  Log() << kWARNING << "Event " << evtIdx;
-                  if (sizeOfArrays>1) Log() << kWARNING << " rejected" << Endl;
+                  Log() << kWARNING << Form("Dataset[%s] : ",dsi.GetName())<< "Event " << evtIdx;
+                  if (sizeOfArrays>1) Log() << kWARNING << Form("Dataset[%s] : ",dsi.GetName())<< " rejected" << Endl;
                   continue;
                }
 
@@ -974,10 +974,10 @@ TMVA::DataSetFactory::MixEvents( DataSetInfo& dsi,
    }
 
    // check for each class the number of training and testing events, the requested number and the available number
-   Log() << kDEBUG << "SPLITTING ========" << Endl;
+   Log() << kDEBUG << Form("Dataset[%s] : ",dsi.GetName())<< "SPLITTING ========" << Endl;
    for( UInt_t cls = 0; cls < dsi.GetNClasses(); ++cls ){
-      Log() << kDEBUG << "---- class " << cls << Endl;
-      Log() << kDEBUG << "check number of training/testing events, requested and available number of events and for class " << cls << Endl;
+      Log() << kDEBUG << Form("Dataset[%s] : ",dsi.GetName())<< "---- class " << cls << Endl;
+      Log() << kDEBUG << Form("Dataset[%s] : ",dsi.GetName())<< "check number of training/testing events, requested and available number of events and for class " << cls << Endl;
 
       // check if enough or too many events are already in the training/testing eventvectors of the class cls
       EventVector& eventVectorTraining  = tmpEventVector[ Types::kTraining    ].at(cls);
@@ -1002,10 +1002,10 @@ TMVA::DataSetFactory::MixEvents( DataSetInfo& dsi,
       Int_t requestedTraining = Int_t(eventCounts[cls].nTrainingEventsRequested * presel_scale);
       Int_t requestedTesting  = Int_t(eventCounts[cls].nTestingEventsRequested  * presel_scale);
 
-      Log() << kDEBUG << "events in training trees    : " << availableTraining  << Endl;
-      Log() << kDEBUG << "events in testing trees     : " << availableTesting   << Endl;
-      Log() << kDEBUG << "events in unspecified trees : " << availableUndefined << Endl;
-      Log() << kDEBUG << "requested for training      : " << requestedTraining;
+      Log() << kDEBUG << Form("Dataset[%s] : ",dsi.GetName())<< "events in training trees    : " << availableTraining  << Endl;
+      Log() << kDEBUG << Form("Dataset[%s] : ",dsi.GetName())<< "events in testing trees     : " << availableTesting   << Endl;
+      Log() << kDEBUG << Form("Dataset[%s] : ",dsi.GetName())<< "events in unspecified trees : " << availableUndefined << Endl;
+      Log() << kDEBUG << Form("Dataset[%s] : ",dsi.GetName())<< "requested for training      : " << requestedTraining;
       
       if(presel_scale<1)
          Log() << " ( " << eventCounts[cls].nTrainingEventsRequested
@@ -1093,7 +1093,7 @@ TMVA::DataSetFactory::MixEvents( DataSetInfo& dsi,
          // case B
          useForTraining = TMath::Max(requestedTraining,availableTraining);
          if (allAvailable <  useForTraining) {
-            Log() << kFATAL << "More events requested for training ("
+            Log() << kFATAL << Form("Dataset[%s] : ",dsi.GetName())<< "More events requested for training ("
                   << requestedTraining << ") than available ("
                   << allAvailable << ")!" << Endl;
          }
@@ -1104,7 +1104,7 @@ TMVA::DataSetFactory::MixEvents( DataSetInfo& dsi,
       else if (requestedTraining == 0){ // case B)
          useForTesting = TMath::Max(requestedTesting,availableTesting);
          if (allAvailable <  useForTesting) {
-            Log() << kFATAL << "More events requested for testing ("
+            Log() << kFATAL << Form("Dataset[%s] : ",dsi.GetName())<< "More events requested for testing ("
                   << requestedTesting << ") than available ("
                   << allAvailable << ")!" << Endl;
          }
@@ -1127,14 +1127,14 @@ TMVA::DataSetFactory::MixEvents( DataSetInfo& dsi,
          useForTesting= allAvailable - useForTraining; // the rest
       }
 
-      Log() << kDEBUG << "determined event sample size to select training sample from="<<useForTraining<<Endl;
-      Log() << kDEBUG << "determined event sample size to select test sample from="<<useForTesting<<Endl;
+      Log() << kDEBUG << Form("Dataset[%s] : ",dsi.GetName())<< "determined event sample size to select training sample from="<<useForTraining<<Endl;
+      Log() << kDEBUG << Form("Dataset[%s] : ",dsi.GetName())<< "determined event sample size to select test sample from="<<useForTesting<<Endl;
 
 
 
       // associate undefined events
       if( splitMode == "ALTERNATE" ){
-         Log() << kDEBUG << "split 'ALTERNATE'" << Endl;
+         Log() << kDEBUG << Form("Dataset[%s] : ",dsi.GetName())<< "split 'ALTERNATE'" << Endl;
          Int_t nTraining = availableTraining;
          Int_t nTesting  = availableTesting;
          for( EventVector::iterator it = eventVectorUndefined.begin(), itEnd = eventVectorUndefined.end(); it != itEnd; ){
@@ -1150,19 +1150,19 @@ TMVA::DataSetFactory::MixEvents( DataSetInfo& dsi,
             }
          }
       } else {
-         Log() << kDEBUG << "split '" << splitMode << "'" << Endl;
+         Log() << kDEBUG << Form("Dataset[%s] : ",dsi.GetName())<< "split '" << splitMode << "'" << Endl;
 
          // test if enough events are available
-         Log() << kDEBUG << "availableundefined : " << availableUndefined << Endl;
-         Log() << kDEBUG << "useForTraining     : " << useForTraining << Endl;
-         Log() << kDEBUG << "useForTesting      : " << useForTesting  << Endl;
-         Log() << kDEBUG << "availableTraining      : " << availableTraining  << Endl;
-         Log() << kDEBUG << "availableTesting       : " << availableTesting  << Endl;
+         Log() << kDEBUG << Form("Dataset[%s] : ",dsi.GetName())<< "availableundefined : " << availableUndefined << Endl;
+         Log() << kDEBUG << Form("Dataset[%s] : ",dsi.GetName())<< "useForTraining     : " << useForTraining << Endl;
+         Log() << kDEBUG << Form("Dataset[%s] : ",dsi.GetName())<< "useForTesting      : " << useForTesting  << Endl;
+         Log() << kDEBUG << Form("Dataset[%s] : ",dsi.GetName())<< "availableTraining      : " << availableTraining  << Endl;
+         Log() << kDEBUG << Form("Dataset[%s] : ",dsi.GetName())<< "availableTesting       : " << availableTesting  << Endl;
 
          if( availableUndefined<(useForTraining-availableTraining) ||
              availableUndefined<(useForTesting -availableTesting ) ||
              availableUndefined<(useForTraining+useForTesting-availableTraining-availableTesting ) ){
-            Log() << kFATAL << "More events requested than available!" << Endl;
+            Log() << kFATAL << Form("Dataset[%s] : ",dsi.GetName())<< "More events requested than available!" << Endl;
          }
 
          // select the events
@@ -1216,13 +1216,13 @@ TMVA::DataSetFactory::MixEvents( DataSetInfo& dsi,
       }
       else { // erase at end
          if( eventVectorTraining.size() < UInt_t(requestedTraining) )
-            Log() << kWARNING << "DataSetFactory/requested number of training samples larger than size of eventVectorTraining.\n"
+            Log() << kWARNING << Form("Dataset[%s] : ",dsi.GetName())<< "DataSetFactory/requested number of training samples larger than size of eventVectorTraining.\n"
                   << "There is probably an issue. Please contact the TMVA developers." << Endl;
          std::for_each( eventVectorTraining.begin()+requestedTraining, eventVectorTraining.end(), DeleteFunctor<Event>() );
          eventVectorTraining.erase(eventVectorTraining.begin()+requestedTraining,eventVectorTraining.end());
 
          if( eventVectorTesting.size() < UInt_t(requestedTesting) )
-            Log() << kWARNING << "DataSetFactory/requested number of testing samples larger than size of eventVectorTesting.\n"
+            Log() << kWARNING << Form("Dataset[%s] : ",dsi.GetName())<< "DataSetFactory/requested number of testing samples larger than size of eventVectorTesting.\n"
                   << "There is probably an issue. Please contact the TMVA developers." << Endl;
          std::for_each( eventVectorTesting.begin()+requestedTesting, eventVectorTesting.end(), DeleteFunctor<Event>() );
          eventVectorTesting.erase(eventVectorTesting.begin()+requestedTesting,eventVectorTesting.end());
@@ -1277,7 +1277,7 @@ TMVA::DataSetFactory::MixEvents( DataSetInfo& dsi,
       // insert other classes
       EvtVecIt itTarget;
       for( UInt_t cls = 1; cls < dsi.GetNClasses(); ++cls ){
-         Log() << kDEBUG << "insert class " << cls << Endl;
+         Log() << kDEBUG << Form("Dataset[%s] : ",dsi.GetName())<< "insert class " << cls << Endl;
          // training vector
          itTarget = trainingEventVector->begin() - 1; // start one before begin
          // loop over source
@@ -1338,14 +1338,14 @@ TMVA::DataSetFactory::MixEvents( DataSetInfo& dsi,
    tmpEventVector[Types::kMaxTreeType].clear();
 
    if (mixMode == "RANDOM") {
-      Log() << kDEBUG << "shuffling events"<<Endl;
+      Log() << kDEBUG << Form("Dataset[%s] : ",dsi.GetName())<< "shuffling events"<<Endl;
 
       std::random_shuffle( trainingEventVector->begin(), trainingEventVector->end(), rndm );
       std::random_shuffle( testingEventVector->begin(),  testingEventVector->end(),  rndm  );
    }
 
-   Log() << kDEBUG << "trainingEventVector " << trainingEventVector->size() << Endl;
-   Log() << kDEBUG << "testingEventVector  " << testingEventVector->size() << Endl;
+   Log() << kDEBUG << Form("Dataset[%s] : ",dsi.GetName())<< "trainingEventVector " << trainingEventVector->size() << Endl;
+   Log() << kDEBUG << Form("Dataset[%s] : ",dsi.GetName())<< "testingEventVector  " << testingEventVector->size() << Endl;
 
    // create dataset
    DataSet* ds = new DataSet(dsi);
@@ -1508,7 +1508,7 @@ TMVA::DataSetFactory::RenormEvents( TMVA::DataSetInfo& dsi,
       }
    }
    else {
-      Log() << kFATAL << "<PrepareForTrainingAndTesting> Unknown NormMode: " << normMode << Endl;
+      Log() << kFATAL << Form("Dataset[%s] : ",dsi.GetName())<< "<PrepareForTrainingAndTesting> Unknown NormMode: " << normMode << Endl;
    }
    
    // ---------------------------------

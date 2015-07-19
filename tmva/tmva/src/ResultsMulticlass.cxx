@@ -115,7 +115,8 @@ std::vector<Double_t> TMVA::ResultsMulticlass::GetBestMultiClassCuts(UInt_t targ
    //calculate the best working point (optimal cut values)
    //for the multiclass classifier
    const DataSetInfo* dsi = GetDataSetInfo();
-   Log() << kINFO << "Calculating best set of cuts for class " 
+   Log() << kINFO << Endl;
+   Log() << kINFO <<Form("Dataset[%s] : ",GetDataSetInfo()->GetName())<< "Calculating best set of cuts for class " 
          << dsi->GetClassInfo( targetClass )->GetName() << Endl;
   
    fClassToOptimize = targetClass;
@@ -144,7 +145,7 @@ std::vector<Double_t> TMVA::ResultsMulticlass::GetBestMultiClassCuts(UInt_t targ
 void  TMVA::ResultsMulticlass::CreateMulticlassHistos( TString prefix, Int_t nbins, Int_t /* nbins_high */ )
 {
    //this function fills the mva response histos for multiclass classification
-   Log() << kINFO << "Creating multiclass response histograms..." << Endl;
+   Log() << kINFO <<Form("Dataset[%s] : ",GetDataSetInfo()->GetName())<< "Creating multiclass response histograms..." << Endl;
       
    DataSet* ds = GetDataSet();
    ds->SetCurrentType( GetTreeType() );

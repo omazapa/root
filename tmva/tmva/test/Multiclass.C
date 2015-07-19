@@ -59,11 +59,17 @@ void Multiclass()
    TMVA::Factory *factory = new TMVA::Factory( "TMVAMulticlass", outputFile,
                                                "!V:!Silent:Color:DrawProgressBar:Transformations=I;D;P;G,D:AnalysisType=multiclass" );
    TMVA::DataLoader  *loader1=new TMVA::DataLoader("dataset1");
+   TMVA::DataLoader  *loader2=new TMVA::DataLoader("dataset2");
+   
    loader1->AddVariable( "var1", 'F' );
    loader1->AddVariable( "var2", "Variable 2", "", 'F' );
    loader1->AddVariable( "var3", "Variable 3", "units", 'F' );
    loader1->AddVariable( "var4", "Variable 4", "units", 'F' );
 
+   loader2->AddVariable( "var1", 'F' );
+   loader2->AddVariable( "var2", "Variable 2", "", 'F' );
+   loader2->AddVariable( "var3", "Variable 3", "units", 'F' );
+   loader2->AddVariable( "var4", "Variable 4", "units", 'F' );
    TFile *input(0);
    TString fname = "./tmva_example_multiple_background.root";
    if (!gSystem->AccessPathName( fname )) {
@@ -94,13 +100,24 @@ void Multiclass()
    loader1->AddTree    (background1,"bg1");
    loader1->AddTree    (background2,"bg2");
    
-   loader1->PrepareTrainingAndTestTree( "", "SplitMode=Random:NormMode=NumEvents:!V" );
+   loader2->AddTree    (signal,"Signal");
+   loader2->AddTree    (background0,"bg0");
+   loader2->AddTree    (background1,"bg1");
+   loader2->AddTree    (background2,"bg2");
 
-   factory->BookMethod( loader1,TMVA::Types::kBDT, "BDTG", "!H:!V:NTrees=1000:BoostType=Grad:Shrinkage=0.10:UseBaggedBoost:BaggedSampleFraction=0.50:nCuts=20:MaxDepth=2");
-   factory->BookMethod( loader1,TMVA::Types::kMLP, "MLP", "!H:!V:NeuronType=tanh:NCycles=1000:HiddenLayers=N+5,5:TestRate=5:EstimatorType=MSE");
-   factory->BookMethod( loader1,TMVA::Types::kFDA, "FDA_GA", "H:!V:Formula=(0)+(1)*x0+(2)*x1+(3)*x2+(4)*x3:ParRanges=(-1,1);(-10,10);(-10,10);(-10,10);(-10,10):FitMethod=GA:PopSize=300:Cycles=3:Steps=20:Trim=True:SaveBestGen=1" );
-   factory->BookMethod( loader1,TMVA::Types::kPDEFoam, "PDEFoam", "!H:!V:TailCut=0.001:VolFrac=0.0666:nActiveCells=500:nSampl=2000:nBin=5:Nmin=100:Kernel=None:Compress=T" );
+   loader1->PrepareTrainingAndTestTree( "","SplitMode=Random:NormMode=NumEvents:!V" );
    
+   loader2->PrepareTrainingAndTestTree( "","SplitMode=Random:NormMode=NumEvents:!V" );
+
+   factory->BookMethod( loader1,TMVA::Types::kBDT, "BDTG", "!V:NTrees=1000:BoostType=Grad:Shrinkage=0.10:UseBaggedBoost:BaggedSampleFraction=0.50:nCuts=20:MaxDepth=2");
+   factory->BookMethod( loader1,TMVA::Types::kMLP, "MLP", "!V:NeuronType=tanh:NCycles=1000:HiddenLayers=N+5,5:TestRate=5:EstimatorType=MSE");
+   factory->BookMethod( loader1,TMVA::Types::kFDA, "FDA_GA", "!V:Formula=(0)+(1)*x0+(2)*x1+(3)*x2+(4)*x3:ParRanges=(-1,1);(-10,10);(-10,10);(-10,10);(-10,10):FitMethod=GA:PopSize=300:Cycles=3:Steps=20:Trim=True:SaveBestGen=1" );
+   factory->BookMethod( loader1,TMVA::Types::kPDEFoam, "PDEFoam", "!V:TailCut=0.001:VolFrac=0.0666:nActiveCells=500:nSampl=2000:nBin=5:Nmin=100:Kernel=None:Compress=T" );
+   
+   factory->BookMethod( loader2,TMVA::Types::kBDT, "BDTG", "!V:NTrees=1000:BoostType=Grad:Shrinkage=0.10:UseBaggedBoost:BaggedSampleFraction=0.50:nCuts=20:MaxDepth=2");
+   factory->BookMethod( loader2,TMVA::Types::kMLP, "MLP", "!V:NeuronType=tanh:NCycles=1000:HiddenLayers=N+5,5:TestRate=5:EstimatorType=MSE");
+   factory->BookMethod( loader2,TMVA::Types::kFDA, "FDA_GA", "!V:Formula=(0)+(1)*x0+(2)*x1+(3)*x2+(4)*x3:ParRanges=(-1,1);(-10,10);(-10,10);(-10,10);(-10,10):FitMethod=GA:PopSize=300:Cycles=3:Steps=20:Trim=True:SaveBestGen=1" );
+   factory->BookMethod( loader2,TMVA::Types::kPDEFoam, "PDEFoam", "!V:TailCut=0.001:VolFrac=0.0666:nActiveCells=500:nSampl=2000:nBin=5:Nmin=100:Kernel=None:Compress=T" );
   // Train MVAs using the set of training events
    factory->TrainAllMethods();
 
@@ -120,5 +137,6 @@ void Multiclass()
    
    delete factory;
    delete loader1;
+   delete loader2;
    
 }

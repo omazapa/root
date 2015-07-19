@@ -44,7 +44,7 @@
 
 using namespace TMVA;
    
-void Regression( ) 
+void RegressionAll( ) 
 {
    // The explicit loading of the shared libTMVA is done in TMVAlogon.C, defined in .rootrc
    // if you use your private .rootrc, or run from a different directory, please copy the 
@@ -112,7 +112,7 @@ void Regression( )
    // Add the variable carrying the regression target
    loader1->AddTarget( "fvalue" ); 
 
-   loader2->AddTarget( "fvalue" ); 
+   loader2->AddTarget( "fvalue*2" ); 
    // It is also possible to declare additional targets for multi-dimensional regression, ie:
    // -- factory->AddTarget( "fvalue2" );
    // BUT: this is currently ONLY implemented for MLP
@@ -153,9 +153,9 @@ void Regression( )
 
    // tell the factory to use all remaining events in the trees after training for testing:
    loader1->PrepareTrainingAndTestTree( mycut, 
-                                         "nTrain_Regression=1000:nTest_Regression=0:SplitMode=Random:NormMode=NumEvents:!V" );
-   loader2->PrepareTrainingAndTestTree( mycut, 
                                          "nTrain_Regression=2000:nTest_Regression=0:SplitMode=Random:NormMode=NumEvents:!V" );
+   loader2->PrepareTrainingAndTestTree( mycut, 
+                                         "nTrain_Regression=1000:nTest_Regression=0:SplitMode=Random:NormMode=NumEvents:!V" );
    // factory->PrepareTrainingAndTestTree( mycut, 
    //                                      "nTrain_Regression=0:nTest_Regression=0:SplitMode=Random:NormMode=NumEvents:!V" );
 
@@ -169,19 +169,95 @@ void Regression( )
    // src/MethoCuts.cxx, etc, or here: http://tmva.sourceforge.net/optionRef.html
    // it is possible to preset ranges in the option string in which the cut optimisation should be done:
    // "...:CutRangeMin[2]=-1:CutRangeMax[2]=1"...", where [2] is the third input variable
+   // PDE - RS method
+      factory->BookMethod( loader1,TMVA::Types::kPDERS, "PDERS", 
+                           "!V:NormTree=T:VolumeRangeMode=Adaptive:KernelEstimator=Gauss:GaussSigma=0.3:NEventsMin=40:NEventsMax=60:VarTransform=None" );
+
+       factory->BookMethod( loader1,TMVA::Types::kPDEFoam, "PDEFoam", 
+			    "!V:MultiTargetRegression=F:TargetSelection=Mpv:TailCut=0.001:VolFrac=0.0666:nActiveCells=500:nSampl=2000:nBin=5:Compress=T:Kernel=None:Nmin=10:VarTransform=None" );
+
+   // K-Nearest Neighbour classifier (KNN)
+      factory->BookMethod( loader1,TMVA::Types::kKNN, "KNN", 
+                           "nkNN=20:ScaleFrac=0.8:SigmaFact=1.0:Kernel=Gaus:UseKernel=F:UseWeight=T:!Trim" );
+
+   // Linear discriminant
+      factory->BookMethod( loader1,TMVA::Types::kLD, "LD", 
+                           "!V:VarTransform=None" );
+
+	// Function discrimination analysis (FDA) -- test of various fitters - the recommended one is Minuit (or GA or SA)
+      factory->BookMethod( loader1,TMVA::Types::kFDA, "FDA_MC",
+                          "!V:Formula=(0)+(1)*x0+(2)*x1:ParRanges=(-100,100);(-100,100);(-100,100):FitMethod=MC:SampleSize=100000:Sigma=0.1:VarTransform=D" );
+   
+   // can also use Simulated Annealing (SA) algorithm (see Cuts_SA options) .. the formula of this example is good for parabolas
+      factory->BookMethod( loader1,TMVA::Types::kFDA, "FDA_GA",
+                           "!V:Formula=(0)+(1)*x0+(2)*x1:ParRanges=(-100,100);(-100,100);(-100,100):FitMethod=GA:PopSize=100:Cycles=3:Steps=30:Trim=True:SaveBestGen=1:VarTransform=Norm" );
+
+      factory->BookMethod( loader1,TMVA::Types::kFDA, "FDA_MT",
+                           "!V:Formula=(0)+(1)*x0+(2)*x1:ParRanges=(-100,100);(-100,100);(-100,100);(-10,10):FitMethod=MINUIT:ErrorLevel=1:PrintLevel=-1:FitStrategy=2:UseImprove:UseMinos:SetBatch" );
+
+      factory->BookMethod( loader1,TMVA::Types::kFDA, "FDA_GAMT",
+                           "!V:Formula=(0)+(1)*x0+(2)*x1:ParRanges=(-100,100);(-100,100);(-100,100):FitMethod=GA:Converger=MINUIT:ErrorLevel=1:PrintLevel=-1:FitStrategy=0:!UseImprove:!UseMinos:SetBatch:Cycles=1:PopSize=5:Steps=5:Trim" );
 
    // Neural network (MLP)
-//       factory->BookMethod(loader1, TMVA::Types::kMLP, "MLP", "!H:!V:VarTransform=Norm:NeuronType=tanh:NCycles=20000:HiddenLayers=N+20:TestRate=6:TrainingMethod=BFGS:Sampling=0.3:SamplingEpoch=0.8:ConvergenceImprove=1e-6:ConvergenceTests=15:!UseRegulator" );
+      factory->BookMethod( loader1,TMVA::Types::kMLP, "MLP", "!V:VarTransform=Norm:NeuronType=tanh:NCycles=20000:HiddenLayers=N+20:TestRate=6:TrainingMethod=BFGS:Sampling=0.3:SamplingEpoch=0.8:ConvergenceImprove=1e-6:ConvergenceTests=15:!UseRegulator" );
 
    // Support Vector Machine
-      factory->BookMethod(loader1, TMVA::Types::kSVM, "SVM", "Gamma=0.25:Tol=0.001:VarTransform=Norm" );
+      factory->BookMethod( loader1,TMVA::Types::kSVM, "SVM", "Gamma=0.25:Tol=0.001:VarTransform=Norm" );
 
    // Boosted Decision Trees
-     factory->BookMethod(loader2, TMVA::Types::kBDT, "BDT",
-                           "!H:!V:NTrees=100:MinNodeSize=1.0%:BoostType=AdaBoostR2:SeparationType=RegressionVariance:nCuts=20:PruneMethod=CostComplexity:PruneStrength=30" );
-     
-   // ---- Now you can tell the factory to train, test, and evaluate the MVAs
+     factory->BookMethod( loader1,TMVA::Types::kBDT, "BDT",
+                           "!V:NTrees=100:MinNodeSize=1.0%:BoostType=AdaBoostR2:SeparationType=RegressionVariance:nCuts=20:PruneMethod=CostComplexity:PruneStrength=30" );
 
+     factory->BookMethod( loader1,TMVA::Types::kBDT, "BDTG",
+                           "!V:NTrees=2000::BoostType=Grad:Shrinkage=0.1:UseBaggedBoost:BaggedSampleFraction=0.5:nCuts=20:MaxDepth=3:MaxDepth=4" );
+
+   
+   
+
+ 
+    
+      factory->BookMethod( loader2,TMVA::Types::kPDERS, "PDERS", 
+                           "!V:NormTree=T:VolumeRangeMode=Adaptive:KernelEstimator=Gauss:GaussSigma=0.3:NEventsMin=40:NEventsMax=60:VarTransform=None" );
+
+       factory->BookMethod( loader2,TMVA::Types::kPDEFoam, "PDEFoam", 
+			    "!V:MultiTargetRegression=F:TargetSelection=Mpv:TailCut=0.001:VolFrac=0.0666:nActiveCells=500:nSampl=2000:nBin=5:Compress=T:Kernel=None:Nmin=10:VarTransform=None" );
+
+//    K-Nearest Neighbour classifier (KNN)
+      factory->BookMethod( loader2,TMVA::Types::kKNN, "KNN", 
+                           "nkNN=20:ScaleFrac=0.8:SigmaFact=1.0:Kernel=Gaus:UseKernel=F:UseWeight=T:!Trim" );
+
+//    Linear discriminant
+      factory->BookMethod( loader2,TMVA::Types::kLD, "LD", 
+                           "!V:VarTransform=None" );
+
+// 	Function discrimination analysis (FDA) -- test of various fitters - the recommended one is Minuit (or GA or SA)
+      factory->BookMethod( loader2,TMVA::Types::kFDA, "FDA_MC",
+                          "!V:Formula=(0)+(1)*x0+(2)*x1:ParRanges=(-100,100);(-100,100);(-100,100):FitMethod=MC:SampleSize=100000:Sigma=0.1:VarTransform=D" );
+   
+//    can also use Simulated Annealing (SA) algorithm (see Cuts_SA options) .. the formula of this example is good for parabolas
+      factory->BookMethod( loader2,TMVA::Types::kFDA, "FDA_GA",
+                           "!V:Formula=(0)+(1)*x0+(2)*x1:ParRanges=(-100,100);(-100,100);(-100,100):FitMethod=GA:PopSize=100:Cycles=3:Steps=30:Trim=True:SaveBestGen=1:VarTransform=Norm" );
+
+      factory->BookMethod( loader2,TMVA::Types::kFDA, "FDA_MT",
+                           "!V:Formula=(0)+(1)*x0+(2)*x1:ParRanges=(-100,100);(-100,100);(-100,100);(-10,10):FitMethod=MINUIT:ErrorLevel=1:PrintLevel=-1:FitStrategy=2:UseImprove:UseMinos:SetBatch" );
+
+      factory->BookMethod( loader2,TMVA::Types::kFDA, "FDA_GAMT",
+                           "!V:Formula=(0)+(1)*x0+(2)*x1:ParRanges=(-100,100);(-100,100);(-100,100):FitMethod=GA:Converger=MINUIT:ErrorLevel=1:PrintLevel=-1:FitStrategy=0:!UseImprove:!UseMinos:SetBatch:Cycles=1:PopSize=5:Steps=5:Trim" );
+
+//    Neural network (MLP)
+      factory->BookMethod( loader2,TMVA::Types::kMLP, "MLP", "!V:VarTransform=Norm:NeuronType=tanh:NCycles=20000:HiddenLayers=N+20:TestRate=6:TrainingMethod=BFGS:Sampling=0.3:SamplingEpoch=0.8:ConvergenceImprove=1e-6:ConvergenceTests=15:!UseRegulator" );
+
+   // Support Vector Machine
+      factory->BookMethod( loader2,TMVA::Types::kSVM, "SVM", "Gamma=0.25:Tol=0.001:VarTransform=Norm" );
+
+   // Boosted Decision Trees
+     factory->BookMethod( loader2,TMVA::Types::kBDT, "BDT",
+                           "!V:NTrees=100:MinNodeSize=1.0%:BoostType=AdaBoostR2:SeparationType=RegressionVariance:nCuts=20:PruneMethod=CostComplexity:PruneStrength=30" );
+
+     factory->BookMethod( loader2,TMVA::Types::kBDT, "BDTG",
+                           "!V:NTrees=2000::BoostType=Grad:Shrinkage=0.1:UseBaggedBoost:BaggedSampleFraction=0.5:nCuts=20:MaxDepth=3:MaxDepth=4" );
+     
+     
    // Train MVAs using the set of training events
    factory->TrainAllMethods();
 
@@ -202,5 +278,5 @@ void Regression( )
    delete factory;
 
    // Launch the GUI for the root macros
+//    if (!gROOT->IsBatch()) TMVA::TMVARegGui( outfileName );
 }
-

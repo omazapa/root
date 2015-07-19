@@ -1204,14 +1204,14 @@ void TMVA::Factory::EvaluateAllMethods( void )
 	      MethodBase* theMethod = dynamic_cast<MethodBase*>(*itrMethod);
 	      if(theMethod==0) continue;
 
-	      TString header= "MVA Method     "; 
+	      TString header= "DataSet Name     MVA Method     "; 
 	      for(UInt_t icls = 0; icls<theMethod->fDataSetInfo.GetNClasses(); ++icls){
 		  header += Form("%-12s ",theMethod->fDataSetInfo.GetClassInfo(icls)->GetName().Data());
 	      }
 	      Log() << kINFO << header << Endl;
 	      Log() << kINFO << hLine << Endl;
 	      for (Int_t i=0; i<nmeth_used[0]; i++) {
-		TString res =  Form("%-15s",(const char*)mname[0][i]);
+		TString res =  Form("[%-14s] %-15s",theMethod->fDataSetInfo.GetName(),(const char*)mname[0][i]);
 		for(UInt_t icls = 0; icls<theMethod->fDataSetInfo.GetNClasses(); ++icls){
 		    res += Form("%#1.3f        ",(multiclass_testEff[i][icls])*(multiclass_testPur[i][icls]));
 		}
