@@ -9,7 +9,7 @@
 
 
 //dataset name and TMVA output file
-void TMVAGui(TString dataset,const char *file="TMVA.root");
+void TMVAMultiClassGui(TString dataset,const char *file="TMVA.root");
 
 
 
@@ -70,12 +70,12 @@ void CopyFile(const char* dataset,const char *fname) {
    target->cd();
 }
 
-void TMVAGui(TString dataset,const char *file="TMVA.root")
+void TMVAMultiClassGui(TString dataset,const char *file="TMVA.root")
 {
   TString datasetfile=dataset+".root";
   TFile *f = new TFile(datasetfile.Data(),"recreate");
   
   CopyFile(dataset.Data(),file);
   f->Close();
-  TMVA::TMVAGui(datasetfile.Data());
+  TMVA::TMVAMultiClassGui(datasetfile.Data());
 }
