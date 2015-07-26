@@ -1,25 +1,3 @@
-// @(#)root/tmva $Id: TMVAClassificationCategory.C,v 1.36 2009-04-14 13:08:13 andreas.hoecker Exp $
-/**********************************************************************************
- * Project   : TMVA - a Root-integrated toolkit for multivariate data analysis    *
- * Package   : TMVA                                                               *
- * Root Macro: TMVAClassificationCategory                                         *
- *                                                                                *
- * This macro provides examples for the training and testing of the               *
- * TMVA classifiers in categorisation mode.                                       *
- *                                                                                *
- * As input data is used a toy-MC sample consisting of four Gaussian-distributed  *
- * and linearly correlated input variables with category (eta) dependent          *
- * properties.                                                                    *
- *                                                                                *
- * For this example, only Fisher and Likelihood are used. Run via:                *
- *                                                                                *
- *    root -l TMVAClassificationCategory.C                                        *
- *                                                                                *
- * The output file "TMVA.root" can be analysed with the use of dedicated          *
- * macros (simply say: root -l <macro.C>), which can be conveniently              *
- * invoked through a GUI that will appear at the end of the run of this macro.    *
- **********************************************************************************/
-
 #include <cstdlib>
 #include <iostream>
 #include <map>
@@ -79,6 +57,7 @@ void ClassificationCategory()
    loader2->AddVariable( "var2", 'F' );
    loader2->AddVariable( "var3", 'F' );
    loader2->AddVariable( "var4", 'F' );
+
    // You can add so-called "Spectator variables", which are not used in the MVA training,
    // but will appear in the final "TestTree" produced by TMVA. This TestTree will contain the
    // input variables, the response values of all trained MVAs, and the spectator variables
@@ -91,7 +70,13 @@ void ClassificationCategory()
 
    if (UseOffsetMethod) fname += "toy_sigbkg_categ_offset.root";
    else                 fname += "toy_sigbkg_categ_varoff.root";
+   
    if (!gSystem->AccessPathName( fname )) {
+      gSystem->mkdir("data");
+      // file does not exist in local directory
+      gSystem->Exec("cd data;curl -O http://files.oproject.org/root/tmva/data/toy_sigbkg_categ_offset.root");
+      gSystem->Exec("cd data;curl -O http://files.oproject.org/root/tmva/data/toy_sigbkg_categ_varoff.root");
+   
       // first we try to find tmva_example.root in the local directory
       std::cout << "--- TMVAClassificationCategory: Accessing " << fname << std::endl;
       input = TFile::Open( fname );
@@ -131,8 +116,8 @@ void ClassificationCategory()
    factory->BookMethod(loader1, TMVA::Types::kFisher, "Fisher", "!H:!V:Fisher" );
 
    // Likelihood
-//    factory->BookMethod(loader2, TMVA::Types::kLikelihood, "Likelihood",
-//                         "!H:!V:TransformOutput:PDFInterpol=Spline2:NSmoothSig[0]=20:NSmoothBkg[0]=20:NSmoothBkg[1]=10:NSmooth=1:NAvEvtPerBin=50" ); 
+   factory->BookMethod(loader2, TMVA::Types::kLikelihood, "Likelihood",
+                        "!H:!V:TransformOutput:PDFInterpol=Spline2:NSmoothSig[0]=20:NSmoothBkg[0]=20:NSmoothBkg[1]=10:NSmooth=1:NAvEvtPerBin=50" ); 
 
    // --- Categorised classifier
    TMVA::MethodCategory* mcat = 0;
@@ -148,12 +133,12 @@ void ClassificationCategory()
    mcat->AddMethod( "abs(eta)>1.3",  theCat2Vars, TMVA::Types::kFisher, "Category_Fisher_2","!H:!V:Fisher" );
 
    // Likelihood with categories
-//    TMVA::MethodBase* liCat = factory->BookMethod(loader2, TMVA::Types::kCategory, "LikelihoodCat","" );
-//    mcat = dynamic_cast<TMVA::MethodCategory*>(liCat);
-//    mcat->AddMethod( "abs(eta)<=1.3",theCat1Vars, TMVA::Types::kLikelihood,
-//                     "Category_Likelihood_1","!H:!V:TransformOutput:PDFInterpol=Spline2:NSmoothSig[0]=20:NSmoothBkg[0]=20:NSmoothBkg[1]=10:NSmooth=1:NAvEvtPerBin=50" );
-//    mcat->AddMethod( "abs(eta)>1.3", theCat2Vars, TMVA::Types::kLikelihood,
-//                     "Category_Likelihood_2","!H:!V:TransformOutput:PDFInterpol=Spline2:NSmoothSig[0]=20:NSmoothBkg[0]=20:NSmoothBkg[1]=10:NSmooth=1:NAvEvtPerBin=50" );
+   TMVA::MethodBase* liCat = factory->BookMethod(loader2, TMVA::Types::kCategory, "LikelihoodCat","" );
+   mcat = dynamic_cast<TMVA::MethodCategory*>(liCat);
+   mcat->AddMethod( "abs(eta)<=1.3",theCat1Vars, TMVA::Types::kLikelihood,
+                    "Category_Likelihood_1","!H:!V:TransformOutput:PDFInterpol=Spline2:NSmoothSig[0]=20:NSmoothBkg[0]=20:NSmoothBkg[1]=10:NSmooth=1:NAvEvtPerBin=50" );
+   mcat->AddMethod( "abs(eta)>1.3", theCat2Vars, TMVA::Types::kLikelihood,
+                    "Category_Likelihood_2","!H:!V:TransformOutput:PDFInterpol=Spline2:NSmoothSig[0]=20:NSmoothBkg[0]=20:NSmoothBkg[1]=10:NSmooth=1:NAvEvtPerBin=50" );
 
    // ---- Now you can tell the factory to train, test, and evaluate the MVAs
 
@@ -176,13 +161,6 @@ void ClassificationCategory()
 
    // Clean up
    delete factory;
-//    delete loader1;
-//    delete loader1;
-   // Launch the GUI for the root macros
-//    if (!gROOT->IsBatch()) TMVA::TMVAGui( outfileName );
-}
-int main( int argc, char** argv )
-{
-   ClassificationCategory();
-   return 0;
+   delete loader1;
+   delete loader2;
 }

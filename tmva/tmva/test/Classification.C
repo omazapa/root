@@ -43,7 +43,7 @@ void Classification()
    // All TMVA output can be suppressed by removing the "!" (not) in
    // front of the "Silent" argument in the option string
    TMVA::Factory *factory = new TMVA::Factory( "TMVAClassification", outputFile,
-                                               "!V:!Silent:Color:DrawProgressBar:Transformations=I;D;P;G,D:AnalysisType=Classification" );
+                                               "!V:!Silent:Color:DrawProgressBar:Correlations=kFALSE:AnalysisType=Classification" );
    
    TMVA::DataLoader *loader1=new TMVA::DataLoader("dataset1");
    TMVA::DataLoader *loader2=new TMVA::DataLoader("dataset2");
@@ -89,8 +89,8 @@ void Classification()
    Double_t backgroundWeight = 1.0;
    
    // You can add an arbitrary number of signal or background trees
-   loader1->AddSignalTree    ( tsignal->Clone(),     signalWeight     );
-   loader1->AddBackgroundTree( tbackground->Clone(), backgroundWeight );
+   loader1->AddSignalTree    ( tsignal,     signalWeight     );
+   loader1->AddBackgroundTree( tbackground, backgroundWeight );
  
    // You can add an arbitrary number of signal or background trees
    loader2->AddSignalTree    ( tsignal,     signalWeight     );

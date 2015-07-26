@@ -117,7 +117,7 @@ namespace TMVA {
 
       // performance evaluation
       void EvaluateAllMethods( void );
-//       void EvaluateAllVariables( TString options = "" ); 
+      void EvaluateAllVariables(DataLoader *loader, TString options = "" ); 
   
       // delete all methods and reset the method vector
       void DeleteAllMethods( void );
@@ -165,6 +165,7 @@ namespace TMVA {
       TString                                   fOptions;         //! option string given by construction (presently only "V")
       TString                                   fTransformations; //! List of transformations to test
       Bool_t                                    fVerbose;         //! verbose mode
+      Bool_t					fCorrelations;    //! enable to calculate corelations
 
       TString                                   fJobName;         //! jobname, used as extension in weight file names
 
