@@ -61,10 +61,7 @@ namespace TMVA {
    class DataLoader;
 
    class IMethod {
-   
-   protected:
-      DataLoader *fDataLoader;//DataLoader
-      
+         
    public:
 
       // default constructur

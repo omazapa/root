@@ -319,7 +319,7 @@ TMVA::MethodBase* TMVA::Factory::BookMethod( TMVA::DataLoader *loader, TString t
    }
    
 //    method->SetWeightFileDir(Form("%s/%s",loader->GetName(),method->GetWeightFileDir().Data()));//setting up weight file dir
-   method->fDataLoader=loader;
+//    method->fDataLoader=loader;
    method->SetAnalysisType( fAnalysisType );
    method->SetupMethod();
    method->ParseOptions();
@@ -539,14 +539,14 @@ void TMVA::Factory::TrainAllMethods()
 	  
 	  if(mva==0) continue;
 	  
-	  if(mva->fDataLoader->fDataInputHandler->GetEntries() <=1) { // 0 entries --> 0 events, 1 entry --> dynamical dataset (or one entry)
+	  if(mva->DataInfo().GetDataSetManager()->DataInput().GetEntries() <=1) { // 0 entries --> 0 events, 1 entry --> dynamical dataset (or one entry)
 	      Log() << kFATAL << "No input data for the training provided!" << Endl;
 	  }
 	  
-	  if(fAnalysisType == Types::kRegression && mva->fDataLoader->DefaultDataSetInfo().GetNTargets() < 1 )
+	  if(fAnalysisType == Types::kRegression && mva->DataInfo().GetNTargets() < 1 )
 	  Log() << kFATAL << "You want to do regression training without specifying a target." << Endl;
 	  else if( (fAnalysisType == Types::kMulticlass || fAnalysisType == Types::kClassification) 
-		&& mva->fDataLoader->DefaultDataSetInfo().GetNClasses() < 2 ) 
+		&& mva->DataInfo().GetNClasses() < 2 ) 
 	  Log() << kFATAL << "You want to do classification training, but specified less than two classes." << Endl;
 	  
 	  // first print some information about the default dataset
@@ -618,7 +618,7 @@ void TMVA::Factory::TrainAllMethods()
 	    if( m->GetMethodType() == Types::kCategory ){ 
 		MethodCategory *methCat = (dynamic_cast<MethodCategory*>(m));
 		if( !methCat ) Log() << kFATAL << "Method with type kCategory cannot be casted to MethodCategory. /Factory" << Endl; 
-		else methCat->fDataSetManager = m->fDataLoader->fDataSetManager;
+		else methCat->fDataSetManager = m->DataInfo().GetDataSetManager();
 	    }
 	    //ToDo, Do we need to fill the DataSetManager of MethodBoost here too?
 	    

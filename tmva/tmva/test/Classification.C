@@ -89,8 +89,8 @@ void Classification()
    Double_t backgroundWeight = 1.0;
    
    // You can add an arbitrary number of signal or background trees
-   loader1->AddSignalTree    ( tsignal,     signalWeight     );
-   loader1->AddBackgroundTree( tbackground, backgroundWeight );
+   loader1->AddSignalTree    ( tsignal->Clone(),     signalWeight     );
+   loader1->AddBackgroundTree( tbackground->Clone(), backgroundWeight );
  
    // You can add an arbitrary number of signal or background trees
    loader2->AddSignalTree    ( tsignal,     signalWeight     );
@@ -124,8 +124,8 @@ void Classification()
    factory->BookMethod( loader1, TMVA::Types::kBDT, "BDT",
                            "!H:!V:NTrees=850:MinNodeSize=2.5%:MaxDepth=3:BoostType=AdaBoost:AdaBoostBeta=0.5:UseBaggedBoost:BaggedSampleFraction=0.5:SeparationType=GiniIndex:nCuts=20" );
 
-   factory->BookMethod( loader1, TMVA::Types::kBDT, "BDT",
-                           "!H:!V:NTrees=850:MinNodeSize=2.5%:MaxDepth=3:BoostType=AdaBoost:AdaBoostBeta=0.5:UseBaggedBoost:BaggedSampleFraction=0.5:SeparationType=GiniIndex:nCuts=20" );
+//    factory->BookMethod( loader1, TMVA::Types::kBDT, "BDT",
+//                            "!H:!V:NTrees=850:MinNodeSize=2.5%:MaxDepth=3:BoostType=AdaBoost:AdaBoostBeta=0.5:UseBaggedBoost:BaggedSampleFraction=0.5:SeparationType=GiniIndex:nCuts=20" );
 
    factory->BookMethod( loader1, TMVA::Types::kBDT, "BDTB",
                            "!H:!V:NTrees=400:BoostType=Bagging:SeparationType=GiniIndex:nCuts=20" );
@@ -134,10 +134,9 @@ void Classification()
    factory->BookMethod( loader2, TMVA::Types::kBDT, "BDT",
                            "!H:!V:NTrees=850:MinNodeSize=2.5%:MaxDepth=3:BoostType=AdaBoost:AdaBoostBeta=0.5:UseBaggedBoost:BaggedSampleFraction=0.5:SeparationType=GiniIndex:nCuts=20" );
 
-   factory->BookMethod( loader2, TMVA::Types::kC50, "C50",
-      "!H:NTrials=10:Rules=kFALSE:ControlSubSet=kFALSE:ControlBands=0:ControlWinnow=kFALSE:ControlNoGlobalPruning=kTRUE:ControlCF=0.25:ControlMinCases=2:ControlFuzzyThreshold=kTRUE:ControlSample=0:ControlEarlyStopping=kTRUE:!V" );
-   
-   factory->BookMethod(loader2, TMVA::Types::kRSNNS, "RMLP","!H:VarTransform=N:Size=c(5):Maxit=800:InitFunc=Randomize_Weights:LearnFunc=Std_Backpropagation:LearnFuncParams=c(0.2,0):!V" );
+
+   factory->BookMethod( loader2, TMVA::Types::kBDT, "BDTB",
+                           "!H:!V:NTrees=400:BoostType=Bagging:SeparationType=GiniIndex:nCuts=20" );
 
    
       // Train MVAs using the set of training events
