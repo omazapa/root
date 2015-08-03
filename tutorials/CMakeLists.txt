@@ -12,9 +12,8 @@ if(DEFINED ROOT_SOURCE_DIR)  # Testing using the binary tree
                    ROOTSYS=${CMAKE_BINARY_DIR}
                    PYTHONPATH=${CMAKE_BINARY_DIR}/lib:$ENV{PYTHONPATH})
 else()                       # testing using an installation
-  if(DEFINED ROOT_USE_FILE)
-    include(${ROOT_USE_FILE})
-  else()  #---If ROOT was built with the classic configure/make---
+  include(${ROOT_USE_FILE})
+  if(DEFINED ROOT_CONFIG_EXECUTABLE) #---If ROOT was built with the classic configure/make---
     set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/../cmake/modules)
     include(RootNewMacros)
     set(ROOT_root_CMD root.exe)
@@ -232,7 +231,8 @@ set(benchmarks-depends tutorial-hsimple
                        tutorial-geom-na49view
                        tutorial-tree-ntuple1
                        tutorial-io-hadd
-                       tutorial-io-loopdir)
+                       tutorial-io-loopdir
+                       tutorial-io-copyFiles)
 
 #--many roostats tutorials depending on having creating the file first with histfactory
 foreach(tname  ModelInspector OneSidedFrequentistUpperLimitWithBands StandardBayesianMCMCDemo StandardBayesianNumericalDemo

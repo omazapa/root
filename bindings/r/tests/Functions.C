@@ -70,7 +70,7 @@ void Functions(TString type = "Import")
       ROOT::R::TRFunctionImport c("c");
       ROOT::R::TRFunctionImport require("require");
       ROOT::R::TRFunctionImport plot("plot");
-//      ROOT::R::TRFunctionImport devoff("dev.off");
+      ROOT::R::TRFunctionImport devoff("dev.off");
 //      
       ROOT::R::TRFunctionImport sin("sin");
 //      ROOT::R::TRFunctionImport options("options");
@@ -78,20 +78,40 @@ void Functions(TString type = "Import")
       ROOT::R::TRFunctionImport read("read.csv");
       ROOT::R::TRFunctionImport head("head");
       
+      ROOT::R::TRFunctionImport options("options");
+      options(ROOT::R::Label["device"]="x11");
       
       
-//      options("device='x11'");
+      r<<"test <- function() x11";
+      ROOT::R::TRFunctionImport test("test");
+      
+      
+      ROOT::R::TRFunctionImport dev=test();
+
+//       dev();      
+      
+      
+     options("device='x11'");
 //      
-      ROOT::R::TRObjectProxy vector=c(1,2,3,4);
+      ROOT::R::TRObject vector=c(1,2,3,4);
       TVectorF v=vector;
+      TVectorF v2=c(11,22,33,44);
       print(v);
-//      ROOT::R::TRDataFrame obj=read("training.csv");
+      print(v2);
+     ROOT::R::TRDataFrame obj=read("training.csv");
       
 //      ROOT::R::TRDataFrame df(obj.As<ROOT::R::TRDataFrame>());
-//      print(head(obj));
+     print(head(obj));
 //      print(vector);
-//      x11();
-//      plot(sin,0,6,ROOT::R::Label["type"]="s");
+      x11();
+      plot(sin,0,6,ROOT::R::Label["type"]="s");
+      x11();
+      plot(sin,0,6,ROOT::R::Label["type"]="l");
+      x11();
+      plot(sin,0,6,ROOT::R::Label["type"]="p");
+
+
+
 //      devoff();
 //      print(vector);
       
