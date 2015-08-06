@@ -99,6 +99,7 @@ TMVA::Factory::Factory( TString jobName, TFile* theTargetFile, TString theOption
    fTransformations      ( "I" ),
    fVerbose              ( kFALSE ),
    fCorrelations         ( kFALSE ),
+   fROC                  ( kFALSE ),
    fJobName              ( jobName ),
    fDataAssignType       ( kAssignEvents ),
    fATreeEvent           ( NULL ),
@@ -1229,41 +1230,14 @@ void TMVA::Factory::EvaluateAllMethods( void )
       else {
 	    if(fROC)
 	    {
-               Log().EnableOutput();
-	       gConfig().SetSilent(kFALSE);
+                Log().EnableOutput();
+	        gConfig().SetSilent(kFALSE);
 	        Log() << Endl;
-		TString hLine = "--------------------------------------------------------------------------------------------------------";
-		Log() << kINFO << hLine << Endl;
-		Log() << kINFO << "ROCCalc Results"<<Endl;
-		Log() << kINFO << hLine << Endl;
-		Log() << kINFO << "DataSet              MVA              "   << Endl;
-		Log() << kINFO << "Name:                Method:          ROC-integ" << Endl;
-		Log() << kINFO << hLine << Endl;
-	       for (Int_t k=0; k<2; k++) {
-	         for (Int_t i=0; i<nmeth_used[k]; i++) {
-		   MethodBase* theMethod = dynamic_cast<MethodBase*>((*methods)[i]);
-		   if(theMethod==0) continue;
-
-		   TMVA::Results *results=theMethod->Data()->GetResults(theMethod->GetMethodName(),Types::kTesting,Types::kClassification);
-		   if(results==0) std::cout<<"ERROR\n";
-
-		   TH1D *mvaS=dynamic_cast<TH1D*>(results->GetStorage()->FindObject(Form("MVA_%s_S",theMethod->GetMethodName().Data())));
-		   TH1D *mvaB=dynamic_cast<TH1D*>(results->GetStorage()->FindObject(Form("MVA_%s_B",theMethod->GetMethodName().Data())));
-		   TMVA::ROCCalc *fROC=new TMVA::ROCCalc(mvaS,mvaB);
-		   Log() << kINFO << Form("%-20s %-20s %#1.3f \n",theMethod->fDataSetInfo.GetName(),theMethod->GetMethodName().Data(),fROC->GetROCIntegral());
-		   delete fROC;
-		
-	 	 }
-	        }
-	        Log() << Endl;
-		Log() << kINFO << hLine << Endl;
-	        
-	        Log() << Endl;
-// 		TString hLine = "--------------------------------------------------------------------------------------------------------";
+		TString hLine = "-------------------------------------------------------------------------------------------------------------------";
 		Log() << kINFO << "Evaluation results ranked by best signal efficiency and purity (area)" << Endl;
 		Log() << kINFO << hLine << Endl;
-		Log() << kINFO << "DataSet              MVA              Signal efficiency at bkg eff.(error):       | Sepa-    Signifi- "   << Endl;
-		Log() << kINFO << "Name:                Method:          @B=0.01    @B=0.10    @B=0.30    ROC-integ. | ration:  cance:   "   << Endl;
+		Log() << kINFO << "DataSet              MVA              Signal efficiency at bkg eff.(error):                | Sepa-    Signifi- "   << Endl;
+		Log() << kINFO << "Name:                Method:          @B=0.01    @B=0.10    @B=0.30    ROC-integ    ROCCalc| ration:  cance:   "   << Endl;
 		Log() << kINFO << hLine << Endl;
 		for (Int_t k=0; k<2; k++) {
 		  if (k == 1 && nmeth_used[k] > 0) {
@@ -1275,28 +1249,33 @@ void TMVA::Factory::EvaluateAllMethods( void )
 		      
 		      MethodBase* theMethod = dynamic_cast<MethodBase*>((*methods)[i]);
 		      if(theMethod==0) continue;
+		      TMVA::Results *results=theMethod->Data()->GetResults(theMethod->GetMethodName(),Types::kTesting,Types::kClassification);
+		      TH1D *mvaS=dynamic_cast<TH1D*>(results->GetStorage()->FindObject(Form("MVA_%s_S",theMethod->GetMethodName().Data())));
+		      TH1D *mvaB=dynamic_cast<TH1D*>(results->GetStorage()->FindObject(Form("MVA_%s_B",theMethod->GetMethodName().Data())));
+		      TMVA::ROCCalc *fROCalc=new TMVA::ROCCalc(mvaS,mvaB);
 		      
 		      if (sep[k][i] < 0 || sig[k][i] < 0) {
 			// cannot compute separation/significance -> no MVA (usually for Cuts)
 			
-			Log() << kINFO << Form("%-20s %-15s: %#1.3f(%02i)  %#1.3f(%02i)  %#1.3f(%02i)    %#1.3f    | --       --",
+			Log() << kINFO << Form("%-20s %-15s: %#1.3f(%02i)  %#1.3f(%02i)  %#1.3f(%02i)    %#1.3f       %#1.3f | --       --",
 						theMethod->fDataSetInfo.GetName(), 
 						(const char*)mname[k][i], 
 						eff01[k][i], Int_t(1000*eff01err[k][i]), 
 						eff10[k][i], Int_t(1000*eff10err[k][i]), 
 						eff30[k][i], Int_t(1000*eff30err[k][i]), 
-						effArea[k][i]) << Endl;
+						effArea[k][i],fROCalc->GetROCIntegral()) << Endl;
 		      }
 		      else {
-			Log() << kINFO << Form("%-20s %-15s: %#1.3f(%02i)  %#1.3f(%02i)  %#1.3f(%02i)    %#1.3f    | %#1.3f    %#1.3f",
+			Log() << kINFO << Form("%-20s %-15s: %#1.3f(%02i)  %#1.3f(%02i)  %#1.3f(%02i)    %#1.3f       %#1.3f | %#1.3f    %#1.3f",
 						theMethod->fDataSetInfo.GetName(), 
 						(const char*)mname[k][i], 
 						eff01[k][i], Int_t(1000*eff01err[k][i]), 
 						eff10[k][i], Int_t(1000*eff10err[k][i]), 
 						eff30[k][i], Int_t(1000*eff30err[k][i]), 
-						effArea[k][i], 
+						effArea[k][i],fROCalc->GetROCIntegral(), 
 						sep[k][i], sig[k][i]) << Endl;
 		      }
+		      delete fROCalc;
 		  }
 		}
 		Log() << kINFO << hLine << Endl;

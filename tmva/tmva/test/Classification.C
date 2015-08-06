@@ -43,7 +43,7 @@ void Classification()
    // All TMVA output can be suppressed by removing the "!" (not) in
    // front of the "Silent" argument in the option string
    TMVA::Factory *factory = new TMVA::Factory( "TMVAClassification", outputFile,
-                                               "!V:Silent:ROC=1:Color:DrawProgressBar:Correlations=kFALSE:AnalysisType=Classification" );
+                                               "!V:Silent:ROC:Color:DrawProgressBar:Correlations=kFALSE:AnalysisType=Classification" );
    
    TMVA::DataLoader *loader1=new TMVA::DataLoader("dataset1");
    TMVA::DataLoader *loader2=new TMVA::DataLoader("dataset2");
@@ -127,8 +127,8 @@ void Classification()
 //    factory->BookMethod( loader1, TMVA::Types::kBDT, "BDT",
 //                            "!H:!V:NTrees=850:MinNodeSize=2.5%:MaxDepth=3:BoostType=AdaBoost:AdaBoostBeta=0.5:UseBaggedBoost:BaggedSampleFraction=0.5:SeparationType=GiniIndex:nCuts=20" );
 
-//    factory->BookMethod( loader1, TMVA::Types::kBDT, "BDTB",
-//                            "!H:!V:NTrees=400:BoostType=Bagging:SeparationType=GiniIndex:nCuts=20" );
+   factory->BookMethod( loader1, TMVA::Types::kBDT, "BDTB",
+                           "!H:!V:NTrees=400:BoostType=Bagging:SeparationType=GiniIndex:nCuts=20" );
 
    // Boosted Decision Trees
    factory->BookMethod( loader2, TMVA::Types::kBDT, "BDT",
@@ -155,7 +155,7 @@ void Classification()
    std::cout << "==> Wrote root file: " << outputFile->GetName() << std::endl;
    std::cout << "==> TMVAClassification is done!" << std::endl;
 
-//     delete factory;
+    delete factory;
     delete loader1;
     delete loader2;
 }
