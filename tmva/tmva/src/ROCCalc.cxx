@@ -68,6 +68,9 @@ TMVA::ROCCalc::ROCCalc(TH1* mvaS, TH1* mvaB) :
    fnBtot(0),
    fSignificance(0),
    fPurity(0),
+   effBvsS(0),
+   rejBvsS(0),
+   inveffBvsS(0),
    fLogger ( new TMVA::MsgLogger("ROCCalc") )
 {
    fUseSplines = kTRUE;
@@ -89,8 +92,8 @@ TMVA::ROCCalc::ROCCalc(TH1* mvaS, TH1* mvaB) :
    if (!strcmp(fmvaS->GetYaxis()->GetTitle(),"")) fmvaS->SetYTitle("#entries");
    if (!strcmp(fmvaB->GetYaxis()->GetTitle(),"")) fmvaB->SetYTitle("#entries");
    ApplySignalAndBackgroundStyle(fmvaS, fmvaB);
-   fmvaSpdf = mvaS->RebinX(mvaS->GetNbinsX()/100,"MVA Signal PDF"); 
-   fmvaBpdf = mvaB->RebinX(mvaB->GetNbinsX()/100,"MVA Backgr PDF");
+   fmvaSpdf = (TH1*)mvaS->Clone();//->RebinX(mvaS->GetNbinsX()/100,"MVA Signal PDF"); 
+   fmvaBpdf = (TH1*)mvaB->Clone();//->RebinX(mvaB->GetNbinsX()/100,"MVA Backgr PDF");
    fmvaSpdf->SetTitle("MVA Signal PDF"); 
    fmvaBpdf->SetTitle("MVA Backgr PDF");
    fmvaSpdf->Scale(1./fmvaSpdf->GetSumOfWeights());
@@ -168,7 +171,9 @@ TMVA::ROCCalc::~ROCCalc() {
    if (fSplmvaCumB)      { delete fSplmvaCumB; fSplmvaCumB = 0; }
    if (fmvaScumul)       { delete fmvaScumul; }
    if (fmvaBcumul)       { delete fmvaBcumul; }
-
+   if (effBvsS)          { delete effBvsS; }
+   if (rejBvsS)          { delete rejBvsS; }
+   if (inveffBvsS)       { delete inveffBvsS; }
    delete fLogger;
 }
 
@@ -193,17 +198,17 @@ TH1D* TMVA::ROCCalc::GetROC(){
    //   fmvaBcumul->Draw("histsame");
 
    // background efficiency versus signal efficiency
-   TH1D* effBvsS = new TH1D("effBvsS", "ROC-Curve", fNbins, 0, 1 );
+   if(effBvsS==0) effBvsS = new TH1D("effBvsS", "ROC-Curve", fNbins, 0, 1 );
    effBvsS->SetXTitle( "Signal eff" );
    effBvsS->SetYTitle( "Backgr eff" );
 
    // background rejection (=1-eff.) versus signal efficiency
-   TH1D* rejBvsS = new TH1D( "rejBvsS", "ROC-Curve", fNbins, 0, 1 );
+   if(rejBvsS==0) rejBvsS = new TH1D( "rejBvsS", "ROC-Curve", fNbins, 0, 1 );
    rejBvsS->SetXTitle( "Signal eff" );
    rejBvsS->SetYTitle( "Backgr rejection (1-eff)" );
    
    // inverse background eff (1/eff.) versus signal efficiency
-   TH1D* inveffBvsS = new TH1D("invBeffvsSeff", "ROC-Curve" , fNbins, 0, 1 );
+   if(inveffBvsS ==0) inveffBvsS = new TH1D("invBeffvsSeff", "ROC-Curve" , fNbins, 0, 1 );
    inveffBvsS->SetXTitle( "Signal eff" );
    inveffBvsS->SetYTitle( "Inverse backgr. eff (1/eff)" );
 

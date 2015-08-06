@@ -166,6 +166,7 @@ namespace TMVA {
       TString                                   fTransformations; //! List of transformations to test
       Bool_t                                    fVerbose;         //! verbose mode
       Bool_t					fCorrelations;    //! enable to calculate corelations
+      Bool_t					fROC;             //! enable to calculate ROC values
 
       TString                                   fJobName;         //! jobname, used as extension in weight file names
 

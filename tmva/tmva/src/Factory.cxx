@@ -70,6 +70,7 @@
 #include "TMVA/DataLoader.h"
 #include "TMVA/MethodBoost.h"
 #include "TMVA/MethodCategory.h"
+#include "TMVA/ROCCalc.h"
 
 #include "TMVA/VariableIdentityTransform.h"
 #include "TMVA/VariableDecorrTransform.h"
@@ -136,6 +137,7 @@ TMVA::Factory::Factory( TString jobName, TFile* theTargetFile, TString theOption
    DeclareOptionRef( color,    "Color", "Flag for coloured screen output (default: True, if in batch mode: False)" );
    DeclareOptionRef( fTransformations, "Transformations", "List of transformations to test; formatting example: \"Transformations=I;D;P;U;G,D\", for identity, decorrelation, PCA, Uniform and Gaussianisation followed by decorrelation transformations" );
    DeclareOptionRef( fCorrelations, "Correlations", "boolean to show correlation in output" );
+   DeclareOptionRef( fROC, "ROC", "boolean to show ROC in output" );
    DeclareOptionRef( silent,   "Silent", "Batch mode: boolean silent flag inhibiting any output from TMVA after the creation of the factory class object (default: False)" );
    DeclareOptionRef( drawProgressBar,
                      "DrawProgressBar", "Draw progress bar to display training, testing and evaluation schedule (default: True)" );
@@ -1225,74 +1227,108 @@ void TMVA::Factory::EvaluateAllMethods( void )
 	  }
       } 
       else {
-	  Log() << Endl;
-	  TString hLine = "--------------------------------------------------------------------------------------------------------";
-	  Log() << kINFO << "Evaluation results ranked by best signal efficiency and purity (area)" << Endl;
-	  Log() << kINFO << hLine << Endl;
-	  Log() << kINFO << "DataSet              MVA              Signal efficiency at bkg eff.(error):       | Sepa-    Signifi- "   << Endl;
-	  Log() << kINFO << "Name:                Method:          @B=0.01    @B=0.10    @B=0.30    ROC-integ. | ration:  cance:   "   << Endl;
-	  Log() << kINFO << hLine << Endl;
-	  for (Int_t k=0; k<2; k++) {
-	    if (k == 1 && nmeth_used[k] > 0) {
+	    if(fROC)
+	    {
+               Log().EnableOutput();
+	       gConfig().SetSilent(kFALSE);
+	        Log() << Endl;
+		TString hLine = "--------------------------------------------------------------------------------------------------------";
 		Log() << kINFO << hLine << Endl;
-		Log() << kINFO << "Input Variables: " << Endl << hLine << Endl;
-	    }
-	    for (Int_t i=0; i<nmeth_used[k]; i++) {
-		if (k == 1) mname[k][i].ReplaceAll( "Variable_", "" );
-		
-		MethodBase* theMethod = dynamic_cast<MethodBase*>((*methods)[i]);
-		if(theMethod==0) continue;
-		
-		if (sep[k][i] < 0 || sig[k][i] < 0) {
-		  // cannot compute separation/significance -> no MVA (usually for Cuts)
-		  
-		  Log() << kINFO << Form("%-20s %-15s: %#1.3f(%02i)  %#1.3f(%02i)  %#1.3f(%02i)    %#1.3f    | --       --",
-					  theMethod->fDataSetInfo.GetName(), 
-					  (const char*)mname[k][i], 
-					  eff01[k][i], Int_t(1000*eff01err[k][i]), 
-					  eff10[k][i], Int_t(1000*eff10err[k][i]), 
-					  eff30[k][i], Int_t(1000*eff30err[k][i]), 
-					  effArea[k][i]) << Endl;
-		}
-		else {
-		  Log() << kINFO << Form("%-20s %-15s: %#1.3f(%02i)  %#1.3f(%02i)  %#1.3f(%02i)    %#1.3f    | %#1.3f    %#1.3f",
-					  theMethod->fDataSetInfo.GetName(), 
-					  (const char*)mname[k][i], 
-					  eff01[k][i], Int_t(1000*eff01err[k][i]), 
-					  eff10[k][i], Int_t(1000*eff10err[k][i]), 
-					  eff30[k][i], Int_t(1000*eff30err[k][i]), 
-					  effArea[k][i], 
-					  sep[k][i], sig[k][i]) << Endl;
-		}
-	    }
-	  }
-	  Log() << kINFO << hLine << Endl;
-	  Log() << kINFO << Endl;
-	  Log() << kINFO << "Testing efficiency compared to training efficiency (overtraining check)" << Endl;
-	  Log() << kINFO << hLine << Endl;
-	  Log() << kINFO << "DataSet              MVA              Signal efficiency: from test sample (from training sample) "   << Endl;
-	  Log() << kINFO << "Name:                Method:          @B=0.01             @B=0.10            @B=0.30   "   << Endl;
-	  Log() << kINFO << hLine << Endl;
-	  for (Int_t k=0; k<2; k++) {
-	    if (k == 1 && nmeth_used[k] > 0) {
+		Log() << kINFO << "ROCCalc Results"<<Endl;
 		Log() << kINFO << hLine << Endl;
-		Log() << kINFO << "Input Variables: " << Endl << hLine << Endl;
-	    }
-	    for (Int_t i=0; i<nmeth_used[k]; i++) {
-		if (k == 1) mname[k][i].ReplaceAll( "Variable_", "" );
-		MethodBase* theMethod = dynamic_cast<MethodBase*>((*methods)[i]);
-		if(theMethod==0) continue;
+		Log() << kINFO << "DataSet              MVA              "   << Endl;
+		Log() << kINFO << "Name:                Method:          ROC-integ" << Endl;
+		Log() << kINFO << hLine << Endl;
+	       for (Int_t k=0; k<2; k++) {
+	         for (Int_t i=0; i<nmeth_used[k]; i++) {
+		   MethodBase* theMethod = dynamic_cast<MethodBase*>((*methods)[i]);
+		   if(theMethod==0) continue;
 
-		Log() << kINFO << Form("%-20s %-15s: %#1.3f (%#1.3f)       %#1.3f (%#1.3f)      %#1.3f (%#1.3f)",
-				      theMethod->fDataSetInfo.GetName(), 
-				      (const char*)mname[k][i], 
-				      eff01[k][i],trainEff01[k][i], 
-				      eff10[k][i],trainEff10[k][i],
-				      eff30[k][i],trainEff30[k][i]) << Endl;
-	    }
-	  }
-	  Log() << kINFO << hLine << Endl;
-	  Log() << kINFO << Endl; 
+		   TMVA::Results *results=theMethod->Data()->GetResults(theMethod->GetMethodName(),Types::kTesting,Types::kClassification);
+		   if(results==0) std::cout<<"ERROR\n";
+
+		   TH1D *mvaS=dynamic_cast<TH1D*>(results->GetStorage()->FindObject(Form("MVA_%s_S",theMethod->GetMethodName().Data())));
+		   TH1D *mvaB=dynamic_cast<TH1D*>(results->GetStorage()->FindObject(Form("MVA_%s_B",theMethod->GetMethodName().Data())));
+		   TMVA::ROCCalc *fROC=new TMVA::ROCCalc(mvaS,mvaB);
+		   Log() << kINFO << Form("%-20s %-20s %#1.3f \n",theMethod->fDataSetInfo.GetName(),theMethod->GetMethodName().Data(),fROC->GetROCIntegral());
+		   delete fROC;
+		
+	 	 }
+	        }
+	        Log() << Endl;
+		Log() << kINFO << hLine << Endl;
+	        
+	        Log() << Endl;
+// 		TString hLine = "--------------------------------------------------------------------------------------------------------";
+		Log() << kINFO << "Evaluation results ranked by best signal efficiency and purity (area)" << Endl;
+		Log() << kINFO << hLine << Endl;
+		Log() << kINFO << "DataSet              MVA              Signal efficiency at bkg eff.(error):       | Sepa-    Signifi- "   << Endl;
+		Log() << kINFO << "Name:                Method:          @B=0.01    @B=0.10    @B=0.30    ROC-integ. | ration:  cance:   "   << Endl;
+		Log() << kINFO << hLine << Endl;
+		for (Int_t k=0; k<2; k++) {
+		  if (k == 1 && nmeth_used[k] > 0) {
+		      Log() << kINFO << hLine << Endl;
+		      Log() << kINFO << "Input Variables: " << Endl << hLine << Endl;
+		  }
+		  for (Int_t i=0; i<nmeth_used[k]; i++) {
+		      if (k == 1) mname[k][i].ReplaceAll( "Variable_", "" );
+		      
+		      MethodBase* theMethod = dynamic_cast<MethodBase*>((*methods)[i]);
+		      if(theMethod==0) continue;
+		      
+		      if (sep[k][i] < 0 || sig[k][i] < 0) {
+			// cannot compute separation/significance -> no MVA (usually for Cuts)
+			
+			Log() << kINFO << Form("%-20s %-15s: %#1.3f(%02i)  %#1.3f(%02i)  %#1.3f(%02i)    %#1.3f    | --       --",
+						theMethod->fDataSetInfo.GetName(), 
+						(const char*)mname[k][i], 
+						eff01[k][i], Int_t(1000*eff01err[k][i]), 
+						eff10[k][i], Int_t(1000*eff10err[k][i]), 
+						eff30[k][i], Int_t(1000*eff30err[k][i]), 
+						effArea[k][i]) << Endl;
+		      }
+		      else {
+			Log() << kINFO << Form("%-20s %-15s: %#1.3f(%02i)  %#1.3f(%02i)  %#1.3f(%02i)    %#1.3f    | %#1.3f    %#1.3f",
+						theMethod->fDataSetInfo.GetName(), 
+						(const char*)mname[k][i], 
+						eff01[k][i], Int_t(1000*eff01err[k][i]), 
+						eff10[k][i], Int_t(1000*eff10err[k][i]), 
+						eff30[k][i], Int_t(1000*eff30err[k][i]), 
+						effArea[k][i], 
+						sep[k][i], sig[k][i]) << Endl;
+		      }
+		  }
+		}
+		Log() << kINFO << hLine << Endl;
+		Log() << kINFO << Endl;
+		Log() << kINFO << "Testing efficiency compared to training efficiency (overtraining check)" << Endl;
+		Log() << kINFO << hLine << Endl;
+		Log() << kINFO << "DataSet              MVA              Signal efficiency: from test sample (from training sample) "   << Endl;
+		Log() << kINFO << "Name:                Method:          @B=0.01             @B=0.10            @B=0.30   "   << Endl;
+		Log() << kINFO << hLine << Endl;
+		for (Int_t k=0; k<2; k++) {
+		  if (k == 1 && nmeth_used[k] > 0) {
+		      Log() << kINFO << hLine << Endl;
+		      Log() << kINFO << "Input Variables: " << Endl << hLine << Endl;
+		  }
+		  for (Int_t i=0; i<nmeth_used[k]; i++) {
+		      if (k == 1) mname[k][i].ReplaceAll( "Variable_", "" );
+		      MethodBase* theMethod = dynamic_cast<MethodBase*>((*methods)[i]);
+		      if(theMethod==0) continue;
+
+		      Log() << kINFO << Form("%-20s %-15s: %#1.3f (%#1.3f)       %#1.3f (%#1.3f)      %#1.3f (%#1.3f)",
+					    theMethod->fDataSetInfo.GetName(), 
+					    (const char*)mname[k][i], 
+					    eff01[k][i],trainEff01[k][i], 
+					    eff10[k][i],trainEff10[k][i],
+					    eff30[k][i],trainEff30[k][i]) << Endl;
+		  }
+		}
+		Log() << kINFO << hLine << Endl;
+		Log() << kINFO << Endl; 
+		Log().flush();
+		if (gTools().CheckForSilentOption( GetOptions() )) Log().InhibitOutput();
+	    }//end fROC
 	  }
 	  std::list<TString> datasets;
 	  for (Int_t k=0; k<2; k++) {

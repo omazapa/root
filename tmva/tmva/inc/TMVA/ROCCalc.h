@@ -64,6 +64,9 @@ namespace TMVA {
     Int_t           fnStot, fnBtot;
     TH1*            fSignificance;
     TH1*            fPurity;
+    TH1D*           effBvsS;
+    TH1D*           rejBvsS;
+    TH1D*           inveffBvsS;
 
     Double_t        fSignalCut;  // MVA cut value for last demanded background rejection or signal efficiency
 
