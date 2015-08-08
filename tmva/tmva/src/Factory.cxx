@@ -1265,52 +1265,60 @@ void TMVA::Factory::EvaluateAllMethods( void )
 		      MethodBase* theMethod = dynamic_cast<MethodBase*>((*methods)[i]);
 		      if(theMethod==0) continue;
 		      TMVA::Results *results=theMethod->Data()->GetResults(theMethod->GetMethodName(),Types::kTesting,Types::kClassification);
-		      
+// 		      results->GetStorage()->Print();
 		      TH1D *mvaS=0;
 		      TH1D *mvaB=0;
 		      
 		      mvaS=dynamic_cast<TH1D*>(results->GetStorage()->FindObject(Form("MVA_%s_S",theMethod->GetMethodName().Data())));
-	              mvaB=dynamic_cast<TH1D*>(results->GetStorage()->FindObject(Form("MVA_%s_B",theMethod->GetMethodName().Data())));			
+		      mvaB=dynamic_cast<TH1D*>(results->GetStorage()->FindObject(Form("MVA_%s_B",theMethod->GetMethodName().Data())));
+			
 		      if(mvaS==0||mvaB==0)
 		      {
 			mvaS=dynamic_cast<TH1D*>(results->GetStorage()->FindObject(Form("[%s]MVA_%s_S",theMethod->DataInfo().GetName(),theMethod->GetMethodName().Data())));
 			mvaB=dynamic_cast<TH1D*>(results->GetStorage()->FindObject(Form("[%s]MVA_%s_B",theMethod->DataInfo().GetName(),theMethod->GetMethodName().Data())));			
 		      }
-		      
+		      TMVA::ROCCalc *fROCalc=0;
 		      if(mvaS==0||mvaB==0)
 		      {
-			  Log() << kERROR <<Form("Cannot cal ROC curve for DataSet = [%s] in Method = %s",theMethod->DataInfo().GetName(),theMethod->GetMethodName().Data())<<Endl; 
+			  Log() << kERROR <<Form("Cannot cal ROCCal intergral for DataSet = [%s] in Method = %s",theMethod->DataInfo().GetName(),theMethod->GetMethodName().Data())<<Endl; 
 		      }else
 		      {
-			  TMVA::ROCCalc *fROCalc=new TMVA::ROCCalc(mvaS,mvaB);
-			  
-			  if(!fROCalc->GetStatus())
-			  Log() << kERROR <<Form("ROCalc in ERROR status for DataSet = [%s] in Method = %s",theMethod->DataInfo().GetName(),theMethod->GetMethodName().Data())<<Endl; 
-			    
-			  
-			  if (sep[k][i] < 0 || sig[k][i] < 0) {
-			    // cannot compute separation/significance -> no MVA (usually for Cuts)
-			    
-			    Log() << kINFO << Form("%-20s %-15s: %#1.3f(%02i)  %#1.3f(%02i)  %#1.3f(%02i)    %#1.3f       %#1.3f | --       --",
-						    theMethod->fDataSetInfo.GetName(), 
-						    (const char*)mname[k][i], 
-						    eff01[k][i], Int_t(1000*eff01err[k][i]), 
-						    eff10[k][i], Int_t(1000*eff10err[k][i]), 
-						    eff30[k][i], Int_t(1000*eff30err[k][i]), 
-						    effArea[k][i],fROCalc->GetROCIntegral()) << Endl;
-			  }
-			  else {
-			    Log() << kINFO << Form("%-20s %-15s: %#1.3f(%02i)  %#1.3f(%02i)  %#1.3f(%02i)    %#1.3f       %#1.3f | %#1.3f    %#1.3f",
-						    theMethod->fDataSetInfo.GetName(), 
-						    (const char*)mname[k][i], 
-						    eff01[k][i], Int_t(1000*eff01err[k][i]), 
-						    eff10[k][i], Int_t(1000*eff10err[k][i]), 
-						    eff30[k][i], Int_t(1000*eff30err[k][i]), 
-						    effArea[k][i],fROCalc->GetROCIntegral(), 
-						    sep[k][i], sig[k][i]) << Endl;
-			  }
-			  delete fROCalc;
+			fROCalc=new TMVA::ROCCalc(mvaS,mvaB);
 		      }
+		      Double_t fROCalcValue=0;
+		      if(fROCalc)
+		      {
+			//looking for errors in ROCCalc constructor
+			if(!fROCalc->GetStatus())
+			  Log() << kERROR <<Form("ROCalc in ERROR status for DataSet = [%s] in Method = %s",theMethod->DataInfo().GetName(),theMethod->GetMethodName().Data())<<Endl; 
+			  
+			 fROCalcValue=fROCalc->GetROCIntegral();
+			//looking for errors in ROCCalc after call GetROCIntegral()
+			if(!fROCalc->GetStatus())
+			  Log() << kERROR <<Form("ROCalc in ERROR status for DataSet = [%s] in Method = %s",theMethod->DataInfo().GetName(),theMethod->GetMethodName().Data())<<Endl; 
+		      }
+		        if (sep[k][i] < 0 || sig[k][i] < 0) {
+			  // cannot compute separation/significance -> no MVA (usually for Cuts)
+			  
+			  Log() << kINFO << Form("%-20s %-15s: %#1.3f(%02i)  %#1.3f(%02i)  %#1.3f(%02i)    %#1.3f       %#1.3f | --       --",
+						  theMethod->fDataSetInfo.GetName(), 
+						  (const char*)mname[k][i], 
+						  eff01[k][i], Int_t(1000*eff01err[k][i]), 
+						  eff10[k][i], Int_t(1000*eff10err[k][i]), 
+						  eff30[k][i], Int_t(1000*eff30err[k][i]), 
+						  effArea[k][i],fROCalcValue) << Endl;
+			}
+			else {
+			  Log() << kINFO << Form("%-20s %-15s: %#1.3f(%02i)  %#1.3f(%02i)  %#1.3f(%02i)    %#1.3f       %#1.3f | %#1.3f    %#1.3f",
+						  theMethod->fDataSetInfo.GetName(), 
+						  (const char*)mname[k][i], 
+						  eff01[k][i], Int_t(1000*eff01err[k][i]), 
+						  eff10[k][i], Int_t(1000*eff10err[k][i]), 
+						  eff30[k][i], Int_t(1000*eff30err[k][i]), 
+						  effArea[k][i],fROCalcValue, 
+						  sep[k][i], sig[k][i]) << Endl;
+			}
+			if(fROCalc) delete fROCalc;
 		  }
 		}
 		Log() << kINFO << hLine << Endl;

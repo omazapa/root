@@ -187,8 +187,9 @@ TH1D* TMVA::ROCCalc::GetROC(){
    // --> efficiencies vs cut value
    fNevtS = fmvaS->GetSumOfWeights(); // needed to get the error on the eff.. will only be correct if the histogram is not scaled to "integral == 1" Yet;
    if (fNevtS < 2) {
-      Log() << kWARNING << "I guess the mva distributions fed into ROCCalc were already normalized, therefore the calculated error on the efficiency will be incorrect !! " << Endl;
+      Log() << kERROR << "I guess the mva distributions fed into ROCCalc were already normalized, therefore the calculated error on the efficiency will be incorrect !! " << Endl;
       fNevtS = 0;  // reset to zero --> no error will be calculated on the efficiencies
+      fStatus=kFALSE;
    }
    fmvaScumul = gTools().GetCumulativeDist(fmvaS);
    fmvaBcumul = gTools().GetCumulativeDist(fmvaB);

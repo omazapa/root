@@ -120,24 +120,40 @@ void Classification()
 
    loader2->PrepareTrainingAndTestTree( mycuts, mycutb,
                                         "nTrain_Signal=1000:nTrain_Background=1000:nTest_Signal=1000:nTest_Background=1000:SplitMode=Random:NormMode=NumEvents:!V" );
+   
+   factory->BookMethod( loader1,TMVA::Types::kCuts, "Cuts",
+                        "!V:FitMethod=MC:EffSel:SampleSize=200000:VarProp=FSmart" );
+
+   factory->BookMethod( loader1,TMVA::Types::kCuts, "CutsD",
+                        "!V:FitMethod=MC:EffSel:SampleSize=200000:VarProp=FSmart:VarTransform=Decorrelate" );
+
+   factory->BookMethod( loader1,TMVA::Types::kCuts, "CutsPCA",
+                        "!V:FitMethod=MC:EffSel:SampleSize=200000:VarProp=FSmart:VarTransform=PCA" );
+
+   factory->BookMethod( loader1,TMVA::Types::kCuts, "CutsGA",
+                        "!V:FitMethod=GA:CutRangeMin[0]=-10:CutRangeMax[0]=10:VarProp[1]=FMax:EffSel:Steps=30:Cycles=3:PopSize=400:SC_steps=10:SC_rate=5:SC_factor=0.95" );
+
+   factory->BookMethod( loader1,TMVA::Types::kCuts, "CutsSA",
+                        "!V:FitMethod=SA:EffSel:MaxCalls=150000:KernelTemp=IncAdaptive:InitialTemp=1e+6:MinTemp=1e-6:Eps=1e-10:UseDefaultScale" );
+
    // Boosted Decision Trees
    factory->BookMethod( loader1, TMVA::Types::kBDT, "BDT",
                            "!H:!V:NTrees=850:MinNodeSize=2.5%:MaxDepth=3:BoostType=AdaBoost:AdaBoostBeta=0.5:UseBaggedBoost:BaggedSampleFraction=0.5:SeparationType=GiniIndex:nCuts=20" );
-
-//    factory->BookMethod( loader1, TMVA::Types::kBDT, "BDT",
+// 
+// //    factory->BookMethod( loader1, TMVA::Types::kBDT, "BDT",
+// //                            "!H:!V:NTrees=850:MinNodeSize=2.5%:MaxDepth=3:BoostType=AdaBoost:AdaBoostBeta=0.5:UseBaggedBoost:BaggedSampleFraction=0.5:SeparationType=GiniIndex:nCuts=20" );
+// 
+//    factory->BookMethod( loader1, TMVA::Types::kBDT, "BDTB",
+//                            "!H:!V:NTrees=400:BoostType=Bagging:SeparationType=GiniIndex:nCuts=20" );
+// 
+//    // Boosted Decision Trees
+//    factory->BookMethod( loader2, TMVA::Types::kBDT, "BDT",
 //                            "!H:!V:NTrees=850:MinNodeSize=2.5%:MaxDepth=3:BoostType=AdaBoost:AdaBoostBeta=0.5:UseBaggedBoost:BaggedSampleFraction=0.5:SeparationType=GiniIndex:nCuts=20" );
-
-   factory->BookMethod( loader1, TMVA::Types::kBDT, "BDTB",
-                           "!H:!V:NTrees=400:BoostType=Bagging:SeparationType=GiniIndex:nCuts=20" );
-
-   // Boosted Decision Trees
-   factory->BookMethod( loader2, TMVA::Types::kBDT, "BDT",
-                           "!H:!V:NTrees=850:MinNodeSize=2.5%:MaxDepth=3:BoostType=AdaBoost:AdaBoostBeta=0.5:UseBaggedBoost:BaggedSampleFraction=0.5:SeparationType=GiniIndex:nCuts=20" );
-
-
-   factory->BookMethod( loader2, TMVA::Types::kBDT, "BDTB",
-                           "!H:!V:NTrees=400:BoostType=Bagging:SeparationType=GiniIndex:nCuts=20" );
-
+// 
+// 
+//    factory->BookMethod( loader2, TMVA::Types::kBDT, "BDTB",
+//                            "!H:!V:NTrees=400:BoostType=Bagging:SeparationType=GiniIndex:nCuts=20" );
+// 
    
       // Train MVAs using the set of training events
    factory->TrainAllMethods();
