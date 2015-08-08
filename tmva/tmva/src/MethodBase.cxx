@@ -1067,8 +1067,16 @@ void TMVA::MethodBase::TestClassification()
 
    // classifier response distributions for training sample
    // MVA plots used for graphics representation (signal)
-   TH1* mva_s = new TH1D( GetTestvarName() + "_S",GetTestvarName() + "_S", fNbinsMVAoutput, fXmin, sxmax );
-   TH1* mva_b = new TH1D( GetTestvarName() + "_B",GetTestvarName() + "_B", fNbinsMVAoutput, fXmin, sxmax );
+   TString TestvarName;
+   if(TMVA::Factory::IsSilent())
+   {
+     TestvarName=Form("[%s]%s",DataInfo().GetName(),GetTestvarName().Data());
+   }else
+   {
+     TestvarName=GetTestvarName();
+   }
+   TH1* mva_s = new TH1D( TestvarName + "_S",TestvarName + "_S", fNbinsMVAoutput, fXmin, sxmax );
+   TH1* mva_b = new TH1D( TestvarName + "_B",TestvarName + "_B", fNbinsMVAoutput, fXmin, sxmax );
    mvaRes->Store(mva_s, "MVA_S");
    mvaRes->Store(mva_b, "MVA_B");
    mva_s->Sumw2();
@@ -1080,16 +1088,16 @@ void TMVA::MethodBase::TestClassification()
    TH1* rarity_b = 0;
    if (HasMVAPdfs()) {
       // P(MVA) plots used for graphics representation
-      proba_s = new TH1D( GetTestvarName() + "_Proba_S", GetTestvarName() + "_Proba_S", fNbinsMVAoutput, 0.0, 1.0 );
-      proba_b = new TH1D( GetTestvarName() + "_Proba_B", GetTestvarName() + "_Proba_B", fNbinsMVAoutput, 0.0, 1.0 );
+      proba_s = new TH1D( TestvarName + "_Proba_S", TestvarName + "_Proba_S", fNbinsMVAoutput, 0.0, 1.0 );
+      proba_b = new TH1D( TestvarName + "_Proba_B", TestvarName + "_Proba_B", fNbinsMVAoutput, 0.0, 1.0 );
       mvaRes->Store(proba_s, "Prob_S");
       mvaRes->Store(proba_b, "Prob_B");
       proba_s->Sumw2();
       proba_b->Sumw2();
 
       // R(MVA) plots used for graphics representation
-      rarity_s = new TH1D( GetTestvarName() + "_Rarity_S", GetTestvarName() + "_Rarity_S", fNbinsMVAoutput, 0.0, 1.0 );
-      rarity_b = new TH1D( GetTestvarName() + "_Rarity_B", GetTestvarName() + "_Rarity_B", fNbinsMVAoutput, 0.0, 1.0 );
+      rarity_s = new TH1D( TestvarName + "_Rarity_S", TestvarName + "_Rarity_S", fNbinsMVAoutput, 0.0, 1.0 );
+      rarity_b = new TH1D( TestvarName + "_Rarity_B", TestvarName + "_Rarity_B", fNbinsMVAoutput, 0.0, 1.0 );
       mvaRes->Store(rarity_s, "Rar_S");
       mvaRes->Store(rarity_b, "Rar_B");
       rarity_s->Sumw2();
@@ -1097,8 +1105,8 @@ void TMVA::MethodBase::TestClassification()
    }
 
    // MVA plots used for efficiency calculations (large number of bins)
-   TH1* mva_eff_s = new TH1D( GetTestvarName() + "_S_high", GetTestvarName() + "_S_high", fNbinsH, fXmin, sxmax );
-   TH1* mva_eff_b = new TH1D( GetTestvarName() + "_B_high", GetTestvarName() + "_B_high", fNbinsH, fXmin, sxmax );
+   TH1* mva_eff_s = new TH1D( TestvarName + "_S_high", TestvarName + "_S_high", fNbinsH, fXmin, sxmax );
+   TH1* mva_eff_b = new TH1D( TestvarName + "_B_high", TestvarName + "_B_high", fNbinsH, fXmin, sxmax );
    mvaRes->Store(mva_eff_s, "MVA_HIGHBIN_S");
    mvaRes->Store(mva_eff_b, "MVA_HIGHBIN_B");
    mva_eff_s->Sumw2();

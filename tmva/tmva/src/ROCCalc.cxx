@@ -55,6 +55,7 @@ using namespace std;
 TMVA::ROCCalc::ROCCalc(TH1* mvaS, TH1* mvaB) :
    fMaxIter(100),
    fAbsTol(0.0),
+   fStatus(kTRUE),
    fmvaS(0),
    fmvaB(0),
    fmvaSpdf(0),
@@ -85,7 +86,8 @@ TMVA::ROCCalc::ROCCalc(TH1* mvaS, TH1* mvaB) :
    if (TMath::Abs(fXmax-fmvaB->GetXaxis()->GetXmax()) > 0.000001 || 
        TMath::Abs(fXmin-fmvaB->GetXaxis()->GetXmin()) > 0.000001 || 
        fmvaB->GetNbinsX() != fmvaS->GetNbinsX()) {
-      Log() << kFATAL << " Cannot cal ROC curve etc, as in put mvaS and mvaB have differen #nbins or range "<<Endl;
+       Log() << kERROR << "Cannot cal ROC curve etc, as in put mvaS and mvaB have differen #nbins or range "<<Endl;
+       fStatus=kFALSE;
    }
    if (!strcmp(fmvaS->GetXaxis()->GetTitle(),"")) fmvaS->SetXTitle("MVA-value");
    if (!strcmp(fmvaB->GetXaxis()->GetTitle(),"")) fmvaB->SetXTitle("MVA-value");

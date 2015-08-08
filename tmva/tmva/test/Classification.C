@@ -43,7 +43,7 @@ void Classification()
    // All TMVA output can be suppressed by removing the "!" (not) in
    // front of the "Silent" argument in the option string
    TMVA::Factory *factory = new TMVA::Factory( "TMVAClassification", outputFile,
-                                               "!V:Silent:ROC:Color:DrawProgressBar:Correlations=kFALSE:AnalysisType=Classification" );
+                                               "!V:Silent:Color:DrawProgressBar:Correlations=kFALSE:AnalysisType=Classification" );
    
    TMVA::DataLoader *loader1=new TMVA::DataLoader("dataset1");
    TMVA::DataLoader *loader2=new TMVA::DataLoader("dataset2");

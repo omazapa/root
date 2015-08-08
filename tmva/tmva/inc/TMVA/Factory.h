@@ -142,6 +142,8 @@ namespace TMVA {
 
       static TDirectory* RootBaseDir() { return (TDirectory*)fgTargetFile; }
 
+      static Bool_t IsSilent();
+
    private:
 
       // the beautiful greeting message
@@ -150,7 +152,6 @@ namespace TMVA {
       void WriteDataInformation(DataSetInfo&     fDataSetInfo);
 
       void                     SetInputTreesFromEventAssignTrees();
-
 
    private:
 

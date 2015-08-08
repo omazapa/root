@@ -92,6 +92,7 @@ ClassImp(TMVA::Factory)
 #define RECREATE_METHODS kTRUE
 #define READXML          kTRUE
 
+static TString fStaticOptions;
 
 //_______________________________________________________________________
 TMVA::Factory::Factory( TString jobName, TFile* theTargetFile, TString theOption )
@@ -99,7 +100,7 @@ TMVA::Factory::Factory( TString jobName, TFile* theTargetFile, TString theOption
    fTransformations      ( "I" ),
    fVerbose              ( kFALSE ),
    fCorrelations         ( kFALSE ),
-   fROC                  ( kFALSE ),
+   fROC                  ( kTRUE ),
    fJobName              ( jobName ),
    fDataAssignType       ( kAssignEvents ),
    fATreeEvent           ( NULL ),
@@ -110,7 +111,7 @@ TMVA::Factory::Factory( TString jobName, TFile* theTargetFile, TString theOption
    //   theTargetFile : output ROOT file; the test tree and all evaluation plots
    //                   will be stored here
    //   theOption     : option string; currently: "V" for verbose
-
+   fStaticOptions=theOption;
    fgTargetFile = theTargetFile;
 
 
@@ -180,6 +181,13 @@ void TMVA::Factory::Greetings()
    gTools().TMVAWelcomeMessage( Log(), gTools().kLogoWelcomeMsg );
    gTools().TMVAVersionMessage( Log() ); Log() << Endl;
 }
+
+//_______________________________________________________________________
+Bool_t TMVA::Factory::IsSilent()
+{
+  return gTools().CheckForSilentOption(fStaticOptions);
+}
+
 
 //_______________________________________________________________________
 TMVA::Factory::~Factory( void )
@@ -843,18 +851,22 @@ void TMVA::Factory::EvaluateAllMethods( void )
 
 	    mname[0].push_back( theMethod->GetMethodName() );
 	    nmeth_used[0]++;
-
-	    Log() << kINFO << "Write evaluation histograms to file" << Endl;
-	    theMethod->WriteEvaluationHistosToFile(Types::kTesting);
-	    theMethod->WriteEvaluationHistosToFile(Types::kTraining);
+	    if(!IsSilent()) 
+	    {
+		Log() << kINFO << "Write evaluation histograms to file" << Endl;
+		theMethod->WriteEvaluationHistosToFile(Types::kTesting);
+		theMethod->WriteEvaluationHistosToFile(Types::kTraining);
+	    }
 	  } 
 	  else if (theMethod->DoMulticlass()) {
 	    doMulticlass = kTRUE;
 	    Log() << kINFO << "Evaluate multiclass classification method: " << theMethod->GetMethodName() << Endl;
-	    Log() << kINFO << "Write evaluation histograms to file" << Endl;
-	    theMethod->WriteEvaluationHistosToFile(Types::kTesting);
-	    theMethod->WriteEvaluationHistosToFile(Types::kTraining);
-	    
+	    if(!IsSilent()) 
+	    {
+		Log() << kINFO << "Write evaluation histograms to file" << Endl;
+		theMethod->WriteEvaluationHistosToFile(Types::kTesting);
+		theMethod->WriteEvaluationHistosToFile(Types::kTraining);
+	    }
 	    theMethod->TestMulticlass();
 	    multiclass_testEff.push_back(theMethod->GetMulticlassEfficiency(multiclass_testPur));
 
@@ -890,9 +902,12 @@ void TMVA::Factory::EvaluateAllMethods( void )
 
 	    nmeth_used[isel]++;
 
-	    Log() << kINFO << "Write evaluation histograms to file" << Endl;
-	    theMethod->WriteEvaluationHistosToFile(Types::kTesting);
-	    theMethod->WriteEvaluationHistosToFile(Types::kTraining);
+	    if(!IsSilent()) 
+	    {
+              Log() << kINFO << "Write evaluation histograms to file" << Endl;
+	      theMethod->WriteEvaluationHistosToFile(Types::kTesting);
+	      theMethod->WriteEvaluationHistosToFile(Types::kTraining);
+	    }
 	  }
       }
       if (doRegression) {
@@ -1250,32 +1265,52 @@ void TMVA::Factory::EvaluateAllMethods( void )
 		      MethodBase* theMethod = dynamic_cast<MethodBase*>((*methods)[i]);
 		      if(theMethod==0) continue;
 		      TMVA::Results *results=theMethod->Data()->GetResults(theMethod->GetMethodName(),Types::kTesting,Types::kClassification);
-		      TH1D *mvaS=dynamic_cast<TH1D*>(results->GetStorage()->FindObject(Form("MVA_%s_S",theMethod->GetMethodName().Data())));
-		      TH1D *mvaB=dynamic_cast<TH1D*>(results->GetStorage()->FindObject(Form("MVA_%s_B",theMethod->GetMethodName().Data())));
-		      TMVA::ROCCalc *fROCalc=new TMVA::ROCCalc(mvaS,mvaB);
 		      
-		      if (sep[k][i] < 0 || sig[k][i] < 0) {
-			// cannot compute separation/significance -> no MVA (usually for Cuts)
-			
-			Log() << kINFO << Form("%-20s %-15s: %#1.3f(%02i)  %#1.3f(%02i)  %#1.3f(%02i)    %#1.3f       %#1.3f | --       --",
-						theMethod->fDataSetInfo.GetName(), 
-						(const char*)mname[k][i], 
-						eff01[k][i], Int_t(1000*eff01err[k][i]), 
-						eff10[k][i], Int_t(1000*eff10err[k][i]), 
-						eff30[k][i], Int_t(1000*eff30err[k][i]), 
-						effArea[k][i],fROCalc->GetROCIntegral()) << Endl;
+		      TH1D *mvaS=0;
+		      TH1D *mvaB=0;
+		      
+		      mvaS=dynamic_cast<TH1D*>(results->GetStorage()->FindObject(Form("MVA_%s_S",theMethod->GetMethodName().Data())));
+	              mvaB=dynamic_cast<TH1D*>(results->GetStorage()->FindObject(Form("MVA_%s_B",theMethod->GetMethodName().Data())));			
+		      if(mvaS==0||mvaB==0)
+		      {
+			mvaS=dynamic_cast<TH1D*>(results->GetStorage()->FindObject(Form("[%s]MVA_%s_S",theMethod->DataInfo().GetName(),theMethod->GetMethodName().Data())));
+			mvaB=dynamic_cast<TH1D*>(results->GetStorage()->FindObject(Form("[%s]MVA_%s_B",theMethod->DataInfo().GetName(),theMethod->GetMethodName().Data())));			
 		      }
-		      else {
-			Log() << kINFO << Form("%-20s %-15s: %#1.3f(%02i)  %#1.3f(%02i)  %#1.3f(%02i)    %#1.3f       %#1.3f | %#1.3f    %#1.3f",
-						theMethod->fDataSetInfo.GetName(), 
-						(const char*)mname[k][i], 
-						eff01[k][i], Int_t(1000*eff01err[k][i]), 
-						eff10[k][i], Int_t(1000*eff10err[k][i]), 
-						eff30[k][i], Int_t(1000*eff30err[k][i]), 
-						effArea[k][i],fROCalc->GetROCIntegral(), 
-						sep[k][i], sig[k][i]) << Endl;
+		      
+		      if(mvaS==0||mvaB==0)
+		      {
+			  Log() << kERROR <<Form("Cannot cal ROC curve for DataSet = [%s] in Method = %s",theMethod->DataInfo().GetName(),theMethod->GetMethodName().Data())<<Endl; 
+		      }else
+		      {
+			  TMVA::ROCCalc *fROCalc=new TMVA::ROCCalc(mvaS,mvaB);
+			  
+			  if(!fROCalc->GetStatus())
+			  Log() << kERROR <<Form("ROCalc in ERROR status for DataSet = [%s] in Method = %s",theMethod->DataInfo().GetName(),theMethod->GetMethodName().Data())<<Endl; 
+			    
+			  
+			  if (sep[k][i] < 0 || sig[k][i] < 0) {
+			    // cannot compute separation/significance -> no MVA (usually for Cuts)
+			    
+			    Log() << kINFO << Form("%-20s %-15s: %#1.3f(%02i)  %#1.3f(%02i)  %#1.3f(%02i)    %#1.3f       %#1.3f | --       --",
+						    theMethod->fDataSetInfo.GetName(), 
+						    (const char*)mname[k][i], 
+						    eff01[k][i], Int_t(1000*eff01err[k][i]), 
+						    eff10[k][i], Int_t(1000*eff10err[k][i]), 
+						    eff30[k][i], Int_t(1000*eff30err[k][i]), 
+						    effArea[k][i],fROCalc->GetROCIntegral()) << Endl;
+			  }
+			  else {
+			    Log() << kINFO << Form("%-20s %-15s: %#1.3f(%02i)  %#1.3f(%02i)  %#1.3f(%02i)    %#1.3f       %#1.3f | %#1.3f    %#1.3f",
+						    theMethod->fDataSetInfo.GetName(), 
+						    (const char*)mname[k][i], 
+						    eff01[k][i], Int_t(1000*eff01err[k][i]), 
+						    eff10[k][i], Int_t(1000*eff10err[k][i]), 
+						    eff30[k][i], Int_t(1000*eff30err[k][i]), 
+						    effArea[k][i],fROCalc->GetROCIntegral(), 
+						    sep[k][i], sig[k][i]) << Endl;
+			  }
+			  delete fROCalc;
 		      }
-		      delete fROCalc;
 		  }
 		}
 		Log() << kINFO << hLine << Endl;
@@ -1309,20 +1344,23 @@ void TMVA::Factory::EvaluateAllMethods( void )
 		if (gTools().CheckForSilentOption( GetOptions() )) Log().InhibitOutput();
 	    }//end fROC
 	  }
-	  std::list<TString> datasets;
-	  for (Int_t k=0; k<2; k++) {
-	    for (Int_t i=0; i<nmeth_used[k]; i++) {
-		MethodBase* theMethod = dynamic_cast<MethodBase*>((*methods)[i]);
-		if(theMethod==0) continue;
-		// write test/training trees
-		RootBaseDir()->cd(theMethod->fDataSetInfo.GetName());
-		if(std::find(datasets.begin(), datasets.end(), theMethod->fDataSetInfo.GetName()) == datasets.end())
-		{
-		  theMethod->fDataSetInfo.GetDataSet()->GetTree(Types::kTesting)->Write( "", TObject::kOverwrite );
-		  theMethod->fDataSetInfo.GetDataSet()->GetTree(Types::kTraining)->Write( "", TObject::kOverwrite );
-		  datasets.push_back(theMethod->fDataSetInfo.GetName());
+	  if(!IsSilent())
+	  {
+	      std::list<TString> datasets;
+	      for (Int_t k=0; k<2; k++) {
+		for (Int_t i=0; i<nmeth_used[k]; i++) {
+		    MethodBase* theMethod = dynamic_cast<MethodBase*>((*methods)[i]);
+		    if(theMethod==0) continue;
+		    // write test/training trees
+		    RootBaseDir()->cd(theMethod->fDataSetInfo.GetName());
+		    if(std::find(datasets.begin(), datasets.end(), theMethod->fDataSetInfo.GetName()) == datasets.end())
+		    {
+		      theMethod->fDataSetInfo.GetDataSet()->GetTree(Types::kTesting)->Write( "", TObject::kOverwrite );
+		      theMethod->fDataSetInfo.GetDataSet()->GetTree(Types::kTraining)->Write( "", TObject::kOverwrite );
+		      datasets.push_back(theMethod->fDataSetInfo.GetName());
+		    }
 		}
-	    }
+	      }
 	  }
    }//end for MethodsMap     
    // references for citation
