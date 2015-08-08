@@ -563,7 +563,7 @@ void TMVA::Factory::TrainAllMethods()
 	  Log() << kFATAL << "You want to do classification training, but specified less than two classes." << Endl;
 	  
 	  // first print some information about the default dataset
-	  WriteDataInformation(mva->fDataSetInfo);
+	  if(!IsSilent()) WriteDataInformation(mva->fDataSetInfo);
 
 	  
 	  if (mva->Data()->GetNTrainingEvents() < MinNoTrainingEvents) {
