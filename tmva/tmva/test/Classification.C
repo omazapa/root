@@ -43,7 +43,7 @@ void Classification()
    // All TMVA output can be suppressed by removing the "!" (not) in
    // front of the "Silent" argument in the option string
    TMVA::Factory *factory = new TMVA::Factory( "TMVAClassification", outputFile,
-                                               "!V:Silent:Color:DrawProgressBar:Correlations=kFALSE:AnalysisType=Classification" );
+                                               "!V:Silent:SilentFile:Color:DrawProgressBar:Correlations=kFALSE:AnalysisType=Classification" );
    
    TMVA::DataLoader *loader1=new TMVA::DataLoader("dataset1");
    TMVA::DataLoader *loader2=new TMVA::DataLoader("dataset2");
@@ -121,20 +121,20 @@ void Classification()
    loader2->PrepareTrainingAndTestTree( mycuts, mycutb,
                                         "nTrain_Signal=1000:nTrain_Background=1000:nTest_Signal=1000:nTest_Background=1000:SplitMode=Random:NormMode=NumEvents:!V" );
    
-   factory->BookMethod( loader1,TMVA::Types::kCuts, "Cuts",
-                        "!V:FitMethod=MC:EffSel:SampleSize=200000:VarProp=FSmart" );
-
-   factory->BookMethod( loader1,TMVA::Types::kCuts, "CutsD",
-                        "!V:FitMethod=MC:EffSel:SampleSize=200000:VarProp=FSmart:VarTransform=Decorrelate" );
-
-   factory->BookMethod( loader1,TMVA::Types::kCuts, "CutsPCA",
-                        "!V:FitMethod=MC:EffSel:SampleSize=200000:VarProp=FSmart:VarTransform=PCA" );
-
-   factory->BookMethod( loader1,TMVA::Types::kCuts, "CutsGA",
-                        "!V:FitMethod=GA:CutRangeMin[0]=-10:CutRangeMax[0]=10:VarProp[1]=FMax:EffSel:Steps=30:Cycles=3:PopSize=400:SC_steps=10:SC_rate=5:SC_factor=0.95" );
-
-   factory->BookMethod( loader1,TMVA::Types::kCuts, "CutsSA",
-                        "!V:FitMethod=SA:EffSel:MaxCalls=150000:KernelTemp=IncAdaptive:InitialTemp=1e+6:MinTemp=1e-6:Eps=1e-10:UseDefaultScale" );
+//    factory->BookMethod( loader1,TMVA::Types::kCuts, "Cuts",
+//                         "!V:FitMethod=MC:EffSel:SampleSize=200000:VarProp=FSmart" );
+// 
+//    factory->BookMethod( loader1,TMVA::Types::kCuts, "CutsD",
+//                         "!V:FitMethod=MC:EffSel:SampleSize=200000:VarProp=FSmart:VarTransform=Decorrelate" );
+// 
+//    factory->BookMethod( loader1,TMVA::Types::kCuts, "CutsPCA",
+//                         "!V:FitMethod=MC:EffSel:SampleSize=200000:VarProp=FSmart:VarTransform=PCA" );
+// 
+//    factory->BookMethod( loader1,TMVA::Types::kCuts, "CutsGA",
+//                         "!V:FitMethod=GA:CutRangeMin[0]=-10:CutRangeMax[0]=10:VarProp[1]=FMax:EffSel:Steps=30:Cycles=3:PopSize=400:SC_steps=10:SC_rate=5:SC_factor=0.95" );
+// 
+//    factory->BookMethod( loader1,TMVA::Types::kCuts, "CutsSA",
+//                         "!V:FitMethod=SA:EffSel:MaxCalls=150000:KernelTemp=IncAdaptive:InitialTemp=1e+6:MinTemp=1e-6:Eps=1e-10:UseDefaultScale" );
 
    // Boosted Decision Trees
    factory->BookMethod( loader1, TMVA::Types::kBDT, "BDT",
@@ -142,18 +142,30 @@ void Classification()
 // 
 // //    factory->BookMethod( loader1, TMVA::Types::kBDT, "BDT",
 // //                            "!H:!V:NTrees=850:MinNodeSize=2.5%:MaxDepth=3:BoostType=AdaBoost:AdaBoostBeta=0.5:UseBaggedBoost:BaggedSampleFraction=0.5:SeparationType=GiniIndex:nCuts=20" );
-// 
-//    factory->BookMethod( loader1, TMVA::Types::kBDT, "BDTB",
-//                            "!H:!V:NTrees=400:BoostType=Bagging:SeparationType=GiniIndex:nCuts=20" );
-// 
-//    // Boosted Decision Trees
-//    factory->BookMethod( loader2, TMVA::Types::kBDT, "BDT",
-//                            "!H:!V:NTrees=850:MinNodeSize=2.5%:MaxDepth=3:BoostType=AdaBoost:AdaBoostBeta=0.5:UseBaggedBoost:BaggedSampleFraction=0.5:SeparationType=GiniIndex:nCuts=20" );
-// 
-// 
-//    factory->BookMethod( loader2, TMVA::Types::kBDT, "BDTB",
-//                            "!H:!V:NTrees=400:BoostType=Bagging:SeparationType=GiniIndex:nCuts=20" );
-// 
+
+   factory->BookMethod( loader1, TMVA::Types::kBDT, "BDTB",
+                           "!H:!V:NTrees=400:BoostType=Bagging:SeparationType=GiniIndex:nCuts=20" );
+
+   // Likelihood ("naive Bayes estimator")
+   factory->BookMethod( loader1,TMVA::Types::kLikelihood, "Likelihood",
+                           "!V:TransformOutput:PDFInterpol=Spline2:NSmoothSig[0]=20:NSmoothBkg[0]=20:NSmoothBkg[1]=10:NSmooth=1:NAvEvtPerBin=50" );
+   // Use a kernel density estimator to approximate the PDFs
+   factory->BookMethod( loader1,TMVA::Types::kLikelihood, "LikelihoodKDE",
+                           "!V:!TransformOutput:PDFInterpol=KDE:KDEtype=Gauss:KDEiter=Adaptive:KDEFineFactor=0.3:KDEborder=None:NAvEvtPerBin=50" ); 
+
+   // Use a variable-dependent mix of splines and kernel density estimator
+   factory->BookMethod( loader1,TMVA::Types::kLikelihood, "LikelihoodMIX",
+                           "!V:!TransformOutput:PDFInterpolSig[0]=KDE:PDFInterpolBkg[0]=KDE:PDFInterpolSig[1]=KDE:PDFInterpolBkg[1]=KDE:PDFInterpolSig[2]=Spline2:PDFInterpolBkg[2]=Spline2:PDFInterpolSig[3]=Spline2:PDFInterpolBkg[3]=Spline2:KDEtype=Gauss:KDEiter=Nonadaptive:KDEborder=None:NAvEvtPerBin=50" ); 
+
+
+   // Boosted Decision Trees
+   factory->BookMethod( loader2, TMVA::Types::kBDT, "BDT",
+                           "!H:!V:NTrees=850:MinNodeSize=2.5%:MaxDepth=3:BoostType=AdaBoost:AdaBoostBeta=0.5:UseBaggedBoost:BaggedSampleFraction=0.5:SeparationType=GiniIndex:nCuts=20" );
+
+
+   factory->BookMethod( loader2, TMVA::Types::kBDT, "BDTB",
+                           "!H:!V:NTrees=400:BoostType=Bagging:SeparationType=GiniIndex:nCuts=20" );
+
    
       // Train MVAs using the set of training events
    factory->TrainAllMethods();

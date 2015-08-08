@@ -142,7 +142,7 @@ namespace TMVA {
 
       static TDirectory* RootBaseDir() { return (TDirectory*)fgTargetFile; }
 
-      static Bool_t IsSilent();
+      static Bool_t IsSilentFile();
 
    private:
 
@@ -168,6 +168,7 @@ namespace TMVA {
       Bool_t                                    fVerbose;         //! verbose mode
       Bool_t					fCorrelations;    //! enable to calculate corelations
       Bool_t					fROC;             //! enable to calculate ROC values
+      static Bool_t				fSilentFile;      //! enable to reduce the output file
 
       TString                                   fJobName;         //! jobname, used as extension in weight file names
 

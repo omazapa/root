@@ -45,6 +45,7 @@ namespace TMVA {
     
     //false if is found some error in mvaS or mvaB
     Bool_t GetStatus(){return fStatus;}
+    void ResetStatus(){fStatus=kTRUE;}
     
   private:
     Double_t        Root(Double_t);

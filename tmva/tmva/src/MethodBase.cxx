@@ -1068,7 +1068,7 @@ void TMVA::MethodBase::TestClassification()
    // classifier response distributions for training sample
    // MVA plots used for graphics representation (signal)
    TString TestvarName;
-   if(TMVA::Factory::IsSilent())
+   if(TMVA::Factory::IsSilentFile())
    {
      TestvarName=Form("[%s]%s",DataInfo().GetName(),GetTestvarName().Data());
    }else

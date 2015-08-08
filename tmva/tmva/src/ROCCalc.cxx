@@ -94,8 +94,15 @@ TMVA::ROCCalc::ROCCalc(TH1* mvaS, TH1* mvaB) :
    if (!strcmp(fmvaS->GetYaxis()->GetTitle(),"")) fmvaS->SetYTitle("#entries");
    if (!strcmp(fmvaB->GetYaxis()->GetTitle(),"")) fmvaB->SetYTitle("#entries");
    ApplySignalAndBackgroundStyle(fmvaS, fmvaB);
-   fmvaSpdf = (TH1*)mvaS->Clone();//->RebinX(mvaS->GetNbinsX()/100,"MVA Signal PDF"); 
-   fmvaBpdf = (TH1*)mvaB->Clone();//->RebinX(mvaB->GetNbinsX()/100,"MVA Backgr PDF");
+//    fmvaSpdf = mvaS->RebinX(mvaS->GetNbinsX()/100,"MVA Signal PDF"); 
+//    fmvaBpdf = mvaB->RebinX(mvaB->GetNbinsX()/100,"MVA Backgr PDF");
+//    if(fmvaSpdf==0||fmvaBpdf==0)
+//    {
+//        Log() << kERROR << "Cannot Rebin Histograms mvaS and mvaB, ROC values will be calculated without Rebin histograms."<<Endl;
+//        fStatus=kFALSE;
+       fmvaSpdf = (TH1*)mvaS->Clone("MVA Signal PDF"); 
+       fmvaBpdf = (TH1*)mvaB->Clone("MVA Backgr PDF");
+//    }
    fmvaSpdf->SetTitle("MVA Signal PDF"); 
    fmvaBpdf->SetTitle("MVA Backgr PDF");
    fmvaSpdf->Scale(1./fmvaSpdf->GetSumOfWeights());

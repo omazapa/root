@@ -92,7 +92,7 @@ ClassImp(TMVA::Factory)
 #define RECREATE_METHODS kTRUE
 #define READXML          kTRUE
 
-static TString fStaticOptions;
+Bool_t TMVA::Factory::fSilentFile=kFALSE;
 
 //_______________________________________________________________________
 TMVA::Factory::Factory( TString jobName, TFile* theTargetFile, TString theOption )
@@ -111,7 +111,6 @@ TMVA::Factory::Factory( TString jobName, TFile* theTargetFile, TString theOption
    //   theTargetFile : output ROOT file; the test tree and all evaluation plots
    //                   will be stored here
    //   theOption     : option string; currently: "V" for verbose
-   fStaticOptions=theOption;
    fgTargetFile = theTargetFile;
 
 
@@ -141,6 +140,7 @@ TMVA::Factory::Factory( TString jobName, TFile* theTargetFile, TString theOption
    DeclareOptionRef( fCorrelations, "Correlations", "boolean to show correlation in output" );
    DeclareOptionRef( fROC, "ROC", "boolean to show ROC in output" );
    DeclareOptionRef( silent,   "Silent", "Batch mode: boolean silent flag inhibiting any output from TMVA after the creation of the factory class object (default: False)" );
+   DeclareOptionRef( fSilentFile,   "SilentFile", "Reduce the information saved in the output file (default: False)" );
    DeclareOptionRef( drawProgressBar,
                      "DrawProgressBar", "Draw progress bar to display training, testing and evaluation schedule (default: True)" );
 
@@ -183,9 +183,9 @@ void TMVA::Factory::Greetings()
 }
 
 //_______________________________________________________________________
-Bool_t TMVA::Factory::IsSilent()
+Bool_t TMVA::Factory::IsSilentFile()
 {
-  return gTools().CheckForSilentOption(fStaticOptions);
+  return fSilentFile;
 }
 
 
@@ -563,7 +563,7 @@ void TMVA::Factory::TrainAllMethods()
 	  Log() << kFATAL << "You want to do classification training, but specified less than two classes." << Endl;
 	  
 	  // first print some information about the default dataset
-	  if(!IsSilent()) WriteDataInformation(mva->fDataSetInfo);
+	  if(!IsSilentFile()) WriteDataInformation(mva->fDataSetInfo);
 
 	  
 	  if (mva->Data()->GetNTrainingEvents() < MinNoTrainingEvents) {
@@ -851,7 +851,7 @@ void TMVA::Factory::EvaluateAllMethods( void )
 
 	    mname[0].push_back( theMethod->GetMethodName() );
 	    nmeth_used[0]++;
-	    if(!IsSilent()) 
+	    if(!IsSilentFile()) 
 	    {
 		Log() << kINFO << "Write evaluation histograms to file" << Endl;
 		theMethod->WriteEvaluationHistosToFile(Types::kTesting);
@@ -861,7 +861,7 @@ void TMVA::Factory::EvaluateAllMethods( void )
 	  else if (theMethod->DoMulticlass()) {
 	    doMulticlass = kTRUE;
 	    Log() << kINFO << "Evaluate multiclass classification method: " << theMethod->GetMethodName() << Endl;
-	    if(!IsSilent()) 
+	    if(!IsSilentFile()) 
 	    {
 		Log() << kINFO << "Write evaluation histograms to file" << Endl;
 		theMethod->WriteEvaluationHistosToFile(Types::kTesting);
@@ -902,7 +902,7 @@ void TMVA::Factory::EvaluateAllMethods( void )
 
 	    nmeth_used[isel]++;
 
-	    if(!IsSilent()) 
+	    if(!IsSilentFile()) 
 	    {
               Log() << kINFO << "Write evaluation histograms to file" << Endl;
 	      theMethod->WriteEvaluationHistosToFile(Types::kTesting);
@@ -1291,7 +1291,7 @@ void TMVA::Factory::EvaluateAllMethods( void )
 			//looking for errors in ROCCalc constructor
 			if(!fROCalc->GetStatus())
 			  Log() << kERROR <<Form("ROCalc in ERROR status for DataSet = [%s] in Method = %s",theMethod->DataInfo().GetName(),theMethod->GetMethodName().Data())<<Endl; 
-			  
+			 fROCalc->ResetStatus(); 
 			 fROCalcValue=fROCalc->GetROCIntegral();
 			//looking for errors in ROCCalc after call GetROCIntegral()
 			if(!fROCalc->GetStatus())
@@ -1352,7 +1352,7 @@ void TMVA::Factory::EvaluateAllMethods( void )
 		if (gTools().CheckForSilentOption( GetOptions() )) Log().InhibitOutput();
 	    }//end fROC
 	  }
-	  if(!IsSilent())
+	  if(!IsSilentFile())
 	  {
 	      std::list<TString> datasets;
 	      for (Int_t k=0; k<2; k++) {
