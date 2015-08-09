@@ -43,7 +43,7 @@ void ClassificationAll()
    // All TMVA output can be suppressed by removing the "!" (not) in
    // front of the "Silent" argument in the option string
    TMVA::Factory *factory = new TMVA::Factory( "TMVAClassification", outputFile,
-                                               "!V:Silent:Color:DrawProgressBar:Transformations=I;D;P;G,D:AnalysisType=Classification" );
+                                               "!V:Silent:SilentFile:Color:DrawProgressBar:Transformations=I;D;P;G,D:AnalysisType=Classification" );
    
    TMVA::DataLoader *loader1=new TMVA::DataLoader("dataset1");
    TMVA::DataLoader *loader2=new TMVA::DataLoader("dataset2");
@@ -116,7 +116,7 @@ void ClassificationAll()
    //    factory->PrepareTrainingAndTestTree( mycut,
    //                                         "NSigTrain=3000:NBkgTrain=3000:NSigTest=3000:NBkgTest=3000:SplitMode=Random:!V" );
    loader1->PrepareTrainingAndTestTree( mycuts, mycutb,
-                                        "nTrain_Signal=1000:nTrain_Background=1000:nTest_Signal=1000:nTest_Background=1000:SplitMode=Random:NormMode=NumEvents:!V" );
+                                        "nTrain_Signal=0:nTrain_Background=0:nTest_Signal=0:nTest_Background=0:SplitMode=Random:NormMode=NumEvents:!V" );
 
    loader2->PrepareTrainingAndTestTree( mycuts, mycutb,
                                         "nTrain_Signal=500:nTrain_Background=500:nTest_Signal=500:nTest_Background=500:SplitMode=Random:NormMode=NumEvents:!V" );
@@ -265,7 +265,7 @@ void ClassificationAll()
 //       
 //       
 //       
-//       
+      
        factory->BookMethod( loader2,TMVA::Types::kCuts, "Cuts",
                            "!V:FitMethod=MC:EffSel:SampleSize=200000:VarProp=FSmart" );
 

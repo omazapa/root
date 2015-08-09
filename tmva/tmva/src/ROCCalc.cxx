@@ -94,15 +94,19 @@ TMVA::ROCCalc::ROCCalc(TH1* mvaS, TH1* mvaB) :
    if (!strcmp(fmvaS->GetYaxis()->GetTitle(),"")) fmvaS->SetYTitle("#entries");
    if (!strcmp(fmvaB->GetYaxis()->GetTitle(),"")) fmvaB->SetYTitle("#entries");
    ApplySignalAndBackgroundStyle(fmvaS, fmvaB);
-//    fmvaSpdf = mvaS->RebinX(mvaS->GetNbinsX()/100,"MVA Signal PDF"); 
-//    fmvaBpdf = mvaB->RebinX(mvaB->GetNbinsX()/100,"MVA Backgr PDF");
-//    if(fmvaSpdf==0||fmvaBpdf==0)
-//    {
-//        Log() << kERROR << "Cannot Rebin Histograms mvaS and mvaB, ROC values will be calculated without Rebin histograms."<<Endl;
-//        fStatus=kFALSE;
+//    std::cout<<"mvaS->GetNbinsX()"<<mvaS->GetNbinsX()<<std::endl;
+//    std::cout<<"mvaB->GetNbinsX()"<<mvaB->GetNbinsX()<<std::endl; 
+   //the output of mvaS->GetNbinsX() is about 40 and if we divide it by 100 the results is 0
+   //the I will divide it by 10 anyway doing some tests ROC integral is the same
+   fmvaSpdf = mvaS->RebinX(mvaS->GetNbinsX()/10,"MVA Signal PDF"); 
+   fmvaBpdf = mvaB->RebinX(mvaB->GetNbinsX()/10,"MVA Backgr PDF");
+   if(fmvaSpdf==0||fmvaBpdf==0)
+   {
+       Log() << kERROR << "Cannot Rebin Histograms mvaS and mvaB, ROC values will be calculated without Rebin histograms."<<Endl;
+       fStatus=kFALSE;
        fmvaSpdf = (TH1*)mvaS->Clone("MVA Signal PDF"); 
        fmvaBpdf = (TH1*)mvaB->Clone("MVA Backgr PDF");
-//    }
+   }
    fmvaSpdf->SetTitle("MVA Signal PDF"); 
    fmvaBpdf->SetTitle("MVA Backgr PDF");
    fmvaSpdf->Scale(1./fmvaSpdf->GetSumOfWeights());

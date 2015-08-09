@@ -1264,23 +1264,23 @@ void TMVA::Factory::EvaluateAllMethods( void )
 		      
 		      MethodBase* theMethod = dynamic_cast<MethodBase*>((*methods)[i]);
 		      if(theMethod==0) continue;
-		      TMVA::Results *results=theMethod->Data()->GetResults(theMethod->GetMethodName(),Types::kTesting,Types::kClassification);
-// 		      results->GetStorage()->Print();
+		      TMVA::Results *results=theMethod->Data()->GetResults(mname[k][i],Types::kTesting,Types::kClassification);
+
 		      TH1D *mvaS=0;
 		      TH1D *mvaB=0;
 		      
-		      mvaS=dynamic_cast<TH1D*>(results->GetStorage()->FindObject(Form("MVA_%s_S",theMethod->GetMethodName().Data())));
-		      mvaB=dynamic_cast<TH1D*>(results->GetStorage()->FindObject(Form("MVA_%s_B",theMethod->GetMethodName().Data())));
+		      mvaS=dynamic_cast<TH1D*>(results->GetStorage()->FindObject(Form("MVA_%s_S",mname[k][i].Data())));
+		      mvaB=dynamic_cast<TH1D*>(results->GetStorage()->FindObject(Form("MVA_%s_B",mname[k][i].Data())));
 			
 		      if(mvaS==0||mvaB==0)
 		      {
-			mvaS=dynamic_cast<TH1D*>(results->GetStorage()->FindObject(Form("[%s]MVA_%s_S",theMethod->DataInfo().GetName(),theMethod->GetMethodName().Data())));
-			mvaB=dynamic_cast<TH1D*>(results->GetStorage()->FindObject(Form("[%s]MVA_%s_B",theMethod->DataInfo().GetName(),theMethod->GetMethodName().Data())));			
+			mvaS=dynamic_cast<TH1D*>(results->GetStorage()->FindObject(Form("[%s]MVA_%s_S",theMethod->DataInfo().GetName(),mname[k][i].Data())));
+			mvaB=dynamic_cast<TH1D*>(results->GetStorage()->FindObject(Form("[%s]MVA_%s_B",theMethod->DataInfo().GetName(),mname[k][i].Data())));			
 		      }
 		      TMVA::ROCCalc *fROCalc=0;
 		      if(mvaS==0||mvaB==0)
 		      {
-			  Log() << kERROR <<Form("Cannot cal ROCCal intergral for DataSet = [%s] in Method = %s",theMethod->DataInfo().GetName(),theMethod->GetMethodName().Data())<<Endl; 
+			  Log() << kERROR <<Form("Cannot cal ROCCal intergral for DataSet = [%s] in Method = %s",theMethod->DataInfo().GetName(),mname[k][i].Data())<<Endl; 
 		      }else
 		      {
 			fROCalc=new TMVA::ROCCalc(mvaS,mvaB);
@@ -1290,12 +1290,12 @@ void TMVA::Factory::EvaluateAllMethods( void )
 		      {
 			//looking for errors in ROCCalc constructor
 			if(!fROCalc->GetStatus())
-			  Log() << kERROR <<Form("ROCalc in ERROR status for DataSet = [%s] in Method = %s",theMethod->DataInfo().GetName(),theMethod->GetMethodName().Data())<<Endl; 
+			  Log() << kERROR <<Form("ROCalc in ERROR status for DataSet = [%s] in Method = %s",theMethod->DataInfo().GetName(),mname[k][i].Data())<<Endl; 
 			 fROCalc->ResetStatus(); 
 			 fROCalcValue=fROCalc->GetROCIntegral();
 			//looking for errors in ROCCalc after call GetROCIntegral()
 			if(!fROCalc->GetStatus())
-			  Log() << kERROR <<Form("ROCalc in ERROR status for DataSet = [%s] in Method = %s",theMethod->DataInfo().GetName(),theMethod->GetMethodName().Data())<<Endl; 
+			  Log() << kERROR <<Form("ROCalc in ERROR status for DataSet = [%s] in Method = %s",theMethod->DataInfo().GetName(),mname[k][i].Data())<<Endl; 
 		      }
 		        if (sep[k][i] < 0 || sig[k][i] < 0) {
 			  // cannot compute separation/significance -> no MVA (usually for Cuts)
