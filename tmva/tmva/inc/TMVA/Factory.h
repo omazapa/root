@@ -143,6 +143,9 @@ namespace TMVA {
       static TDirectory* RootBaseDir() { return (TDirectory*)fgTargetFile; }
 
       static Bool_t IsSilentFile();
+      
+      Double_t GetROCIntegral(DataLoader *loader,TString theMethodName);
+      Double_t GetROCIntegral(TString  datasetname,TString theMethodName);
 
    private:
 

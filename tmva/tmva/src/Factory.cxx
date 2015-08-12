@@ -518,6 +518,86 @@ void TMVA::Factory::OptimizeAllMethods(TString fomType, TString fitType)
 }
 
 //_______________________________________________________________________
+Double_t TMVA::Factory::GetROCIntegral(TMVA::DataLoader *loader,TString theMethodName)
+{
+  return GetROCIntegral((TString)loader->GetName(),theMethodName);
+}
+
+//_______________________________________________________________________
+Double_t TMVA::Factory::GetROCIntegral(TString datasetname,TString theMethodName)
+{
+      if(fMethodsMap.find(datasetname)==fMethodsMap.end())
+      {
+	Log() << kERROR<< Form("DataSet = %s not found in methods map.",datasetname.Data()) << Endl;
+	return 0;
+      }
+      MVector *methods=fMethodsMap[datasetname.Data()];
+      MVector::iterator itrMethod=methods->begin();
+      TMVA::MethodBase *method=0;
+      while(itrMethod!=methods->end())
+      {
+	TMVA::MethodBase *cmethod=dynamic_cast<TMVA::MethodBase*>(*itrMethod);
+	if(!cmethod)
+	{
+	 //msg of error here
+	 itrMethod++;
+	 continue;
+	}
+	if(cmethod->GetMethodName()==theMethodName)
+	{
+	  method=cmethod;
+	  break;
+	}
+	itrMethod++;
+      }
+      
+      if(!method)
+      {
+	Log() << kERROR<< Form("Method = %s not found with Dataset = %s ",theMethodName.Data(),datasetname.Data()) << Endl;
+	return 0;
+      }
+      
+      TMVA::Results *results=method->Data()->GetResults(method->GetMethodName(),Types::kTesting,Types::kClassification);
+
+      TH1D *mvaS=0;
+      TH1D *mvaB=0;
+      
+      mvaS=dynamic_cast<TH1D*>(results->GetStorage()->FindObject(Form("MVA_%s_S",method->GetMethodName().Data())));
+      mvaB=dynamic_cast<TH1D*>(results->GetStorage()->FindObject(Form("MVA_%s_B",method->GetMethodName().Data())));
+	
+      if(mvaS==0||mvaB==0)
+      {
+	mvaS=dynamic_cast<TH1D*>(results->GetStorage()->FindObject(Form("[%s]MVA_%s_S",method->DataInfo().GetName(),method->GetMethodName().Data())));
+	mvaB=dynamic_cast<TH1D*>(results->GetStorage()->FindObject(Form("[%s]MVA_%s_B",method->DataInfo().GetName(),method->GetMethodName().Data())));			
+      }
+      TMVA::ROCCalc *fROCalc=0;
+      if(mvaS==0||mvaB==0)
+      {
+	  Log() << kERROR <<Form("Cannot cal ROCCal intergral for DataSet = [%s] in Method = %s",method->DataInfo().GetName(),method->GetMethodName().Data())<<Endl; 
+      }else
+      {
+	fROCalc=new TMVA::ROCCalc(mvaS,mvaB);
+      }
+      Double_t fROCalcValue=0;
+      if(fROCalc)
+      {
+	//looking for errors in ROCCalc constructor
+	if(!fROCalc->GetStatus())
+	  Log() << kERROR <<Form("ROCalc in ERROR status for DataSet = [%s] in Method = %s",method->DataInfo().GetName(),method->GetMethodName().Data())<<Endl; 
+	  fROCalc->ResetStatus(); 
+	  fROCalcValue=fROCalc->GetROCIntegral();
+	//looking for errors in ROCCalc after call GetROCIntegral()
+	if(!fROCalc->GetStatus())
+	  Log() << kERROR <<Form("ROCalc in ERROR status for DataSet = [%s] in Method = %s",method->DataInfo().GetName(),method->GetMethodName().Data())<<Endl; 
+	delete fROCalc;
+      }
+      
+      return fROCalcValue;
+}
+
+
+
+//_______________________________________________________________________
 void TMVA::Factory::TrainAllMethods() 
 {  
    // iterates through all booked methods and calls training
