@@ -881,6 +881,12 @@ void TMVA::Factory::EvaluateAllMethods( void )
 	    // perform the evaluation
 	    theMethod->TestClassification();
 	    
+	    //removing all the output of File
+	    if(IsSilentFile())
+	    {	      
+	      fgTargetFile->Delete(itrMap->first);
+	      
+	    }
 	    // evaluate the classifier
 	    mname[isel].push_back( theMethod->GetMethodName() );
 	    sig[isel].push_back  ( theMethod->GetSignificance() );
