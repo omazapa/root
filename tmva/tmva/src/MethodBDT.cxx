@@ -136,6 +136,8 @@
 
 #include "TMatrixTSym.h"
 
+#include<omp.h>
+
 using std::vector;
 using std::make_pair;
 
@@ -1341,7 +1343,9 @@ Double_t TMVA::MethodBDT::GetGradBoostMVA(const TMVA::Event* e, UInt_t nTrees)
 {
    //returns MVA value: -1 for background, 1 for signal
    Double_t sum=0;
-   for (UInt_t itree=0; itree<nTrees; itree++) {
+   UInt_t itree=0;
+   #pragma omp parallel for default(shared) private(itree) reduction(+:sum)
+   for (itree=0; itree<nTrees; itree++) {
       //loop over all trees in forest
       sum += fForest[itree]->CheckEvent(e,kFALSE);
  
@@ -1560,7 +1564,7 @@ Double_t TMVA::MethodBDT::Boost( std::vector<const TMVA::Event*>& eventSample, D
 
    Double_t returnVal=-1;
 
-   if      (fBoostType=="AdaBoost")    returnVal = this->AdaBoost  (eventSample, dt);
+   if      (fBoostType=="AdaBoost")    returnVal = this->AdaBoost  (eventSample, dt);//DONE OMP
    else if (fBoostType=="AdaCost")     returnVal = this->AdaCost   (eventSample, dt);
    else if (fBoostType=="Bagging")     returnVal = this->Bagging   ( );
    else if (fBoostType=="RegBoost")    returnVal = this->RegBoost  (eventSample, dt);
@@ -1692,7 +1696,10 @@ Double_t TMVA::MethodBDT::AdaBoost( std::vector<const TMVA::Event*>& eventSample
    std::map<Node*,Int_t> sigEventsInNode; // how many signal events of the training tree
 
    Double_t maxDev=0;
-   for (std::vector<const TMVA::Event*>::const_iterator e=eventSample.begin(); e!=eventSample.end();e++) {
+   UInt_t index=0,size=eventSample.size();
+      #pragma omp parallel for default(none) shared(size,eventSample,sumw,dt,maxDev) private(index) reduction(+:sumGlobalw,sumGlobalwfalse,sumGlobalwfalse2) 
+      for (index=0; index<size;index++) {
+      std::vector<const TMVA::Event*>::const_iterator e=eventSample.begin()+index;
       Double_t w = (*e)->GetWeight();
       sumGlobalw += w;
       UInt_t iclass=(*e)->GetClass();
@@ -1786,8 +1793,12 @@ Double_t TMVA::MethodBDT::AdaBoost( std::vector<const TMVA::Event*>& eventSample
 
    Results* results = Data()->GetResults(GetMethodName(),Types::kTraining, Types::kMaxAnalysisType);
 
-
-   for (std::vector<const TMVA::Event*>::const_iterator e=eventSample.begin(); e!=eventSample.end();e++) {
+   index=0;
+   size=eventSample.size();
+   #pragma omp parallel for default(none) shared(size,eventSample,dt,boostWeight,maxDev,results,newSumw) private(index) reduction(+:newSumGlobalw)
+   for (index=0; index<size;index++) {
+     std::vector<const TMVA::Event*>::const_iterator e=eventSample.begin()+index;
+//    for (std::vector<const TMVA::Event*>::const_iterator e=eventSample.begin(); e!=eventSample.end();e++) {
  
       if (fUseYesNoLeaf||DoRegression()){ 
          if ((!( (dt->CheckEvent(*e,fUseYesNoLeaf) > fNodePurityLimit ) == DataInfo().IsSignal(*e))) || DoRegression()) {
@@ -1924,7 +1935,11 @@ Double_t TMVA::MethodBDT::AdaCost( vector<const TMVA::Event*>& eventSample, Deci
 
    Results* results = Data()->GetResults(GetMethodName(),Types::kTraining, Types::kMaxAnalysisType);
 
-   for (vector<const TMVA::Event*>::const_iterator e=eventSample.begin(); e!=eventSample.end();e++) {
+   UInt_t index=0,size=eventSample.size();
+   #pragma omp parallel for default(shared) private(index)  
+   for (index=0; index<size;index++) {
+      std::vector<const TMVA::Event*>::const_iterator e=eventSample.begin()+index;
+//    for (vector<const TMVA::Event*>::const_iterator e=eventSample.begin(); e!=eventSample.end();e++) {
       Double_t dtoutput = (dt->CheckEvent(*e,false) - 0.5)*2.;
       Int_t    trueType;
       Bool_t   isTrueSignal = DataInfo().IsSignal(*e);
@@ -2322,7 +2337,9 @@ Double_t TMVA::MethodBDT::PrivateGetMvaValue(const TMVA::Event* ev, Double_t* er
    
    Double_t myMVA = 0;
    Double_t norm  = 0;
-   for (UInt_t itree=0; itree<nTrees; itree++) {
+   UInt_t itree=0;
+   #pragma omp parallel for default(shared) private(itree)
+   for (itree=0; itree<nTrees; itree++) {
       //
       myMVA += fBoostWeights[itree] * fForest[itree]->CheckEvent(ev,fUseYesNoLeaf);
       norm  += fBoostWeights[itree];

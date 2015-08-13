@@ -18,6 +18,11 @@ ROOT_USE_PACKAGE(hist/histpainter)
 ROOT_USE_PACKAGE(tree/treeplayer)
 ROOT_USE_PACKAGE(io/xml) 
 #ROOT_USE_PACKAGE(gui/gui) 
+find_package(OpenMP)
+if (OPENMP_FOUND)
+    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+endif()
 
 set(headers1 Configurable.h Event.h Factory.h DataLoader.h MethodBase.h MethodCompositeBase.h
 	     MethodANNBase.h MethodTMlpANN.h MethodRuleFit.h MethodCuts.h MethodFisher.h

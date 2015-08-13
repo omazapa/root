@@ -139,32 +139,36 @@ void Classification()
    // Boosted Decision Trees
    factory->BookMethod( loader1, TMVA::Types::kBDT, "BDT",
                            "!H:!V:NTrees=850:MinNodeSize=2.5%:MaxDepth=3:BoostType=AdaBoost:AdaBoostBeta=0.5:UseBaggedBoost:BaggedSampleFraction=0.5:SeparationType=GiniIndex:nCuts=20" );
+   
+//    factory->BookMethod( loader1,TMVA::Types::kBDT, "BDTG",
+//                            "!V:NTrees=1000:MinNodeSize=2.5%:BoostType=Grad:Shrinkage=0.10:UseBaggedBoost:BaggedSampleFraction=0.5:nCuts=20:MaxDepth=2" );
+
 // 
 // //    factory->BookMethod( loader1, TMVA::Types::kBDT, "BDT",
 // //                            "!H:!V:NTrees=850:MinNodeSize=2.5%:MaxDepth=3:BoostType=AdaBoost:AdaBoostBeta=0.5:UseBaggedBoost:BaggedSampleFraction=0.5:SeparationType=GiniIndex:nCuts=20" );
 
-   factory->BookMethod( loader1, TMVA::Types::kBDT, "BDTB",
-                           "!H:!V:NTrees=400:BoostType=Bagging:SeparationType=GiniIndex:nCuts=20" );
-
-   // Likelihood ("naive Bayes estimator")
-   factory->BookMethod( loader1,TMVA::Types::kLikelihood, "Likelihood",
-                           "!V:TransformOutput:PDFInterpol=Spline2:NSmoothSig[0]=20:NSmoothBkg[0]=20:NSmoothBkg[1]=10:NSmooth=1:NAvEvtPerBin=50" );
-   // Use a kernel density estimator to approximate the PDFs
-   factory->BookMethod( loader1,TMVA::Types::kLikelihood, "LikelihoodKDE",
-                           "!V:!TransformOutput:PDFInterpol=KDE:KDEtype=Gauss:KDEiter=Adaptive:KDEFineFactor=0.3:KDEborder=None:NAvEvtPerBin=50" ); 
-
-   // Use a variable-dependent mix of splines and kernel density estimator
-   factory->BookMethod( loader1,TMVA::Types::kLikelihood, "LikelihoodMIX",
-                           "!V:!TransformOutput:PDFInterpolSig[0]=KDE:PDFInterpolBkg[0]=KDE:PDFInterpolSig[1]=KDE:PDFInterpolBkg[1]=KDE:PDFInterpolSig[2]=Spline2:PDFInterpolBkg[2]=Spline2:PDFInterpolSig[3]=Spline2:PDFInterpolBkg[3]=Spline2:KDEtype=Gauss:KDEiter=Nonadaptive:KDEborder=None:NAvEvtPerBin=50" ); 
+//    factory->BookMethod( loader1, TMVA::Types::kBDT, "BDTB",
+//                            "!H:!V:NTrees=400:BoostType=Bagging:SeparationType=GiniIndex:nCuts=20" );
+// 
+//    // Likelihood ("naive Bayes estimator")
+//    factory->BookMethod( loader1,TMVA::Types::kLikelihood, "Likelihood",
+//                            "!V:TransformOutput:PDFInterpol=Spline2:NSmoothSig[0]=20:NSmoothBkg[0]=20:NSmoothBkg[1]=10:NSmooth=1:NAvEvtPerBin=50" );
+//    // Use a kernel density estimator to approximate the PDFs
+//    factory->BookMethod( loader1,TMVA::Types::kLikelihood, "LikelihoodKDE",
+//                            "!V:!TransformOutput:PDFInterpol=KDE:KDEtype=Gauss:KDEiter=Adaptive:KDEFineFactor=0.3:KDEborder=None:NAvEvtPerBin=50" ); 
+// 
+//    // Use a variable-dependent mix of splines and kernel density estimator
+//    factory->BookMethod( loader1,TMVA::Types::kLikelihood, "LikelihoodMIX",
+//                            "!V:!TransformOutput:PDFInterpolSig[0]=KDE:PDFInterpolBkg[0]=KDE:PDFInterpolSig[1]=KDE:PDFInterpolBkg[1]=KDE:PDFInterpolSig[2]=Spline2:PDFInterpolBkg[2]=Spline2:PDFInterpolSig[3]=Spline2:PDFInterpolBkg[3]=Spline2:KDEtype=Gauss:KDEiter=Nonadaptive:KDEborder=None:NAvEvtPerBin=50" ); 
 
 
    // Boosted Decision Trees
-   factory->BookMethod( loader2, TMVA::Types::kBDT, "BDT",
-                           "!H:!V:NTrees=850:MinNodeSize=2.5%:MaxDepth=3:BoostType=AdaBoost:AdaBoostBeta=0.5:UseBaggedBoost:BaggedSampleFraction=0.5:SeparationType=GiniIndex:nCuts=20" );
+//    factory->BookMethod( loader2, TMVA::Types::kBDT, "BDT",
+//                            "!H:!V:NTrees=850:MinNodeSize=2.5%:MaxDepth=3:BoostType=AdaBoost:AdaBoostBeta=0.5:UseBaggedBoost:BaggedSampleFraction=0.5:SeparationType=GiniIndex:nCuts=20" );
 
 
-   factory->BookMethod( loader2, TMVA::Types::kBDT, "BDTB",
-                           "!H:!V:NTrees=400:BoostType=Bagging:SeparationType=GiniIndex:nCuts=20" );
+//    factory->BookMethod( loader2, TMVA::Types::kBDT, "BDTB",
+//                            "!H:!V:NTrees=400:BoostType=Bagging:SeparationType=GiniIndex:nCuts=20" );
 
    
       // Train MVAs using the set of training events
