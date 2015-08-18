@@ -87,6 +87,7 @@ void stressIOPlugins1();
 void stressIOPlugins2();
 void stressIOPlugins3();
 void stressIOPlugins4();
+void stressIOPlugins5();
 void cleanup();
 
 int main(int argc, char **argv)
@@ -229,6 +230,7 @@ void stressIOPluginsForProto(const char *protoName /*=0*/, int multithread /*=0*
    stressIOPlugins2();
    stressIOPlugins3();
    stressIOPlugins4();
+   stressIOPlugins5();
 
    cleanup();
 
@@ -240,11 +242,12 @@ void stressIOPlugins()
    stressIOPluginsForProto((const char*)0,0);
 }
 
-//_______________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+///based on stress2()
+///check length and compression factor in stress.root
+
 void stressIOPlugins1()
 {
-   //based on stress2()
-   //check length and compression factor in stress.root
    const char *title = "Check size & compression factor of a Root file";
    Bprint(1, title);
 
@@ -268,21 +271,21 @@ void stressIOPlugins1()
    delete f;
 }
 
-//_______________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+/// based on stress5()
+/// Test of Postscript.
+/// Make a complex picture. Verify number of lines on ps file
+/// Testing automatically the graphics package is a complex problem.
+/// The best way we have found is to generate a Postscript image
+/// of a complex canvas containing many objects.
+/// The number of lines in the ps file is compared with a reference run.
+/// A few lines (up to 2 or 3) of difference may be expected because
+/// Postscript works with floats. The date and time of the run are also
+/// different.
+/// You can also inspect visually the ps file with a ps viewer.
+
 void stressIOPlugins2()
 {
-// based on stress5()
-// Test of Postscript.
-// Make a complex picture. Verify number of lines on ps file
-// Testing automatically the graphics package is a complex problem.
-// The best way we have found is to generate a Postscript image
-// of a complex canvas containing many objects.
-// The number of lines in the ps file is compared with a reference run.
-// A few lines (up to 2 or 3) of difference may be expected because
-// Postscript works with floats. The date and time of the run are also
-// different.
-// You can also inspect visually the ps file with a ps viewer.
-
    const char *title = "Test graphics & Postscript";
    Bprint(2,title);
 
@@ -346,10 +349,10 @@ void stressIOPlugins2()
    delete f;
 }
 
-//_______________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 Int_t test3read(const TString &fn, const char *title)
 {
-
 //  Read the event file
 //  Loop on all events in the file (reading everything).
 //  Count number of bytes read
@@ -383,10 +386,11 @@ Int_t test3read(const TString &fn, const char *title)
 }
 
 
-//_______________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+/// based on stress8()
+
 void stressIOPlugins3()
 {
-   // based on stress8()
    const char *title = "Trees split and compression modes";
    Bprint(3,title);
 
@@ -405,7 +409,8 @@ void stressIOPlugins3()
    }
 }
 
-//_______________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 void stressIOPlugins4()
 {
    Long64_t nent;
@@ -567,7 +572,58 @@ void stressIOPlugins4()
       }
    }
 }
-      
+
+////////////////////////////////////////////////////////////////////////////////
+
+void stressIOPlugins5()
+{
+   Bool_t tryziparchive = kFALSE;
+   const char *title = "Read content from a zip archive";
+   Bprint(5,title);
+
+   if (gCurProtoName == "xroot" || gCurProtoName == "root") {
+      tryziparchive = kTRUE;
+   }
+
+   if (!tryziparchive) {
+      printf("skipping\n");
+      return;
+   }
+
+   TFile *hfile = openTestFile("multi_8.zip?&zip=1","find tree");
+   if (!hfile) {
+      printf("FAILED\n");
+      return;
+   }
+   TTree *tree = 0;
+   hfile->GetObject("T",tree);
+   if (!tree) {
+      printf("FAILED\n");
+      delete hfile;
+      return;
+   }
+   tree->SetCacheSize(0);
+   Int_t nentries = (Int_t)tree->GetEntries();
+   if (nentries != 100) {
+      printf("FAILED\n");
+      delete hfile;
+      return;
+   } else {
+      printf("OK\n");
+   }
+   Event *event = 0;
+   tree->SetBranchAddress("event",&event);
+   tree->GetEntry(0);
+   Bprint(0,"read event (no cache)");
+   if (!event || event->GetNtrack() != 603) {
+      printf("FAILED\n");
+   } else {
+      printf("OK\n");
+   }
+   delete event;
+   delete hfile;
+}
+
 void cleanup()
 {
    TString psfname = TString::Format("stressIOPlugins-%d.ps", gSystem->GetPid());

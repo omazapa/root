@@ -95,6 +95,13 @@ ClassImp(TMVA::Factory)
 Bool_t TMVA::Factory::fSilentFile=kFALSE;
 
 //_______________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+/// standard constructor
+///   jobname       : this name will appear in all weight file names produced by the MVAs
+///   theTargetFile : output ROOT file; the test tree and all evaluation plots
+///                   will be stored here
+///   theOption     : option string; currently: "V" for verbose
+
 TMVA::Factory::Factory( TString jobName, TFile* theTargetFile, TString theOption )
 : Configurable          ( theOption ),
    fTransformations      ( "I" ),
@@ -106,11 +113,6 @@ TMVA::Factory::Factory( TString jobName, TFile* theTargetFile, TString theOption
    fATreeEvent           ( NULL ),
    fAnalysisType         ( Types::kClassification )
 {
-   // standard constructor
-   //   jobname       : this name will appear in all weight file names produced by the MVAs
-   //   theTargetFile : output ROOT file; the test tree and all evaluation plots
-   //                   will be stored here
-   //   theOption     : option string; currently: "V" for verbose
    fgTargetFile = theTargetFile;
 
 
@@ -171,12 +173,12 @@ TMVA::Factory::Factory( TString jobName, TFile* theTargetFile, TString theOption
    Greetings();
 }
 
-//_______________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+/// print welcome message
+/// options are: kLogoWelcomeMsg, kIsometricWelcomeMsg, kLeanWelcomeMsg
+
 void TMVA::Factory::Greetings()
 {
-   // print welcome message
-   // options are: kLogoWelcomeMsg, kIsometricWelcomeMsg, kLeanWelcomeMsg
-
    gTools().ROOTVersionMessage( Log() );
    gTools().TMVAWelcomeMessage( Log(), gTools().kLogoWelcomeMsg );
    gTools().TMVAVersionMessage( Log() ); Log() << Endl;
@@ -190,11 +192,12 @@ Bool_t TMVA::Factory::IsSilentFile()
 
 
 //_______________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+/// destructor
+///   delete fATreeEvent;
+
 TMVA::Factory::~Factory( void )
 {
-   // destructor
-   //   delete fATreeEvent;
-
    std::vector<TMVA::VariableTransformBase*>::iterator trfIt = fDefaultTrfs.begin();
    for (;trfIt != fDefaultTrfs.end(); trfIt++) delete (*trfIt);
 
@@ -208,7 +211,9 @@ TMVA::Factory::~Factory( void )
    Config::DestroyInstance();
 }
 
-//_______________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+/// delete methods
+
 void TMVA::Factory::DeleteAllMethods( void )
 {
    std::map<TString,MVector*>::iterator itrMap;
@@ -227,7 +232,8 @@ void TMVA::Factory::DeleteAllMethods( void )
    }
 }
 
-//_______________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 void TMVA::Factory::SetVerbose( Bool_t v )
 {
    fVerbose = v;
@@ -350,6 +356,12 @@ TMVA::MethodBase* TMVA::Factory::BookMethod( TMVA::DataLoader *loader, TString t
    return method;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+/// books MVA method; the option configuration string is custom for each MVA
+/// the TString field "theNameAppendix" serves to define (and distinguish)
+/// several instances of a given MVA, eg, when one wants to compare the
+/// performance of various configurations
+
 //_______________________________________________________________________
 TMVA::MethodBase* TMVA::Factory::BookMethod(TMVA::DataLoader *loader, Types::EMVA theMethod, TString methodTitle, TString theOption )
 {
@@ -378,12 +390,12 @@ TMVA::IMethod* TMVA::Factory::GetMethod(const TString& datasetname,  const TStri
    return 0;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+/// put correlations of input data and a few (default + user
+/// selected) transformations into the root file
 //_______________________________________________________________________
 void TMVA::Factory::WriteDataInformation(DataSetInfo&     fDataSetInfo)
 {
-   // put correlations of input data and a few (default + user
-   // selected) transformations into the root file
-
    RootBaseDir()->cd();
    
    if(!RootBaseDir()->GetDirectory(fDataSetInfo.GetName())) RootBaseDir()->mkdir(fDataSetInfo.GetName());
@@ -474,13 +486,14 @@ void TMVA::Factory::WriteDataInformation(DataSetInfo&     fDataSetInfo)
    for (trfIt = trfs.begin(); trfIt != trfs.end(); trfIt++) delete *trfIt;
 }
 
-//_______________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+/// iterates through all booked methods and sees if they use parameter tuning and if so..
+/// does just that  i.e. calls "Method::Train()" for different parameter setttings and
+/// keeps in mind the "optimal one"... and that's the one that will later on be used
+/// in the main training loop.
+
 void TMVA::Factory::OptimizeAllMethods(TString fomType, TString fitType) 
 {
-   // iterates through all booked methods and sees if they use parameter tuning and if so..
-   // does just that  i.e. calls "Method::Train()" for different parameter setttings and
-   // keeps in mind the "optimal one"... and that's the one that will later on be used
-   // in the main training loop.
 
    std::map<TString,MVector*>::iterator itrMap;
    
@@ -596,13 +609,10 @@ Double_t TMVA::Factory::GetROCIntegral(TString datasetname,TString theMethodName
 }
 
 
-
 //_______________________________________________________________________
 void TMVA::Factory::TrainAllMethods() 
 {  
-   // iterates through all booked methods and calls training
     
-
    // iterates over all MVAs that have been booked, and calls their training methods
 
 
@@ -727,7 +737,8 @@ void TMVA::Factory::TrainAllMethods()
    }
 }
 
-//_______________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 void TMVA::Factory::TestAllMethods()
 {
    Log() << kINFO << "Test all methods..." << Endl;
@@ -758,11 +769,13 @@ void TMVA::Factory::TestAllMethods()
    }
 }
 
+////////////////////////////////////////////////////////////////////////////////
+/// Print predefined help message of classifier
+/// iterate over methods and test
+
 //_______________________________________________________________________
 void TMVA::Factory::MakeClass(const TString& datasetname , const TString& methodTitle ) const
 {
-   // Print predefined help message of classifier
-   // iterate over methods and test
    if (methodTitle != "") {
       IMethod* method = GetMethod(datasetname, methodTitle);
       if (method) method->MakeClass();
@@ -785,11 +798,13 @@ void TMVA::Factory::MakeClass(const TString& datasetname , const TString& method
    }
 }
 
+////////////////////////////////////////////////////////////////////////////////
+/// Print predefined help message of classifier
+/// iterate over methods and test
+
 //_______________________________________________________________________
 void TMVA::Factory::PrintHelpMessage(const TString& datasetname , const TString& methodTitle ) const
 {
-   // Print predefined help message of classifier
-   // iterate over methods and test
    if (methodTitle != "") {
       IMethod* method = GetMethod(datasetname , methodTitle );
       if (method) method->PrintHelpMessage();
@@ -812,10 +827,12 @@ void TMVA::Factory::PrintHelpMessage(const TString& datasetname , const TString&
    }
 }
 
+////////////////////////////////////////////////////////////////////////////////
+/// iterates over all MVA input varables and evaluates them
+
 //_______________________________________________________________________
 void TMVA::Factory::EvaluateAllVariables(DataLoader *loader, TString options )
 {
-   // iterates over all MVA input varables and evaluates them
    Log() << kINFO << "Evaluating all variables..." << Endl;
    Event::SetIsTraining(kFALSE);
 
@@ -826,10 +843,11 @@ void TMVA::Factory::EvaluateAllVariables(DataLoader *loader, TString options )
    }
 }
 
-//_______________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+/// iterates over all MVAs that have been booked, and calls their evaluation methods
+
 void TMVA::Factory::EvaluateAllMethods( void )
 {
-   // iterates over all MVAs that have been booked, and calls their evaluation methods
    Log() << kINFO << "Evaluate all methods..." << Endl;
 
    // don't do anything if no method booked

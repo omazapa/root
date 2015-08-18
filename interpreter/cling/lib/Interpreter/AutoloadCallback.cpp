@@ -10,6 +10,8 @@
 
 #include "llvm/ADT/SmallVector.h"
 #include "llvm/Support/Path.h"
+#include "llvm/Support/raw_ostream.h"
+
 #include "clang/Sema/Sema.h"
 #include "clang/Basic/Diagnostic.h"
 #include "clang/AST/AST.h"
@@ -23,6 +25,7 @@
 #include "cling/Interpreter/InterpreterCallbacks.h"
 #include "cling/Interpreter/AutoloadCallback.h"
 #include "cling/Interpreter/Transaction.h"
+#include "TransactionUnloader.h"
 
 namespace {
   static const char annoTag[] = "$clingAutoload$";
@@ -67,6 +70,7 @@ namespace cling {
     bool m_IsStoringState;
     AutoloadCallback::FwdDeclsMap* m_Map;
     clang::Preprocessor* m_PP;
+    clang::Sema* m_Sema;
     const clang::FileEntry* m_PrevFE;
     std::string m_PrevFileName;
   private:
@@ -99,18 +103,29 @@ namespace cling {
         m_PrevFileName = FileName;
       }
 
-      assert(FE && "Must have a valid FileEntry");
       if (FE) {
         auto& Vec = (*m_Map)[FE];
         Vec.push_back(decl);
+      } else {
+        llvm::errs()
+          << "Error in cling::AutoloadingVisitor::InsertIntoAutoloadingState:\n"
+          "   Missing FileEntry for " << FileName << "\n";
+        if (NamedDecl* ND = dyn_cast<NamedDecl>(decl)) {
+          llvm::errs() << "   requested to autoload type ";
+          ND->getNameForDiagnostic(llvm::errs(),
+                                   ND->getASTContext().getPrintingPolicy(),
+                                   true /*qualified*/);
+          llvm::errs() << "\n";
+        }
       }
     }
 
   public:
     AutoloadingVisitor():
-      m_IsStoringState(false), m_Map(0), m_PP(0), m_PrevFE(0) {}
-    void RemoveDefaultArgsOf(Decl* D) {
+      m_IsStoringState(false), m_Map(0), m_PP(0), m_Sema(0), m_PrevFE(0) {}
+    void RemoveDefaultArgsOf(Decl* D, Sema* S) {
       //D = D->getMostRecentDecl();
+      m_Sema = S;
       TraverseDecl(D);
       //while ((D = D->getPreviousDecl()))
       //  TraverseDecl(D);
@@ -136,35 +151,8 @@ namespace cling {
       if (!D->hasAttr<AnnotateAttr>())
         return true;
 
-      AnnotateAttr* attr = D->getAttr<AnnotateAttr>();
-      if (!attr)
-        return true;
-
-      switch (D->getKind()) {
-      default:
+      if (AnnotateAttr* attr = D->getAttr<AnnotateAttr>())
         InsertIntoAutoloadingState(D, attr->getAnnotation());
-        break;
-      case Decl::Enum:
-        // EnumDecls have extra information 2 chars after the filename used
-        // for extra fixups.
-          EnumDecl* ED = cast<EnumDecl>(D);
-          if (ED->isFixed()) {
-            StringRef str = ED->getAttr<AnnotateAttr>()->getAnnotation();
-            char ch = str.back();
-//            str.drop_back(2);
-            ED->getAttr<AnnotateAttr>()->setAnnotation(ED->getASTContext(), str);
-            struct EnumDeclDerived: public EnumDecl {
-              static void setFixed(EnumDecl* ED, bool value = true) {
-                ((EnumDeclDerived*)ED)->IsFixed = value;
-              }
-            };
-
-            if (ch != '1')
-              EnumDeclDerived::setFixed(ED, false);
-          }
-        InsertIntoAutoloadingState(D, attr->getAnnotation().drop_back(2));
-        break;
-      }
 
       return true;
     }
@@ -173,16 +161,12 @@ namespace cling {
       if (!D->hasAttr<AnnotateAttr>())
         return true;
 
-      VisitDecl(D);
-
       if (ClassTemplateDecl* TmplD = D->getDescribedClassTemplate())
         return VisitTemplateDecl(TmplD);
       return true;
     }
 
     bool VisitTemplateTypeParmDecl(TemplateTypeParmDecl* D) {
-      VisitDecl(D);
-
       if (m_IsStoringState)
         return true;
 
@@ -195,8 +179,6 @@ namespace cling {
       if (D->getTemplatedDecl() &&
           !D->getTemplatedDecl()->hasAttr<AnnotateAttr>())
         return true;
-
-      VisitDecl(D);
 
       // If we have a definition we might be about to re-#include the
       // same header containing definition that was #included previously,
@@ -214,8 +196,6 @@ namespace cling {
     }
 
     bool VisitTemplateTemplateParmDecl(TemplateTemplateParmDecl* D) {
-      VisitDecl(D);
-
       if (m_IsStoringState)
         return true;
 
@@ -225,8 +205,6 @@ namespace cling {
     }
 
     bool VisitNonTypeTemplateParmDecl(NonTypeTemplateParmDecl* D) {
-      VisitDecl(D);
-
       if (m_IsStoringState)
         return true;
 
@@ -236,13 +214,21 @@ namespace cling {
     }
 
     bool VisitParmVarDecl(ParmVarDecl* D) {
-      VisitDecl(D);
-
       if (m_IsStoringState)
         return true;
 
       if (D->hasDefaultArg())
         D->setDefaultArg(nullptr);
+      return true;
+    }
+
+    bool VisitEnumDecl(EnumDecl* D) {
+      if (m_IsStoringState)
+        return true;
+
+      // Now that we will read the full enum, unload the forward decl.
+      TransactionUnloader Unloader(m_Sema, 0);
+      Unloader.UnloadDecl(D);
       return true;
     }
   };
@@ -266,7 +252,7 @@ namespace cling {
 
     AutoloadingVisitor defaultArgsCleaner;
     for (auto D : found->second) {
-      defaultArgsCleaner.RemoveDefaultArgsOf(D);
+      defaultArgsCleaner.RemoveDefaultArgsOf(D, &getInterpreter()->getSema());
     }
     // Don't need to keep track of cleaned up decls from file.
     m_Map.erase(found);
@@ -281,35 +267,36 @@ namespace cling {
     if (T.decls_begin()->m_DGR.isNull())
       return;
 
-    if (const NamedDecl* ND = dyn_cast<NamedDecl>(*T.decls_begin()->m_DGR.begin()))
-      if (ND->getIdentifier() && ND->getName().equals("__Cling_Autoloading_Map")) {
-        AutoloadingVisitor defaultArgsStateCollector;
-        Preprocessor& PP = m_Interpreter->getCI()->getPreprocessor();
-        for (Transaction::const_iterator I = T.decls_begin(), E = T.decls_end();
-             I != E; ++I) {
-          Transaction::DelayCallInfo DCI = *I;
-
-          // if (DCI.m_Call != Transaction::kCCIHandleTopLevelDecl)
-          //   continue;
-          if (DCI.m_DGR.isNull())
-            continue;
-
-          if (const NamedDecl* ND = dyn_cast<NamedDecl>(*T.decls_begin()->m_DGR.begin()))
-            if (ND->getIdentifier()
-                && ND->getName().equals("__Cling_Autoloading_Map")) {
-
-              for (Transaction::const_iterator I = T.decls_begin(),
-                     E = T.decls_end(); I != E; ++I) {
-                Transaction::DelayCallInfo DCI = *I;
-                for (DeclGroupRef::iterator J = DCI.m_DGR.begin(),
-                       JE = DCI.m_DGR.end(); J != JE; ++J) {
-                    defaultArgsStateCollector.TrackDefaultArgStateOf(*J, m_Map, PP);
-                }
-              }
-            }
-
-        }
+    // The first decl must be
+    //   extern int __Cling_Autoloading_Map;
+    bool HaveAutoloadingMapMarker = false;
+    for (auto I = T.decls_begin(), E = T.decls_end();
+         !HaveAutoloadingMapMarker && I != E; ++I) {
+      if (I->m_Call != cling::Transaction::kCCIHandleTopLevelDecl)
+        return;
+      for (auto&& D: I->m_DGR) {
+        if (isa<EmptyDecl>(D))
+          continue;
+        else if (auto VD = dyn_cast<VarDecl>(D)) {
+          HaveAutoloadingMapMarker
+            = VD->hasExternalStorage() && VD->getIdentifier()
+              && VD->getName().equals("__Cling_Autoloading_Map");
+          if (!HaveAutoloadingMapMarker)
+            return;
+          break;
+        } else
+          return;
       }
+    }
+
+    if (!HaveAutoloadingMapMarker)
+      return;
+
+    AutoloadingVisitor defaultArgsStateCollector;
+    Preprocessor& PP = m_Interpreter->getCI()->getPreprocessor();
+    for (auto I = T.decls_begin(), E = T.decls_end(); I != E; ++I)
+      for (auto&& D: I->m_DGR)
+        defaultArgsStateCollector.TrackDefaultArgStateOf(D, m_Map, PP);
   }
 
 } //end namespace cling

@@ -28,7 +28,8 @@ TArrayI TColor::fgPalette(0);
 
 using std::floor;
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 /* Begin_Html
 <center><h2>The color creation and management class</h2></center>
 
@@ -291,7 +292,8 @@ it is visible with PDF, PNG, Gif, JPEG, SVG ... but not PostScript.
 End_Html */
 
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 TColor::TColor(): TNamed()
 {
    /* Begin_html
@@ -304,7 +306,8 @@ TColor::TColor(): TNamed()
 }
 
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 TColor::TColor(Int_t color, Float_t r, Float_t g, Float_t b, const char *name,
                Float_t a)
       : TNamed(name,"")
@@ -348,7 +351,8 @@ TColor::TColor(Int_t color, Float_t r, Float_t g, Float_t b, const char *name,
 }
 
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 TColor::~TColor()
 {
    /* Begin_html
@@ -360,7 +364,8 @@ TColor::~TColor()
 }
 
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 TColor::TColor(const TColor &color) : TNamed(color)
 {
    /* Begin_html
@@ -371,7 +376,8 @@ TColor::TColor(const TColor &color) : TNamed(color)
 }
 
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 void TColor::InitializeColors()
 {
    /* Begin_html
@@ -380,13 +386,10 @@ void TColor::InitializeColors()
    initializes the GUI colors).
    End_html */
 
-   if (fgInitDone)
-      return;
+   if (fgInitDone) return;
    fgInitDone = kTRUE;
+
    if (gROOT->GetListOfColors()->First() == 0) {
-      TColor *s0;
-      Float_t r, g, b, h, l, s;
-      Int_t   i;
 
       new TColor(kWhite,1,1,1,"background");
       new TColor(kBlack,0,0,0,"black");
@@ -401,10 +404,9 @@ void TColor::InitializeColors()
 
       // The color white above is defined as being nearly white.
       // Sets the associated dark color also to white.
-      //TColor *c110 = gROOT->GetColor(110);
       TColor::GetColorDark(10);
       TColor *c110 = gROOT->GetColor(110);
-      c110->SetRGB(0.999,0.999,.999);
+      if (c110) c110->SetRGB(0.999,0.999,.999);
 
       // Initialize Custom colors
       new TColor(20,0.8,0.78,0.67);
@@ -457,12 +459,14 @@ void TColor::InitializeColors()
       //   Fixing the saturation and lightness we can scan through the
       //   spectrum of visible light by using "hue" alone.
       //   In Root hue takes values from 0 to 360.
+      Int_t   i;
       Float_t  saturation = 1;
       Float_t  lightness = 0.5;
       Float_t  maxHue = 280;
       Float_t  minHue = 0;
       Int_t    maxPretty = 50;
       Float_t  hue;
+      Float_t r=0., g=0., b=0., h, l, s;
 
       for (i=0 ; i<maxPretty ; i++) {
          hue = maxHue-(i+1)*((maxHue-minHue)/maxPretty);
@@ -471,9 +475,10 @@ void TColor::InitializeColors()
       }
 
       // Initialize special colors for x3d
+      TColor *s0;
       for (i = 1; i < 8; i++) {
          s0 = gROOT->GetColor(i);
-         s0->GetRGB(r,g,b);
+         if (s0) s0->GetRGB(r,g,b);
          if (i == 1) { r = 0.6; g = 0.6; b = 0.6; }
          if (r == 1) r = 0.9; if (r == 0) r = 0.1;
          if (g == 1) g = 0.9; if (g == 0) g = 0.1;
@@ -499,7 +504,8 @@ void TColor::InitializeColors()
 }
 
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 const char *TColor::AsHexString() const
 {
    /* Begin_html
@@ -525,7 +531,8 @@ const char *TColor::AsHexString() const
 }
 
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 void TColor::Copy(TObject &obj) const
 {
    /* Begin_html
@@ -544,7 +551,8 @@ void TColor::Copy(TObject &obj) const
 }
 
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 void TColor::CreateColorsGray()
 {
    /* Begin_html
@@ -563,7 +571,8 @@ void TColor::CreateColorsGray()
 }
 
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 void TColor::CreateColorsCircle(Int_t offset, const char *name, UChar_t *rgb)
 {
    /* Begin_html
@@ -586,7 +595,8 @@ void TColor::CreateColorsCircle(Int_t offset, const char *name, UChar_t *rgb)
 }
 
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 void TColor::CreateColorsRectangle(Int_t offset, const char *name, UChar_t *rgb)
 {
    /* Begin_html
@@ -609,7 +619,8 @@ void TColor::CreateColorsRectangle(Int_t offset, const char *name, UChar_t *rgb)
 }
 
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 void TColor::CreateColorWheel()
 {
    /* Begin_html
@@ -700,7 +711,8 @@ void TColor::CreateColorWheel()
 }
 
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 Int_t TColor::GetColorPalette(Int_t i)
 {
    /* Begin_html
@@ -715,7 +727,8 @@ Int_t TColor::GetColorPalette(Int_t i)
 }
 
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 Int_t TColor::GetNumberOfColors()
 {
    /* Begin_html
@@ -726,7 +739,8 @@ Int_t TColor::GetNumberOfColors()
 }
 
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 ULong_t TColor::GetPixel() const
 {
    /* Begin_html
@@ -747,7 +761,8 @@ ULong_t TColor::GetPixel() const
 }
 
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 void TColor::HLS2RGB(Float_t hue, Float_t light, Float_t satur,
                      Float_t &r, Float_t &g, Float_t &b)
 {
@@ -775,7 +790,8 @@ void TColor::HLS2RGB(Float_t hue, Float_t light, Float_t satur,
 }
 
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 Float_t TColor::HLStoRGB1(Float_t rn1, Float_t rn2, Float_t huei)
 {
    /* Begin_html
@@ -792,7 +808,8 @@ Float_t TColor::HLStoRGB1(Float_t rn1, Float_t rn2, Float_t huei)
 }
 
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 void TColor::HLS2RGB(Int_t h, Int_t l, Int_t s, Int_t &r, Int_t &g, Int_t &b)
 {
    /* Begin_html
@@ -814,7 +831,8 @@ void TColor::HLS2RGB(Int_t h, Int_t l, Int_t s, Int_t &r, Int_t &g, Int_t &b)
 }
 
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 void TColor::HSV2RGB(Float_t hue, Float_t satur, Float_t value,
                      Float_t &r, Float_t &g, Float_t &b)
 {
@@ -881,7 +899,8 @@ void TColor::HSV2RGB(Float_t hue, Float_t satur, Float_t value,
 }
 
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 void TColor::ls(Option_t *) const
 {
    /* Begin_html
@@ -893,7 +912,8 @@ void TColor::ls(Option_t *) const
 }
 
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 void TColor::Print(Option_t *) const
 {
    /* Begin_html
@@ -904,7 +924,8 @@ void TColor::Print(Option_t *) const
 }
 
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 void TColor::RGB2HLS(Float_t rr, Float_t gg, Float_t bb,
                      Float_t &hue, Float_t &light, Float_t &satur)
 {
@@ -957,7 +978,8 @@ void TColor::RGB2HLS(Float_t rr, Float_t gg, Float_t bb,
 }
 
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 void TColor::RGB2HSV(Float_t r, Float_t g, Float_t b,
                      Float_t &hue, Float_t &satur, Float_t &value)
 {
@@ -1008,7 +1030,8 @@ void TColor::RGB2HSV(Float_t r, Float_t g, Float_t b,
 }
 
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 void TColor::RGB2HLS(Int_t r, Int_t g, Int_t b, Int_t &h, Int_t &l, Int_t &s)
 {
    /* Begin_html
@@ -1030,7 +1053,8 @@ void TColor::RGB2HLS(Int_t r, Int_t g, Int_t b, Int_t &h, Int_t &l, Int_t &s)
 }
 
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 void TColor::SetRGB(Float_t r, Float_t g, Float_t b)
 {
    /* Begin_html
@@ -1079,7 +1103,8 @@ void TColor::SetRGB(Float_t r, Float_t g, Float_t b)
 }
 
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 void TColor::Allocate()
 {
    /* Begin_html
@@ -1092,7 +1117,8 @@ void TColor::Allocate()
 }
 
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 Int_t TColor::GetColor(const char *hexcolor)
 {
    /* Begin_html
@@ -1114,7 +1140,8 @@ Int_t TColor::GetColor(const char *hexcolor)
 }
 
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 Int_t TColor::GetColor(Float_t r, Float_t g, Float_t b)
 {
    /* Begin_html
@@ -1135,7 +1162,8 @@ Int_t TColor::GetColor(Float_t r, Float_t g, Float_t b)
 }
 
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 Int_t TColor::GetColor(ULong_t pixel)
 {
    /* Begin_html
@@ -1152,7 +1180,8 @@ Int_t TColor::GetColor(ULong_t pixel)
 }
 
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 Int_t TColor::GetColor(Int_t r, Int_t g, Int_t b)
 {
    /* Begin_html
@@ -1217,7 +1246,8 @@ Int_t TColor::GetColor(Int_t r, Int_t g, Int_t b)
 }
 
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 Int_t TColor::GetColorBright(Int_t n)
 {
    /* Begin_html
@@ -1252,7 +1282,8 @@ Int_t TColor::GetColorBright(Int_t n)
 }
 
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 Int_t TColor::GetColorDark(Int_t n)
 {
    /* Begin_html
@@ -1287,7 +1318,8 @@ Int_t TColor::GetColorDark(Int_t n)
 }
 
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 Int_t TColor::GetColorTransparent(Int_t n, Float_t a)
 {
    /* Begin_html
@@ -1298,15 +1330,21 @@ Int_t TColor::GetColorTransparent(Int_t n, Float_t a)
    if (n < 0) return -1;
 
    TColor *color = gROOT->GetColor(n);
-   TColor *colort = new TColor(gROOT->GetListOfColors()->GetLast()+1,
-                               color->GetRed(), color->GetGreen(), color->GetBlue());
-   colort->SetAlpha(a);
-   colort->SetName(Form("%s_transparent",color->GetName()));
-   return colort->GetNumber();
+   if (color) {
+      TColor *colort = new TColor(gROOT->GetListOfColors()->GetLast()+1,
+                                  color->GetRed(), color->GetGreen(), color->GetBlue());
+      colort->SetAlpha(a);
+      colort->SetName(Form("%s_transparent",color->GetName()));
+      return colort->GetNumber();
+   } else {
+      ::Error("TColor::GetColorTransparent", "color with index %d not defined", n);
+      return -1;
+   }
 }
 
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 ULong_t TColor::Number2Pixel(Int_t ci)
 {
    /* Begin_html
@@ -1328,7 +1366,8 @@ ULong_t TColor::Number2Pixel(Int_t ci)
 }
 
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 ULong_t TColor::RGB2Pixel(Float_t r, Float_t g, Float_t b)
 {
    /* Begin_html
@@ -1353,7 +1392,8 @@ ULong_t TColor::RGB2Pixel(Float_t r, Float_t g, Float_t b)
 }
 
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 ULong_t TColor::RGB2Pixel(Int_t r, Int_t g, Int_t b)
 {
    /* Begin_html
@@ -1378,7 +1418,8 @@ ULong_t TColor::RGB2Pixel(Int_t r, Int_t g, Int_t b)
 }
 
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 void TColor::Pixel2RGB(ULong_t pixel, Float_t &r, Float_t &g, Float_t &b)
 {
    /* Begin_html
@@ -1396,7 +1437,8 @@ void TColor::Pixel2RGB(ULong_t pixel, Float_t &r, Float_t &g, Float_t &b)
 }
 
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 void TColor::Pixel2RGB(ULong_t pixel, Int_t &r, Int_t &g, Int_t &b)
 {
    /* Begin_html
@@ -1414,7 +1456,8 @@ void TColor::Pixel2RGB(ULong_t pixel, Int_t &r, Int_t &g, Int_t &b)
 }
 
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 const char *TColor::PixelAsHexString(ULong_t pixel)
 {
    /* Begin_html
@@ -1433,7 +1476,8 @@ const char *TColor::PixelAsHexString(ULong_t pixel)
 }
 
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 void TColor::SaveColor(std::ostream &out, Int_t ci)
 {
    /* Begin_html
@@ -1475,7 +1519,8 @@ void TColor::SaveColor(std::ostream &out, Int_t ci)
 }
 
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 Bool_t TColor::IsGrayscale()
 {
    /* Begin_html
@@ -1486,7 +1531,8 @@ Bool_t TColor::IsGrayscale()
 }
 
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 void TColor::SetGrayscale(Bool_t set /*= kTRUE*/)
 {
    /* Begin_html
@@ -1507,7 +1553,8 @@ void TColor::SetGrayscale(Bool_t set /*= kTRUE*/)
 }
 
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 Int_t TColor::CreateGradientColorTable(UInt_t Number, Double_t* Stops,
                               Double_t* Red, Double_t* Green,
                               Double_t* Blue, UInt_t NColors, Float_t alpha)
@@ -1610,6 +1657,7 @@ Int_t TColor::CreateGradientColorTable(UInt_t Number, Double_t* Stops,
    // Now create the colors and add them to the default palette:
 
    // For each defined gradient...
+   TColor *hi;
    for (g = 1; g < Number; g++) {
       // create the colors...
       nColorsGradient = (Int_t) (floor(NColors*Stops[g]) - floor(NColors*Stops[g-1]));
@@ -1619,7 +1667,8 @@ Int_t TColor::CreateGradientColorTable(UInt_t Number, Double_t* Stops,
                     Green[g-1] + c * (Green[g] - Green[g-1])/ nColorsGradient,
                     Blue[g-1] + c * (Blue[g] - Blue[g-1])/ nColorsGradient,
                     "  ");
-         gROOT->GetColor(highestIndex)->SetAlpha(alpha);
+         hi = gROOT->GetColor(highestIndex);
+         if (hi) hi->SetAlpha(alpha);
          palette[nPalette] = highestIndex;
          nPalette++;
          highestIndex++;
@@ -1633,7 +1682,8 @@ Int_t TColor::CreateGradientColorTable(UInt_t Number, Double_t* Stops,
 }
 
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 void TColor::SetPalette(Int_t ncolors, Int_t *colors, Float_t alpha)
 {
    /* Begin_html
@@ -1727,6 +1777,7 @@ void TColor::SetPalette(Int_t ncolors, Int_t *colors, Float_t alpha)
    if ncolors = 109 and colors=0, a Cool palette is used.
    if ncolors = 110 and colors=0, a Copper palette is used.
    if ncolors = 111 and colors=0, a Gist Earth palette is used.
+   if ncolors = 112 and colors=0, a Viridis palette is used.
    </pre>
    These palettes can also be accessed by names:
    <pre>
@@ -1750,7 +1801,7 @@ void TColor::SetPalette(Int_t ncolors, Int_t *colors, Float_t alpha)
    kStarryNight=102,     kSunset=103,      kTemperatureMap=104,
    kThermometer=105,     kValentine=106,   kVisibleSpectrum=107,
    kWaterMelon=108,      kCool=109,        kCopper=110,
-   kGistEarth=111
+   kGistEarth=111        kViridis=112
    </pre>
    For example:
    <pre>
@@ -2408,6 +2459,16 @@ void TColor::SetPalette(Int_t ncolors, Int_t *colors, Float_t alpha)
             Double_t red[9]   = { 0./255., 13./255.,  30./255.,  44./255.,  72./255., 120./255., 156./255., 200./255., 247./255.};
             Double_t green[9] = { 0./255., 36./255.,  84./255., 117./255., 141./255., 153./255., 151./255., 158./255., 247./255.};
             Double_t blue[9]  = { 0./255., 94./255., 100./255.,  82./255.,  56./255.,  66./255.,  76./255., 131./255., 247./255.};
+            TColor::CreateGradientColorTable(9, stops, red, green, blue, 255, alpha);
+         }
+         break;
+
+      // Viridis
+      case 112:
+         {
+            Double_t red[9]   = { 26./255., 51./255.,  43./255.,  33./255.,  28./255.,  35./255.,  74./255., 144./255., 246./255.};
+            Double_t green[9] = {  9./255., 24./255.,  55./255.,  87./255., 118./255., 150./255., 180./255., 200./255., 222./255.};
+            Double_t blue[9]  = { 30./255., 96./255., 112./255., 114./255., 112./255., 101./255.,  72./255.,  35./255.,   0./255.};
             TColor::CreateGradientColorTable(9, stops, red, green, blue, 255, alpha);
          }
          break;

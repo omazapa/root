@@ -21,12 +21,12 @@ CLINGDEP     := $(CLINGO:.o=.d)
 
 CLINGETC_CLING := DynamicExprInfo.h DynamicLookupRuntimeUniverse.h \
         DynamicLookupLifetimeHandler.h Interpreter.h InvocationOptions.h \
-        RuntimeUniverse.h Value.h RuntimeException.h
+        RuntimeException.h RuntimePrintValue.h RuntimeUniverse.h Value.h
 
 CLINGETC_LLVM := llvm/ADT/IntrusiveRefCntPtr.h \
         llvm/ADT/StringRef.h \
         llvm/ADT/SmallVector.h \
-	llvm/ADT/iterator_range.h \
+		llvm/ADT/iterator_range.h \
         llvm/Config/llvm-config.h \
         llvm/Support/AlignOf.h \
         llvm/Support/Allocator.h \
@@ -168,7 +168,7 @@ $(CLINGEXCEPO): CLINGEXCCXXFLAGS := -fexceptions
 $(CLINGETC) : $(LLVMLIB)
 $(CLINGO)   : $(CLINGETC)
 $(call stripsrc,$(MODDIR)/lib/Interpreter/CIFactory.o): $(CLINGCOMPDH)
-$(call stripsrc,$(MODDIR)/lib/Interpreter/CIFactory.o): CLINGCXXFLAGS += -I$(dir $(CLINGCOMPDH))
+$(call stripsrc,$(MODDIR)/lib/Interpreter/CIFactory.o): CLINGCXXFLAGS += -I$(dir $(CLINGCOMPDH)) -pthread
 $(call stripsrc,$(MODDIR)/lib/Interpreter/Interpreter.o): $(CLINGCOMPDH)
 $(call stripsrc,$(MODDIR)/lib/Interpreter/Interpreter.o): CLINGCXXFLAGS += -I$(dir $(CLINGCOMPDH))
 $(call stripsrc,$(MODDIR)/lib/Interpreter/Interpreter.o): CLINGCXXFLAGS += -DCLING_VERSION=$(CLING_VERSION)

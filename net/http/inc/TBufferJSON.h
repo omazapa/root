@@ -42,9 +42,9 @@ public:
 
    void SetCompact(int level);
 
-   static TString   ConvertToJSON(const TObject *obj, Int_t compact = 0);
-   static TString   ConvertToJSON(const void *obj, const TClass *cl, Int_t compact = 0);
-   static TString   ConvertToJSON(const void *obj, TDataMember *member, Int_t compact = 0);
+   static TString   ConvertToJSON(const TObject *obj, Int_t compact = 0, const char *member_name = 0);
+   static TString   ConvertToJSON(const void *obj, const TClass *cl, Int_t compact = 0, const char *member_name = 0);
+   static TString   ConvertToJSON(const void *obj, TDataMember *member, Int_t compact = 0, Int_t arraylen = -1);
 
    // suppress class writing/reading
 
@@ -409,7 +409,7 @@ protected:
 
    // end redefined protected virtual functions
 
-   TString          JsonWriteMember(const void *ptr, TDataMember *member, TClass *memberClass);
+   TString          JsonWriteMember(const void *ptr, TDataMember *member, TClass *memberClass, Int_t arraylen);
 
    TJSONStackObj   *PushStack(Int_t inclevel = 0);
    TJSONStackObj   *PopStack();
@@ -458,6 +458,7 @@ protected:
    Int_t                     fCompact;       //!  0 - no any compression, 1 - no spaces in the begin, 2 - no new lines, 3 - no spaces at all
    TString                   fSemicolon;     //!  depending from compression level, " : " or ":"
    TString                   fArraySepar;    //!  depending from compression level, ", " or ","
+   TString                   fNumericLocale; //!  stored value of setlocale(LC_NUMERIC), which should be recovered at the end
 
    static const char *fgFloatFmt;          //!  printf argument for floats and doubles, either "%f" or "%e" or "%10f" and so on
 
