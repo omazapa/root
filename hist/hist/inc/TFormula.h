@@ -61,6 +61,7 @@ public:
       return fName == rhv.fName && fBody == rhv.fBody && fNargs == rhv.fNargs;
    }
 };
+
 class TFormulaVariable
 {
 public:
@@ -80,9 +81,7 @@ public:
    }
 };
 
-// Functor defining the parameter order
 struct TFormulaParamOrder {
-   // comparison function
    bool operator() (const TString& a, const TString& b) const;
 };
 
@@ -129,6 +128,7 @@ protected:
    static Bool_t IsBracket(const char c);
    static Bool_t IsFunctionNameChar(const char c);
    static Bool_t IsScientificNotation(const TString & formula, int ipos);
+   static Bool_t IsHexadecimal(const TString & formula, int ipos);
    void   ExtractFunctors(TString &formula);
    void   PreProcessFormula(TString &formula);
    void   ProcessFormula(TString &formula);

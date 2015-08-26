@@ -9,26 +9,25 @@
  * For the list of contributors see $ROOTSYS/README/CREDITS.             *
  *************************************************************************/
 
-//////////////////////////////////////////////////////////////////////////
-//                                                                      //
-// Abstract interface for Tree Index                                    //
-//                                                                      //
-//////////////////////////////////////////////////////////////////////////
+/** \class TVirtualIndex
+Abstract interface for Tree Index
+*/
 
 #include "TVirtualIndex.h"
 #include "TTree.h"
 
 ClassImp(TVirtualIndex)
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+/// Default constructor for TVirtualIndex
+
 TVirtualIndex::TVirtualIndex(): TNamed()
 {
-// Default constructor for TVirtualIndex
-
    fTree         = 0;
 }
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 TVirtualIndex::~TVirtualIndex()
 {
 }

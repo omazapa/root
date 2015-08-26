@@ -1,8 +1,6 @@
 ############################################################################
 # CMakeLists.txt file for building ROOT bindings/pyroot package
 ############################################################################
-ROOT_USE_PACKAGE(math/mathcore)
-ROOT_USE_PACKAGE(tree/tree)
 include_directories(${PYTHON_INCLUDE_DIRS})
 
 ROOT_GENERATE_DICTIONARY(G__PyROOT *.h MODULE PyROOT LINKDEF LinkDef.h OPTIONS "-writeEmptyRootPCM")
@@ -14,16 +12,13 @@ endif()
 if(WIN32)
   set(ROOTULIBS -include:_G__cpp_setupG__Net
                 -include:_G__cpp_setupG__IO
-                -include:_G__cpp_setupG__Hist
-                -include:_G__cpp_setupG__Graf
-                -include:_G__cpp_setupG__G3D
-                -include:_G__cpp_setupG__GPad
                 -include:_G__cpp_setupG__Tree
                 -include:_G__cpp_setupG__Thread
-                -include:_G__cpp_setupG__Matrix)
+                -include:_G__cpp_setupG__MathCore)
 endif()
-ROOT_LINKER_LIBRARY(PyROOT *.cxx G__PyROOT.cxx LIBRARIES RIO Net Hist Graf Graf3d Gpad Tree Matrix Thread ${PYTHON_LIBRARIES})
-if(WIN32)
+ROOT_LINKER_LIBRARY(PyROOT *.cxx G__PyROOT.cxx LIBRARIES Core Net Tree MathCore Rint ${PYTHON_LIBRARIES})
+
+if(MSVC)
   add_custom_command(TARGET PyROOT POST_BUILD
                      COMMAND link -dll -nologo -IGNORE:4001 -machine:ix86 -export:initlibPyROOT
                     $<TARGET_LINKER_FILE:PyROOT> -nodefaultlib kernel32.lib msvcrt.lib
@@ -45,6 +40,9 @@ foreach(pyfile ${pyfiles})
   file(COPY ${pyfile} DESTINATION ${CMAKE_BINARY_DIR}/${runtimedir})
 endforeach()
 
+set( ROOTaaSDirName "ROOTaaS")
+install (DIRECTORY ${ROOTaaSDirName} DESTINATION ${runtimedir})
+file(COPY ${ROOTaaSDirName} DESTINATION ${CMAKE_BINARY_DIR}/${runtimedir})
+
 #---Install headers----------------------------------------------------------
 ROOT_INSTALL_HEADERS()
-

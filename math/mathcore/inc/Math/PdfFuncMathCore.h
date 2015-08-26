@@ -29,25 +29,13 @@ Additional distributions are also provided by the
 
 @defgroup StatFunc Statistical functions
 
+@ingroup  MathCore
+@ingroup  MathMore
+
 */
-
-
-
-#if defined(__CINT__) && !defined(__MAKECINT__)
-// avoid to include header file when using CINT
-#ifndef _WIN32
-#include "../lib/libMathCore.so"
-#else
-#include "../bin/libMathCore.dll"
-#endif
-
-#else
-
 
 #ifndef ROOT_Math_PdfFuncMathCore
 #define ROOT_Math_PdfFuncMathCore
-
-
 
 
 namespace ROOT {
@@ -55,7 +43,7 @@ namespace Math {
 
 
 
-  /** @defgroup PdfFunc Probability Density Functions (PDF) from MathCore
+  /** @defgroup PdfFunc Probability Density Functions (PDF)
    *   @ingroup StatFunc
    *  Probability density functions of various statistical distributions
    *  (continuous and discrete).
@@ -429,5 +417,3 @@ namespace Math {
 
 
 #endif // ROOT_Math_PdfFunc
-
-#endif // if defined (__CINT__) && !defined(__MAKECINT__)

@@ -9,63 +9,67 @@
  * For the list of contributors see $ROOTSYS/README/CREDITS.             *
  *************************************************************************/
 
-////////////////////////////////////////////////////////////////////////////
-//                                                                        //
-// A TSelector object is used by the TTree::Draw, TTree::Scan,            //
-// TTree::Process to navigate in a TTree and make selections.             //
-// It contains the following main methods:                                //
-//                                                                        //
-// void TSelector::Init(TTree *t). Called every time a new TTree is       //
-//    attached.                                                           //
-//                                                                        //
-// void TSelector::SlaveBegin(). Create e.g. histograms in this method.   //
-//    This method is called (with or without PROOF) before looping on the //
-//    entries in the Tree. When using PROOF, this method is called on     //
-//    each worker node.                                                   //
-// void TSelector::Begin(). Mostly for backward compatibility; use        //
-//    SlaveBegin() instead. Both methods are called before looping on the //
-//    entries in the Tree. When using PROOF, Begin() is called on the     //
-//    client only.                                                        //
-//                                                                        //
-// Bool_t TSelector::Notify(). This method is called at the first entry   //
-//    of a new file in a chain.                                           //
-//                                                                        //
-// Bool_t TSelector::Process(Long64_t entry). This method is called       //
-//    to process an entry. It is the user's responsability to read        //
-//    the corresponding entry in memory (may be just a partial read).     //
-//    Once the entry is in memory one can apply a selection and if the    //
-//    entry is selected histograms can be filled. Processing stops        //
-//    when this function returns kFALSE. This function combines the       //
-//    next two functions in one, avoiding to have to maintain state       //
-//    in the class to communicate between these two functions.            //
-//    See WARNING below about entry.                                      //
-//    This method is used by PROOF.                                       //
-// Bool_t TSelector::ProcessCut(Long64_t entry). This method is called    //
-//    before processing entry. It is the user's responsability to read    //
-//    the corresponding entry in memory (may be just a partial read).     //
-//    The function returns kTRUE if the entry must be processed,          //
-//    kFALSE otherwise. This method is obsolete, use Process().           //
-//    See WARNING below about entry.                                      //
-// void TSelector::ProcessFill(Long64_t entry). This method is called     //
-//    for all selected entries. User fills histograms in this function.   //
-//    This method is obsolete, use Process().                             //
-//    See WARNING below about entry.                                      //
-// void TSelector::SlaveTerminate(). This method is called at the end of  //
-//    the loop on all PROOF worker nodes. In local mode this method is    //
-//    called on the client too.                                           //
-// void TSelector::Terminate(). This method is called at the end of       //
-//    the loop on all entries. When using PROOF Terminate() is call on    //
-//    the client only. Typically one performs the fits on the produced    //
-//    histograms or write the histograms to file in this method.          //
-//                                                                        //
-// WARNING when a selector is used with a TChain:                         //
-//    in the Process, ProcessCut, ProcessFill function, you must use      //
-//    the pointer to the current Tree to call GetEntry(entry).            //
-//    entry is always the local entry number in the current tree.         //
-//    Assuming that fChain is the pointer to the TChain being processed,  //
-//    use fChain->GetTree()->GetEntry(entry);                             //
-//                                                                        //
-////////////////////////////////////////////////////////////////////////////
+/** \class TSelector
+A TSelector object is used by the TTree::Draw, TTree::Scan,
+TTree::Process to navigate in a TTree and make selections.
+It contains the following main methods:
+
+- void TSelector::Init(TTree *t). Called every time a new TTree is
+   attached.
+
+- void TSelector::SlaveBegin(). Create e.g. histograms in this method.
+  This method is called (with or without PROOF) before looping on the
+  entries in the Tree. When using PROOF, this method is called on
+  each worker node.
+
+- void TSelector::Begin(). Mostly for backward compatibility; use
+  SlaveBegin() instead. Both methods are called before looping on the
+  entries in the Tree. When using PROOF, Begin() is called on the
+  client only.
+
+- Bool_t TSelector::Notify(). This method is called at the first entry
+  of a new file in a chain.
+
+- Bool_t TSelector::Process(Long64_t entry). This method is called
+  to process an entry. It is the user's responsability to read
+  the corresponding entry in memory (may be just a partial read).
+  Once the entry is in memory one can apply a selection and if the
+  entry is selected histograms can be filled. Processing stops
+  when this function returns kFALSE. This function combines the
+  next two functions in one, avoiding to have to maintain state
+  in the class to communicate between these two functions.
+  See WARNING below about entry.
+  This method is used by PROOF.
+
+- Bool_t TSelector::ProcessCut(Long64_t entry). This method is called
+  before processing entry. It is the user's responsability to read
+  the corresponding entry in memory (may be just a partial read).
+  The function returns kTRUE if the entry must be processed,
+  kFALSE otherwise. This method is obsolete, use Process().
+  See WARNING below about entry.
+
+- void TSelector::ProcessFill(Long64_t entry). This method is called
+  for all selected entries. User fills histograms in this function.
+  This method is obsolete, use Process().
+  See WARNING below about entry.
+
+- void TSelector::SlaveTerminate(). This method is called at the end of
+  the loop on all PROOF worker nodes. In local mode this method is
+  called on the client too.
+
+- void TSelector::Terminate(). This method is called at the end of
+  the loop on all entries. When using PROOF Terminate() is call on
+  the client only. Typically one performs the fits on the produced
+  histograms or write the histograms to file in this method.
+
+__WARNING when a selector is used with a TChain:__
+
+in the Process, ProcessCut, ProcessFill function, you must use
+the pointer to the current Tree to call `GetEntry(entry)`.
+entry is always the local entry number in the current tree.
+Assuming that fChain is the pointer to the TChain being processed,
+use `fChain->GetTree()->GetEntry(entry);`
+*/
 
 #include "TROOT.h"
 #include "TSystem.h"
@@ -75,14 +79,13 @@
 #include "TClass.h"
 #include "TInterpreter.h"
 
-
 ClassImp(TSelector)
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+/// Default selector ctor.
+
 TSelector::TSelector() : TObject()
 {
-   // Default selector ctor.
-
    fStatus = 0;
    fAbort  = kContinue;
    fObject = 0;
@@ -91,25 +94,25 @@ TSelector::TSelector() : TObject()
    fOutput->SetOwner();
 }
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+/// Selector destructor.
+
 TSelector::~TSelector()
 {
-   // Selector destructor.
-
    delete fOutput;
 }
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+/// Abort processing. If what = kAbortProcess, the Process() loop will be
+/// aborted. If what = kAbortFile, the current file in a chain will be
+/// aborted and the processing will continue with the next file, if there
+/// is no next file then Process() will be aborted. Abort() can also  be
+/// called from Begin(), SlaveBegin(), Init() and Notify(). After abort
+/// the SlaveTerminate() and Terminate() are always called. The abort flag
+/// can be checked in these methods using GetAbort().
+
 void TSelector::Abort(const char *why, EAbort what)
 {
-   // Abort processing. If what = kAbortProcess, the Process() loop will be
-   // aborted. If what = kAbortFile, the current file in a chain will be
-   // aborted and the processing will continue with the next file, if there
-   // is no next file then Process() will be aborted. Abort() can also  be
-   // called from Begin(), SlaveBegin(), Init() and Notify(). After abort
-   // the SlaveTerminate() and Terminate() are always called. The abort flag
-   // can be checked in these methods using GetAbort().
-
    fAbort = what;
    TString mess = "Abort";
    if (fAbort == kAbortProcess)
@@ -120,22 +123,22 @@ void TSelector::Abort(const char *why, EAbort what)
    Info(mess, "%s", why);
 }
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+/// The code in filename is loaded (interpreted or compiled, see below),
+/// filename must contain a valid class implementation derived from TSelector.
+///
+/// If filename is of the form file.C, the file will be interpreted.
+/// If filename is of the form file.C++, the file file.C will be compiled
+/// and dynamically loaded. The corresponding binary file and shared
+/// library will be deleted at the end of the function.
+/// If filename is of the form file.C+, the file file.C will be compiled
+/// and dynamically loaded. At next call, if file.C is older than file.o
+/// and file.so, the file.C is not compiled, only file.so is loaded.
+///
+/// The static function returns a pointer to a TSelector object
+
 TSelector *TSelector::GetSelector(const char *filename)
 {
-   // The code in filename is loaded (interpreted or compiled, see below),
-   // filename must contain a valid class implementation derived from TSelector.
-   //
-   // If filename is of the form file.C, the file will be interpreted.
-   // If filename is of the form file.C++, the file file.C will be compiled
-   // and dynamically loaded. The corresponding binary file and shared
-   // library will be deleted at the end of the function.
-   // If filename is of the form file.C+, the file file.C will be compiled
-   // and dynamically loaded. At next call, if file.C is older than file.o
-   // and file.so, the file.C is not compiled, only file.so is loaded.
-   //
-   // The static function returns a pointer to a TSelector object
-
    // If the filename does not contain "." assume class is compiled in
    TString localname;
    Bool_t fromFile = kFALSE;
@@ -225,12 +228,12 @@ TSelector *TSelector::GetSelector(const char *filename)
    }
 }
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+/// Find out if this is a standard selection used for Draw actions
+/// (either TSelectorDraw, TProofDraw or deriving from them).
+
 Bool_t TSelector::IsStandardDraw(const char *selec)
 {
-   // Find out if this is a standard selection used for Draw actions
-   // (either TSelectorDraw, TProofDraw or deriving from them).
-
    // Make sure we have a name
    if (!selec) {
       ::Info("TSelector::IsStandardDraw",

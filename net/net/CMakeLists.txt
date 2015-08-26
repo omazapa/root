@@ -2,10 +2,6 @@
 # CMakeLists.txt file for building ROOT net/net package
 ############################################################################
 
-ROOT_USE_PACKAGE(io/io)
-ROOT_USE_PACKAGE(math/mathcore)
-
-
 ROOT_GLOB_HEADERS(headers RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/inc inc/*.h)
 ROOT_GLOB_SOURCES(sources RELATIVE ${CMAKE_CURRENT_SOURCE_DIR}/src src/*.cxx)
 
@@ -16,6 +12,7 @@ if(NOT ssl)
 else()
   set(ssllib ${OPENSSL_LIBRARIES})
   add_definitions(-DR__SSL)
+  include_directories(${OPENSSL_INCLUDE_DIR})
 endif()
 
 if(NOT ssl OR NOT CRYPTLIBS)

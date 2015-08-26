@@ -3,9 +3,6 @@
 # @author Pere Mato, CERN
 ############################################################################
 
-ROOT_USE_PACKAGE(net/net)
-ROOT_USE_PACKAGE(io/io)
-
 ROOT_GLOB_HEADERS(headers inc/*.h)
 list(REMOVE_ITEM headers ${CMAKE_CURRENT_SOURCE_DIR}/inc/LinkDefAFS.h
                          ${CMAKE_CURRENT_SOURCE_DIR}/inc/LinkDefRoot.h
@@ -27,6 +24,10 @@ add_library(rsa STATIC ${CMAKE_CURRENT_SOURCE_DIR}/src/rsaaux.cxx
                        ${CMAKE_CURRENT_SOURCE_DIR}/src/rsalib.cxx
                        ${CMAKE_CURRENT_SOURCE_DIR}/src/rsafun.cxx)
 add_dependencies(rsa move_headers)
+
+if(ssl)
+  include_directories(${OPENSSL_INCLUDE_DIR})
+endif()
 
 ROOT_GENERATE_DICTIONARY(G__RootAuth ${headers} MODULE RootAuth LINKDEF LinkDefRoot.h)
 ROOT_LINKER_LIBRARY(RootAuth ${sources} G__RootAuth.cxx LIBRARIES ${CRYPTLIBS} DEPENDENCIES Net RIO )

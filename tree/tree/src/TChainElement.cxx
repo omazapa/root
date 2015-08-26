@@ -9,11 +9,9 @@
  * For the list of contributors see $ROOTSYS/README/CREDITS.             *
  *************************************************************************/
 
-//////////////////////////////////////////////////////////////////////////
-//                                                                      //
-// A TChainElement describes a component of a TChain.                   //
-//                                                                      //
-//////////////////////////////////////////////////////////////////////////
+/** \class TChainElement
+A TChainElement describes a component of a TChain.
+*/
 
 #include "TTree.h"
 #include "TChainElement.h"
@@ -22,12 +20,12 @@
 
 ClassImp(TChainElement)
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+/// Default constructor for a chain element.
+
 TChainElement::TChainElement() : TNamed(),fBaddress(0),fBaddressType(0),
                                  fBaddressIsPtr(kFALSE), fBranchPtr(0)
 {
-   // Default constructor for a chain element.
-
    fNPackets   = 0;
    fPackets    = 0;
    fEntries    = 0;
@@ -36,13 +34,13 @@ TChainElement::TChainElement() : TNamed(),fBaddress(0),fBaddressType(0),
    ResetBit(kHasBeenLookedUp);
 }
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+/// Create a chain element.
+
 TChainElement::TChainElement(const char *name, const char *title)
    :TNamed(name,title),fBaddress(0),fBaddressType(0),
     fBaddressIsPtr(kFALSE), fBranchPtr(0)
 {
-   // Create a chain element.
-
    fNPackets   = 0;
    fPackets    = 0;
    fEntries    = 0;
@@ -51,19 +49,19 @@ TChainElement::TChainElement(const char *name, const char *title)
    ResetBit(kHasBeenLookedUp);
 }
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+/// Default destructor for a chain element.
+
 TChainElement::~TChainElement()
 {
-   // Default destructor for a chain element.
-
    delete [] fPackets;
 }
 
-//_______________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+/// Initialize the packet descriptor string.
+
 void TChainElement::CreatePackets()
 {
-   // Initialize the packet descriptor string.
-
    fNPackets = 1 + Int_t(fEntries/fPacketSize);
    delete [] fPackets;
    fPackets = new char[fNPackets+1];
@@ -72,27 +70,28 @@ void TChainElement::CreatePackets()
 
 }
 
-//_______________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+/// List files in the chain.
+
 void TChainElement::ls(Option_t *) const
 {
-   // List files in the chain.
-
    TROOT::IndentLevel();
    std::cout << GetTitle() << "tree:" << GetName() << " entries=" << fEntries << '\n';
 }
 
-//_______________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+/// Set number of entries per packet for parallel root.
+
 void TChainElement::SetPacketSize(Int_t size)
 {
-   // Set number of entries per packet for parallel root.
-
    fPacketSize = size;
 }
 
-//_______________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+/// Set/Reset the looked-up bit
+
 void TChainElement::SetLookedUp(Bool_t y)
 {
-   // Set/Reset the looked-up bit
    if (y)
       SetBit(kHasBeenLookedUp);
    else

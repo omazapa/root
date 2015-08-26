@@ -15,8 +15,10 @@
 # Translated to python by Danilo Piparo, 2015-4-23
 
 
+from __future__ import print_function
 import sys
 import os
+import subprocess
 import shutil
 
 #-------------------------------------------------------------------------------
@@ -24,7 +26,7 @@ def getArgs():
    argv = sys.argv
    argc = len(argv)
    if argc < 2:
-      print "ERROR: too few arguments specified!"
+      print("ERROR: too few arguments specified!")
    pchFileName = argv[1]
    cxxflags = ""
    if argc > 2:
@@ -64,14 +66,14 @@ def makepch():
    loc1 = os.path.join(rootdir, allheadersFilename)
    rootsys = ""
    rootSysEnvName = "ROOTSYS"
-   if os.environ.has_key(rootSysEnvName):
+   if rootSysEnvName in os.environ:
       rootsys = os.environ[rootSysEnvName]
    loc2 = os.path.join(rootsys, allheadersFilename)
 
    if not os.path.exists(loc1):
       rootdir = rootsys
       if not os.path.exists(loc2):
-         print "ERROR: cannot find %s file here %s nor here %s" %(allheadersFilename, loc1, loc2)
+         print ("ERROR: cannot find %s file here %s nor here %s" %(allheadersFilename, loc1, loc2))
          sys.exit(1)
    else:
       rootbuildFlag="-rootbuild"
@@ -102,12 +104,12 @@ def makepch():
                                                                          extraHeaders,
                                                                          alllinkdefsFilename)
 
-   ret = os.system(command)
+   ret = subprocess.call(command,shell=True)
    if ret == 0:
       shutil.move("allDict_rdict.pch",pchFileName)
       os.unlink("allDict.cxx")
 
-   sys.exit(ret)
+   return ret
 
 if __name__ == "__main__":
    ret = makepch()

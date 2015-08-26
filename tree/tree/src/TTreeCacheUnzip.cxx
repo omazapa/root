@@ -8,42 +8,37 @@
  * For the licensing terms see $ROOTSYS/LICENSE.                         *
  * For the list of contributors see $ROOTSYS/README/CREDITS.             *
  *************************************************************************/
-//////////////////////////////////////////////////////////////////////////
-//                                                                      //
-// TTreeCacheUnzip                                                      //
-//                                                                      //
-// Specialization of TTreeCache for parallel Unzipping                  //
-//                                                                      //
-// Fabrizio Furano (CERN) Aug 2009                                      //
-// Core TTree-related code borrowed from the previous version           //
-//  by Leandro Franco and Rene Brun                                     //
-//                                                                      //
-//////////////////////////////////////////////////////////////////////////
 
-//////////////////////////////////////////////////////////////////////////
-// Parallel Unzipping                                                   //
-//                                                                      //
-// TTreeCache has been specialised in order to let additional threads   //
-//  free to unzip in advance its content. In this implementation we     //
-//  support up to 10 threads, but right now it makes more sense to      //
-//  limit their number to 1-2                                           //
-//                                                                      //
-// The application reading data is carefully synchronized, in order to: //
-//  - if the block it wants is not unzipped, it self-unzips it without  //
-//     waiting                                                          //
-//  - if the block is being unzipped in parallel, it waits only         //
-//    for that unzip to finish                                          //
-//  - if the block has already been unzipped, it takes it               //
-//                                                                      //
-// This is supposed to cancel a part of the unzipping latency, at the   //
-//  expenses of cpu time.                                               //
-//                                                                      //
-// The default parameters are the same of the prev version, i.e. 20%    //
-//  of the TTreeCache cache size. To change it use                      //
-// TTreeCache::SetUnzipBufferSize(Long64_t bufferSize)                  //
-// where bufferSize must be passed in bytes.                            //
-//                                                                      //
-//////////////////////////////////////////////////////////////////////////
+/** \class TTreeCacheUnzip
+
+Specialization of TTreeCache for parallel Unzipping.
+
+Fabrizio Furano (CERN) Aug 2009
+Core TTree-related code borrowed from the previous version
+ by Leandro Franco and Rene Brun
+
+## Parallel Unzipping
+
+TTreeCache has been specialised in order to let additional threads
+free to unzip in advance its content. In this implementation we
+support up to 10 threads, but right now it makes more sense to
+limit their number to 1-2
+
+The application reading data is carefully synchronized, in order to:
+ - if the block it wants is not unzipped, it self-unzips it without
+   waiting
+ - if the block is being unzipped in parallel, it waits only
+   for that unzip to finish
+ - if the block has already been unzipped, it takes it
+
+This is supposed to cancel a part of the unzipping latency, at the
+expenses of cpu time.
+
+The default parameters are the same of the prev version, i.e. 20%
+of the TTreeCache cache size. To change it use
+TTreeCache::SetUnzipBufferSize(Long64_t bufferSize)
+where bufferSize must be passed in bytes.
+*/
 
 #include "TTreeCacheUnzip.h"
 #include "TChain.h"
@@ -71,7 +66,8 @@ Double_t TTreeCacheUnzip::fgRelBuffSize = .5;
 
 ClassImp(TTreeCacheUnzip)
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 TTreeCacheUnzip::TTreeCacheUnzip() : TTreeCache(),
 
    fActiveThread(kFALSE),
@@ -96,7 +92,9 @@ TTreeCacheUnzip::TTreeCacheUnzip() : TTreeCache(),
    Init();
 }
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+/// Constructor.
+
 TTreeCacheUnzip::TTreeCacheUnzip(TTree *tree, Int_t buffersize) : TTreeCache(tree,buffersize),
    fActiveThread(kFALSE),
    fAsyncReading(kFALSE),
@@ -114,16 +112,14 @@ TTreeCacheUnzip::TTreeCacheUnzip(TTree *tree, Int_t buffersize) : TTreeCache(tre
    fNStalls(0),
    fNMissed(0)
 {
-   // Constructor.
-
    Init();
 }
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+/// Initialization procedure common to all the constructors.
+
 void TTreeCacheUnzip::Init()
 {
-   // Initialization procedure common to all the constructors
-
    fMutexList        = new TMutex(kTRUE);
    fIOMutex          = new TMutex(kTRUE);
 
@@ -166,23 +162,20 @@ void TTreeCacheUnzip::Init()
 
 }
 
-//______________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+/// Destructor. (in general called by the TFile destructor)
+
 TTreeCacheUnzip::~TTreeCacheUnzip()
 {
-   // destructor. (in general called by the TFile destructor
-   // destructor. (in general called by the TFile destructor)
-
    ResetCache();
 
    if (IsActiveThread())
       StopThreadUnzip();
 
-
    delete [] fUnzipLen;
 
    delete fUnzipStartCondition;
    delete fUnzipDoneCondition;
-
 
    delete fMutexList;
    delete fIOMutex;
@@ -191,34 +184,38 @@ TTreeCacheUnzip::~TTreeCacheUnzip()
    delete [] fUnzipChunks;
 }
 
-//_____________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+/// Add a branch to the list of branches to be stored in the cache
+/// this function is called by TBranch::GetBasket
+/// Returns:
+///  - 0 branch added or already included
+///  - -1 on error
+
 Int_t TTreeCacheUnzip::AddBranch(TBranch *b, Bool_t subbranches /*= kFALSE*/)
 {
-   //add a branch to the list of branches to be stored in the cache
-   //this function is called by TBranch::GetBasket
-   // Returns  0 branch added or already included
-   //         -1 on error
    R__LOCKGUARD(fMutexList);
 
    return TTreeCache::AddBranch(b, subbranches);
 }
 
-//_____________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+/// Add a branch to the list of branches to be stored in the cache
+/// this function is called by TBranch::GetBasket
+/// Returns:
+///  - 0 branch added or already included
+///  - -1 on error
+
 Int_t TTreeCacheUnzip::AddBranch(const char *branch, Bool_t subbranches /*= kFALSE*/)
 {
-   //add a branch to the list of branches to be stored in the cache
-   //this function is called by TBranch::GetBasket
-   // Returns  0 branch added or already included
-   //         -1 on error
    R__LOCKGUARD(fMutexList);
 
    return TTreeCache::AddBranch(branch, subbranches);
 }
 
-//_____________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+
 Bool_t TTreeCacheUnzip::FillBuffer()
 {
-
    if (fNbranches <= 0) return kFALSE;
    {
       // Fill the cache buffer with the branches in the cache.
@@ -295,7 +292,6 @@ Bool_t TTreeCacheUnzip::FillBuffer()
          if (gDebug > 0) printf("Entry: %lld, registering baskets branch %s, fEntryNext=%lld, fNseek=%d, fNtot=%d\n",entry,((TBranch*)fBranches->UncheckedAt(i))->GetName(),fEntryNext,fNseek,fNtot);
       }
 
-
       // Now fix the size of the status arrays
       ResetCache();
 
@@ -306,15 +302,15 @@ Bool_t TTreeCacheUnzip::FillBuffer()
    return kTRUE;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+/// Change the underlying buffer size of the cache.
+/// Returns:
+///  - 0 if the buffer content is still available
+///  - 1 if some or all of the buffer content has been made unavailable
+///  - -1 on error
 
-//_____________________________________________________________________________
 Int_t TTreeCacheUnzip::SetBufferSize(Int_t buffersize)
 {
-   // Change the underlying buffer size of the cache.
-   // Returns  0 if the buffer content is still available
-   //          1 if some or all of the buffer content has been made unavailable
-   //         -1 on error
-
    R__LOCKGUARD(fMutexList);
 
    Int_t res = TTreeCache::SetBufferSize(buffersize);
@@ -326,82 +322,83 @@ Int_t TTreeCacheUnzip::SetBufferSize(Int_t buffersize)
    return 1;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+/// Set the minimum and maximum entry number to be processed
+/// this information helps to optimize the number of baskets to read
+/// when prefetching the branch buffers.
 
-//_____________________________________________________________________________
 void TTreeCacheUnzip::SetEntryRange(Long64_t emin, Long64_t emax)
 {
-   // Set the minimum and maximum entry number to be processed
-   // this information helps to optimize the number of baskets to read
-   // when prefetching the branch buffers.
    R__LOCKGUARD(fMutexList);
 
    TTreeCache::SetEntryRange(emin, emax);
 }
 
-//_____________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+/// It's the same as TTreeCache::StopLearningPhase but we guarantee that
+/// we start the unzipping just after getting the buffers
+
 void TTreeCacheUnzip::StopLearningPhase()
 {
-   // It's the same as TTreeCache::StopLearningPhase but we guarantee that
-   // we start the unzipping just after getting the buffers
    R__LOCKGUARD(fMutexList);
-
 
    TTreeCache::StopLearningPhase();
 
 }
 
-//_____________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+///update pointer to current Tree and recompute pointers to the branches in the cache
+
 void TTreeCacheUnzip::UpdateBranches(TTree *tree)
 {
-   //update pointer to current Tree and recompute pointers to the branches in the cache
    R__LOCKGUARD(fMutexList);
 
    TTreeCache::UpdateBranches(tree);
 }
 
-///////////////////////////////////////////////////////////////////////////////
-//                                                                           //
-// From now on we have the method concerning the threading part of the cache //
-//                                                                           //
-///////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+//                                                                            //
+// From now on we have the methods concerning the threading part of the cache //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
 
-//_____________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+/// Static function that returns the parallel option
+/// (to indicate an additional thread)
+
 TTreeCacheUnzip::EParUnzipMode TTreeCacheUnzip::GetParallelUnzip()
 {
-   // Static function that returns the parallel option
-   // (to indicate an additional thread)
-
    return fgParallel;
 }
 
-//_____________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+/// Static function that tells wether the multithreading unzipping is activated
+
 Bool_t TTreeCacheUnzip::IsParallelUnzip()
 {
-   // Static function that tells wether the multithreading unzipping
-   // is activated
-
    if (fgParallel == kEnable || fgParallel == kForce)
       return kTRUE;
 
    return kFALSE;
 }
 
-//_____________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+/// This indicates if the thread is active in this moment...
+/// this variable is very important because if we change it from true to
+/// false the thread will stop... ( see StopThreadTreeCacheUnzip() )
+
 Bool_t TTreeCacheUnzip::IsActiveThread()
 {
-   // This indicates if the thread is active in this moment...
-   // this variable is very important because if we change it from true to
-   // false the thread will stop... ( see StopThreadTreeCacheUnzip() )
    R__LOCKGUARD(fMutexList);
 
    return fActiveThread;
 }
 
-//_____________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+/// It says if the queue is empty... useful to see if we have to process it.
+
 Bool_t TTreeCacheUnzip::IsQueueEmpty()
 {
-   // It says if the queue is empty... useful to see if we have to process
-   // it.
    R__LOCKGUARD(fMutexList);
 
    if ( fIsLearning )
@@ -417,12 +414,13 @@ void TTreeCacheUnzip::WaitUnzipStartSignal()
    fUnzipStartCondition->TimedWaitRelative(2000);
 
 }
-//_____________________________________________________________________________
+
+////////////////////////////////////////////////////////////////////////////////
+/// This will send the signal corresponfing to the queue... normally used
+/// when we want to start processing the list of buffers.
+
 void TTreeCacheUnzip::SendUnzipStartSignal(Bool_t broadcast)
 {
-   // This will send the signal corresponfing to the queue... normally used
-   // when we want to start processing the list of buffers.
-
    if (gDebug > 0) Info("SendSignal", " fUnzipCondition->Signal()");
 
    if (broadcast)
@@ -431,18 +429,21 @@ void TTreeCacheUnzip::SendUnzipStartSignal(Bool_t broadcast)
       fUnzipStartCondition->Signal();
 }
 
-//_____________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+/// Static function that (de)activates multithreading unzipping
+///
+/// The possible options are:
+///  - kEnable _Enable_ it, which causes an automatic detection and launches the
+///    additional thread if the number of cores in the machine is greater than
+///    one
+///  - kDisable _Disable_ will not activate the additional thread.
+///  - kForce _Force_ will start the additional thread even if there is only one
+///    core. the default will be taken as kEnable.
+///
+/// Returns 0 if there was an error, 1 otherwise.
+
 Int_t TTreeCacheUnzip::SetParallelUnzip(TTreeCacheUnzip::EParUnzipMode option)
 {
-   // Static function that(de)activates multithreading unzipping
-   // The possible options are:
-   // kEnable _Enable_ it, which causes an automatic detection and launches the
-   // additional thread if the number of cores in the machine is greater than one
-   // kDisable _Disable_ will not activate the additional thread.
-   // kForce _Force_ will start the additional thread even if there is only one core.
-   // the default will be taken as kEnable.
-   // returns 0 if there was an error, 1 otherwise.
-
    if(fgParallel == kEnable || fgParallel == kForce || fgParallel == kDisable) {
       fgParallel = option;
       return 1;
@@ -450,20 +451,20 @@ Int_t TTreeCacheUnzip::SetParallelUnzip(TTreeCacheUnzip::EParUnzipMode option)
    return 0;
 }
 
-
 class TTreeCacheUnzipData {
 public:
    TTreeCacheUnzip *fInstance;
    Int_t            fCount;
 };
 
-//_____________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+/// The Thread is only a part of the TTreeCache but it is the part that
+/// waits for info in the queue and process it... unfortunatly, a Thread is
+/// not an object an we have to deal with it in the old C-Style way
+/// Returns 0 if the thread was initialized or 1 if it was already running
+
 Int_t TTreeCacheUnzip::StartThreadUnzip(Int_t nthreads)
 {
-   // The Thread is only a part of the TTreeCache but it is the part that
-   // waits for info in the queue and process it... unfortunatly, a Thread is
-   // not an object an we have to deal with it in the old C-Style way
-   // Returns 0 if the thread was initialized or 1 if it was already running
    Int_t nt = nthreads;
    if (nt > 10) nt = 10;
 
@@ -497,14 +498,16 @@ Int_t TTreeCacheUnzip::StartThreadUnzip(Int_t nthreads)
    return (fActiveThread == kTRUE);
 }
 
-//_____________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+/// To stop the thread we only need to change the value of the variable
+/// fActiveThread to false and the loop will stop (of course, we will have)
+/// to do the cleaning after that.
+///
+/// Note: The syncronization part is important here or we will try to delete
+///       teh object while it's still processing the queue
+
 Int_t TTreeCacheUnzip::StopThreadUnzip()
 {
-   // To stop the thread we only need to change the value of the variable
-   // fActiveThread to false and the loop will stop (of course, we will have)
-   // to do the cleaning after that.
-   // Note: The syncronization part is important here or we will try to delete
-   //       teh object while it's still processing the queue
    fActiveThread = kFALSE;
 
    for (Int_t i = 0; i < 1; i++) {
@@ -523,16 +526,17 @@ Int_t TTreeCacheUnzip::StopThreadUnzip()
    return 1;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+/// This is a static function.
+///
+/// This is the call that will be executed in the Thread generated by
+/// StartThreadTreeCacheUnzip... what we want to do is to inflate the next
+/// series of buffers leaving them in the second cache.
+///
+/// Returns 0 when it finishes
 
-
-//_____________________________________________________________________________
 void* TTreeCacheUnzip::UnzipLoop(void *arg)
 {
-   // This is a static function.
-   // This is the call that will be executed in the Thread generated by
-   // StartThreadTreeCacheUnzip... what we want to do is to inflate the next
-   // series of buffers leaving them in the second cache.
-   // Returns 0 when it finishes
    TTreeCacheUnzipData *d = (TTreeCacheUnzipData *)arg;
    TTreeCacheUnzip *unzipMng = d->fInstance;
 
@@ -557,7 +561,6 @@ void* TTreeCacheUnzip::UnzipLoop(void *arg)
          else startindex = -1;
       }
 
-
       if (startindex >= 0)
          res = unzipMng->UnzipCache(startindex, locbuffsz, locbuff);
 
@@ -572,7 +575,6 @@ void* TTreeCacheUnzip::UnzipLoop(void *arg)
          }
       }
 
-
    }
 
    delete d;
@@ -580,29 +582,32 @@ void* TTreeCacheUnzip::UnzipLoop(void *arg)
    return (void *)0;
 }
 
-///////////////////////////////////////////////////////////////////////////////
-//                                                                           //
-// From now on we have the method concerning the unzipping part of the cache //
-//                                                                           //
-///////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+//                                                                            //
+// From now on we have the methods concerning the unzipping part of the cache //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
 
-//_____________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+/// Read the logical record header from the buffer buf.
+/// That must be the pointer tho the header part not the object by itself and
+/// must contain data of at least maxbytes
+/// Returns nread;
+///
+/// In output arguments:
+///
+/// -  nbytes : number of bytes in record
+///             if negative, this is a deleted record
+///             if 0, cannot read record, wrong value of argument first
+/// -  objlen : uncompressed object size
+/// -  keylen : length of logical record header
+///
+/// Note that the arguments objlen and keylen are returned only
+/// if maxbytes >=16
+/// Note: This was adapted from TFile... so some things dont apply
+
 Int_t TTreeCacheUnzip::GetRecordHeader(char *buf, Int_t maxbytes, Int_t &nbytes, Int_t &objlen, Int_t &keylen)
 {
-   // Read the logical record header from the buffer buf.
-   // That must be the pointer tho the header part not the object by itself and
-   // must contain data of at least maxbytes
-   // Returns nread;
-   // In output arguments:
-   //    nbytes : number of bytes in record
-   //             if negative, this is a deleted record
-   //             if 0, cannot read record, wrong value of argument first
-   //    objlen : uncompressed object size
-   //    keylen : length of logical record header
-   // Note that the arguments objlen and keylen are returned only
-   // if maxbytes >=16
-   // Note: This was adapted from TFile... so some things dont apply
-
    Version_t versionkey;
    Short_t klen;
    UInt_t datime;
@@ -624,17 +629,17 @@ Int_t TTreeCacheUnzip::GetRecordHeader(char *buf, Int_t maxbytes, Int_t &nbytes,
    return nread;
 }
 
-//_____________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+/// This will delete the list of buffers that are in the unzipping cache
+/// and will reset certain values in the cache.
+/// This name is ambiguos because the method doesn't reset the whole cache,
+/// only the part related to the unzipping
+/// Note: This method is completely different from TTreeCache::ResetCache(),
+/// in that method we were cleaning the prefetching buffer while here we
+/// delete the information about the unzipped buffers
+
 void TTreeCacheUnzip::ResetCache()
 {
-   // This will delete the list of buffers that are in the unzipping cache
-   // and will reset certain values in the cache.
-   // This name is ambiguos because the method doesn't reset the whole cache,
-   // only the part related to the unzipping
-   // Note: This method is completely different from TTreeCache::ResetCache(),
-   // in that method we were cleaning the prefetching buffer while here we
-   // delete the information about the unzipped buffers
-
    {
    R__LOCKGUARD(fMutexList);
 
@@ -679,36 +684,32 @@ void TTreeCacheUnzip::ResetCache()
       fNseekMax  = fNseek;
    }
 
-
-
    fLastReadPos = 0;
    fTotalUnzipBytes = 0;
    fBlocksToGo = fNseek;
    }
 
-
    SendUnzipStartSignal(kTRUE);
-
 
 }
 
-//_____________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+/// We try to read a buffer that has already been unzipped
+/// Returns -1 in case of read failure, 0 in case it's not in the
+/// cache and n>0 in case read from cache (number of bytes copied).
+/// pos and len are the original values as were passed to ReadBuffer
+/// but instead we will return the inflated buffer.
+/// Note!! : If *buf == 0 we will allocate the buffer and it will be the
+/// responsability of the caller to free it... it is useful for example
+/// to pass it to the creator of TBuffer
+
 Int_t TTreeCacheUnzip::GetUnzipBuffer(char **buf, Long64_t pos, Int_t len, Bool_t *free)
 {
-   // We try to read a buffer that has already been unzipped
-   // Returns -1 in case of read failure, 0 in case it's not in the
-   // cache and n>0 in case read from cache (number of bytes copied).
-   // pos and len are the original values as were passed to ReadBuffer
-   // but instead we will return the inflated buffer.
-   // Note!! : If *buf == 0 we will allocate the buffer and it will be the
-   // responsability of the caller to free it... it is useful for example
-   // to pass it to the creator of TBuffer
    Int_t res = 0;
    Int_t loc = -1;
 
    {
       R__LOCKGUARD(fMutexList);
-
 
       // We go straight to TTreeCache/TfileCacheRead, in order to get the info we need
       //  pointer to the original zipped chunk
@@ -722,9 +723,7 @@ Int_t TTreeCacheUnzip::GetUnzipBuffer(char **buf, Long64_t pos, Int_t len, Bool_
       // And now loc is the position of the chunk in the array of the sorted chunks
       Int_t myCycle = fCycle;
 
-
       if (fParallel && !fIsLearning) {
-
 
          if(fNseekMax < fNseek){
             if (gDebug > 0)
@@ -756,12 +755,6 @@ Int_t TTreeCacheUnzip::GetUnzipBuffer(char **buf, Long64_t pos, Int_t len, Bool_
             fNseekMax  = fNseek;
          }
 
-
-
-
-
-
-
          loc = (Int_t)TMath::BinarySearch(fNseek,fSeekSort,pos);
          if ( (fCycle == myCycle) && (loc >= 0) && (loc < fNseek) && (pos == fSeekSort[loc]) ) {
 
@@ -772,9 +765,6 @@ Int_t TTreeCacheUnzip::GetUnzipBuffer(char **buf, Long64_t pos, Int_t len, Bool_
             fLastReadPos = seekidx;
 
             do {
-
-
-
 
                // If the block is ready we get it immediately.
                // And also we don't have to alloc the blks. This is supposed to be
@@ -852,7 +842,6 @@ Int_t TTreeCacheUnzip::GetUnzipBuffer(char **buf, Long64_t pos, Int_t len, Bool_
                   *free = kFALSE;
                }
 
-
                fNStalls++;
 
                return fUnzipLen[seekidx];
@@ -869,8 +858,6 @@ Int_t TTreeCacheUnzip::GetUnzipBuffer(char **buf, Long64_t pos, Int_t len, Bool_
                //if (gDebug > 0)
                //   Info("GetUnzipBuffer", "++++++++++++++++++++ CacheMISS Block wanted: %d  len:%d fNseek:%d", seekidx, len, fNseek);
             }
-
-
 
          } else {
             loc = -1;
@@ -898,7 +885,6 @@ Int_t TTreeCacheUnzip::GetUnzipBuffer(char **buf, Long64_t pos, Int_t len, Bool_
       }
    }
 
-
    {
       R__LOCKGUARD(fIOMutex);
       // Here we know that the async unzip of the wanted chunk
@@ -911,7 +897,6 @@ Int_t TTreeCacheUnzip::GetUnzipBuffer(char **buf, Long64_t pos, Int_t len, Bool_
          res = fFile->ReadBuffer(fCompBuffer, len);
       }
 
-
       if (res) res = -1;
 
    } // scope of the lock!
@@ -921,7 +906,6 @@ Int_t TTreeCacheUnzip::GetUnzipBuffer(char **buf, Long64_t pos, Int_t len, Bool_
       *free = kTRUE;
    }
 
-
    if (!fIsLearning) {
       fNMissed++;
    }
@@ -930,37 +914,36 @@ Int_t TTreeCacheUnzip::GetUnzipBuffer(char **buf, Long64_t pos, Int_t len, Bool_
 
 }
 
+////////////////////////////////////////////////////////////////////////////////
+/// static function: Sets the unzip relatibe buffer size
 
-//_____________________________________________________________________________
 void TTreeCacheUnzip::SetUnzipRelBufferSize(Float_t relbufferSize)
 {
-   // static function: Sets the unzip relatibe buffer size
-   // FABRIZIO: PLEASE DOCUMENT and also in TTree::Set...
-
    fgRelBuffSize = relbufferSize;
 }
 
+////////////////////////////////////////////////////////////////////////////////
+/// Sets the size for the unzipping cache... by default it should be
+/// two times the size of the prefetching cache
 
-//_____________________________________________________________________________
 void TTreeCacheUnzip::SetUnzipBufferSize(Long64_t bufferSize)
 {
-   // Sets the size for the unzipping cache... by default it should be
-   // two times the size of the prefetching cache
    R__LOCKGUARD(fMutexList);
 
    fUnzipBufferSize = bufferSize;
 }
 
-//_____________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+/// Unzips a ROOT specific buffer... by reading the header at the beginning.
+/// returns the size of the inflated buffer or -1 if error
+/// Note!! : If *dest == 0 we will allocate the buffer and it will be the
+/// responsability of the caller to free it... it is useful for example
+/// to pass it to the creator of TBuffer
+/// src is the original buffer with the record (header+compressed data)
+/// *dest is the inflated buffer (including the header)
+
 Int_t TTreeCacheUnzip::UnzipBuffer(char **dest, char *src)
 {
-   // UNzips a ROOT specific buffer... by reading the header at the beginning.
-   // returns the size of the inflated buffer or -1 if error
-   // Note!! : If *dest == 0 we will allocate the buffer and it will be the
-   // responsability of the caller to free it... it is useful for example
-   // to pass it to the creator of TBuffer
-   // src is the original buffer with the record (header+compressed data)
-   // *dest is the inflated buffer (including the header)
    Int_t  uzlen = 0;
    Bool_t alloc = kFALSE;
 
@@ -1022,8 +1005,6 @@ Int_t TTreeCacheUnzip::UnzipBuffer(char **dest, char *src)
 
          R__unzip(&nin, bufcur, &nbuf, objbuf, &nout);
 
-
-
          if (gDebug > 2)
             Info("UnzipBuffer", "R__unzip nin:%d, bufcur:%p, nbuf:%d, objbuf:%p, nout:%d",
                  nin, bufcur, nbuf, objbuf, nout);
@@ -1053,28 +1034,29 @@ Int_t TTreeCacheUnzip::UnzipBuffer(char **dest, char *src)
    return uzlen;
 }
 
-//_____________________________________________________________________________
+////////////////////////////////////////////////////////////////////////////////
+/// This inflates all the buffers in the cache.. passing the data to a new
+/// buffer that will only wait there to be read...
+/// We can not inflate all the buffers in the cache so we will try to do
+/// it until the cache gets full... there is a member called fUnzipBufferSize which will
+/// tell us the max size we can allocate for this cache.
+///
+/// note that we will  unzip in the order they were put into the cache not
+/// the order of the transference so it has to be read in that order or the
+/// pre-unzipping will be useless.
+///
+/// startindex is used as start index to check for blks to be unzipped
+///
+/// returns 0 in normal conditions or -1 if error, 1 if it would like to sleep
+///
+/// This func is supposed to compete among an indefinite number of threads to get a chunk to inflate
+/// in order to accommodate multiple unzippers
+/// Since everything is so async, we cannot use a fixed buffer, we are forced to keep
+/// the individual chunks as separate blocks, whose summed size does not exceed the maximum
+/// allowed. The pointers are kept globally in the array fUnzipChunks
+
 Int_t TTreeCacheUnzip::UnzipCache(Int_t &startindex, Int_t &locbuffsz, char *&locbuff)
 {
-   // This inflates all the buffers in the cache.. passing the data to a new
-   // buffer that will only wait there to be read...
-   // We can not inflate all the buffers in the cache so we will try to do
-   // it until the cache gets full... there is a member called fUnzipBufferSize which will
-   // tell us the max size we can allocate for this cache.
-   //
-   // note that we will  unzip in the order they were put into the cache not
-   // the order of the transference so it has to be read in that order or the
-   // pre-unzipping will be useless.
-   //
-   // startindex is used as start index to check for blks to be unzipped
-   //
-   // returns 0 in normal conditions or -1 if error, 1 if it would like to sleep
-   //
-   // This func is supposed to compete among an indefinite number of threads to get a chunk to inflate
-   // in order to accommodate multiple unzippers
-   // Since everything is so async, we cannot use a fixed buffer, we are forced to keep
-   // the individual chunks as separate blocks, whose summed size does not exceed the maximum
-   // allowed. The pointers are kept globally in the array fUnzipChunks
    Int_t myCycle;
    const Int_t hlen=128;
    Int_t objlen=0, keylen=0;
@@ -1103,7 +1085,6 @@ Int_t TTreeCacheUnzip::UnzipCache(Int_t &startindex, Int_t &locbuffsz, char *&lo
       rdlen = 0;
       if (fTotalUnzipBytes < fUnzipBufferSize) {
 
-
          if (fBlocksToGo > 0) {
             for (Int_t ii=0; ii < fNseek; ii++) {
                Int_t reqi = (startindex+ii) % fNseek;
@@ -1123,8 +1104,6 @@ Int_t TTreeCacheUnzip::UnzipCache(Int_t &startindex, Int_t &locbuffsz, char *&lo
 
    } // lock scope
 
-
-
    if (idxtounzip < 0) {
       if (gDebug > 0)
          Info("UnzipCache", "Nothing to do... startindex:%d fTotalUnzipBytes:%lld fUnzipBufferSize:%lld fNseek:%d",
@@ -1132,10 +1111,8 @@ Int_t TTreeCacheUnzip::UnzipCache(Int_t &startindex, Int_t &locbuffsz, char *&lo
       return 1;
    }
 
-
    // And here we have a new blk to unzip
    startindex = idxtounzip+THREADCNT;
-
 
    if (!IsActiveThread() || !fNseek || fIsLearning ) {
       if (gDebug > 0)
@@ -1160,7 +1137,6 @@ Int_t TTreeCacheUnzip::UnzipCache(Int_t &startindex, Int_t &locbuffsz, char *&lo
          //memset(locbuff, 0, locbuffsz);
       }
 
-
       if (gDebug > 0)
       Info("UnzipCache", "Going to unzip block %d", idxtounzip);
 
@@ -1183,7 +1159,6 @@ Int_t TTreeCacheUnzip::UnzipCache(Int_t &startindex, Int_t &locbuffsz, char *&lo
          return 1;
       }
 
-
       if (readbuf <= 0) {
          fUnzipStatus[idxtounzip] = 2; // Set it as not done
          fUnzipChunks[idxtounzip] = 0;
@@ -1192,7 +1167,6 @@ Int_t TTreeCacheUnzip::UnzipCache(Int_t &startindex, Int_t &locbuffsz, char *&lo
             Info("UnzipCache", "Block %d not done. rdoffs=%lld rdlen=%d readbuf=%d", idxtounzip, rdoffs, rdlen, readbuf);
          return -1;
       }
-
 
       GetRecordHeader(locbuff, hlen, nbytes, objlen, keylen);
 
@@ -1261,7 +1235,6 @@ Int_t TTreeCacheUnzip::UnzipCache(Int_t &startindex, Int_t &locbuffsz, char *&lo
       fUnzipLen[idxtounzip] = 0;
    }
 
-
    fUnzipDoneCondition->Signal();
 
    delete [] ptr;
@@ -1280,10 +1253,9 @@ void  TTreeCacheUnzip::Print(Option_t* option) const {
    TTreeCache::Print(option);
 }
 
+////////////////////////////////////////////////////////////////////////////////
 
-//_____________________________________________________________________________
 Int_t TTreeCacheUnzip::ReadBufferExt(char *buf, Long64_t pos, Int_t len, Int_t &loc) {
-
    R__LOCKGUARD(fIOMutex);
    return TTreeCache::ReadBufferExt(buf, pos, len, loc);
 

@@ -8,11 +8,11 @@
 # Author: Axel Naumann <axel@cern.ch>, 2014-10-16
 # Translated to Python by Danilo Piparo, 2015-04-22
 
+from __future__ import print_function
 import sys
 import os
 import glob
 import shutil
-from sets import Set
 
 #-------------------------------------------------------------------------------
 def removeFiles(filesList):
@@ -38,12 +38,19 @@ def removeLeftOvers():
 def getParams():
    """
    Extract parameters from the commandline, which looks like
-   makePCHInput.py ZZZ XXX YYY
+   makePCHInput.py ZZZ XXX YYY -- CXXFLAGS
    """
    argv = sys.argv
    rootSrcDir, modules = argv[1:3]
-   clingetpchList = argv[3:]
-   return rootSrcDir, modules, clingetpchList
+   posDelim = argv.index('--')
+   clingetpchList = argv[3:posDelim]
+   cxxflags = argv[posDelim + 1:]
+   print (', '.join(cxxflags))
+   cxxflagsNoW = [flag for flag in cxxflags if (flag[0:2] != '-W' and flag[0:3] != '-wd' and \
+                                                flag[0:2] != '-O' and flag[0:5] != '-arch') or flag[0:4] == '-Wno']
+   print (', '.join(cxxflagsNoW))
+
+   return rootSrcDir, modules, clingetpchList, cxxflagsNoW
 
 #-------------------------------------------------------------------------------
 def getGuardedStlInclude(headerName):
@@ -296,8 +303,8 @@ def getIncludeLinesFromDict(dictFileName):
 #-------------------------------------------------------------------------------
 def getIncludePathsFromDict(dictFileName):
    """
-   Search for the headers after the line
-   'static const char* headers[]'
+   Search for the include paths after the line
+   'static const char* includePaths[]'
    Return them as list
    """
    incPathsPart=[]
@@ -410,7 +417,7 @@ def writeFiles(contentFileNamePairs):
 #-------------------------------------------------------------------------------
 def printModulesMessageOnScreen(selModules):
    modulesList = sorted(list(selModules))
-   print "\nGenerating PCH for %s\n" %" ".join(modulesList)
+   print ("\nGenerating PCH for %s\n" %" ".join(modulesList))
 
 #-------------------------------------------------------------------------------
 def makePCHInput():
@@ -420,7 +427,7 @@ def makePCHInput():
       * etc/dictpch/allHeaders.h
       * etc/dictpch/allCppflags.txt
    """
-   rootSrcDir, modules, clingetpchList = getParams()
+   rootSrcDir, modules, clingetpchList, cxxflags = getParams()
 
    removeLeftOvers()
 
@@ -439,7 +446,7 @@ def makePCHInput():
 
    # Loop over the dictionaries, ROOT modules
    dictNames = getDictNames(modules)
-   selModules = Set([])
+   selModules = set([])
    allIncPathsList = []
    for dictName in dictNames:
       dirName = getDirName(dictName)
@@ -456,7 +463,7 @@ def makePCHInput():
 
    copyLinkDefs(rootSrcDir, outdir)
 
-   cppFlagsContent = getCppFlags(rootSrcDir,allIncPathsList)
+   cppFlagsContent = getCppFlags(rootSrcDir,allIncPathsList) + '\n'.join(cxxflags) + '\n'
 
    writeFiles(((allHeadersContent, allHeadersFilename),
                (allLinkdefsContent, allLinkdefsFilename),
