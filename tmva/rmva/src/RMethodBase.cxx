@@ -23,7 +23,9 @@ RMethodBase::RMethodBase(const TString &jobName,
                          const TString &methodTitle,
                          DataSetInfo &dsi,
                          const TString &theOption ,
-                         TDirectory *theBaseDir , ROOT::R::TRInterface &_r): MethodBase(jobName, methodType, methodTitle, dsi, theOption, theBaseDir), r(_r)
+                         TDirectory *theBaseDir , ROOT::R::TRInterface &_r): MethodBase(jobName, methodType, methodTitle, dsi, theOption, theBaseDir),
+                         r(_r),
+                         fModelPersistence(kFALSE)
 {
    LoadData();
 }
@@ -32,7 +34,9 @@ RMethodBase::RMethodBase(const TString &jobName,
 RMethodBase::RMethodBase(Types::EMVA methodType,
                          DataSetInfo &dsi,
                          const TString &weightFile,
-                         TDirectory *theBaseDir, ROOT::R::TRInterface &_r): MethodBase(methodType, dsi, weightFile, theBaseDir), r(_r)
+                         TDirectory *theBaseDir, ROOT::R::TRInterface &_r): MethodBase(methodType, dsi, weightFile, theBaseDir), 
+                         r(_r),
+                         fModelPersistence(kFALSE)
 {
    LoadData();
 }

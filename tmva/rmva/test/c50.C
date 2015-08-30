@@ -126,19 +126,19 @@ void c50()
 //       factory->BookMethod( TMVA::Types::kBDT, "BDTMitFisher",
 //                            "!H:!V:NTrees=50:MinNodeSize=2.5%:UseFisherCuts:MaxDepth=3:BoostType=AdaBoost:AdaBoostBeta=0.5:SeparationType=GiniIndex:nCuts=20" );
 
-      factory->BookMethod( TMVA::Types::kC50, "C50",
-      "!H:NTrials=10:Rules=kFALSE:ControlSubSet=kFALSE:ControlBands=0:ControlWinnow=kFALSE:ControlNoGlobalPruning=kTRUE:ControlCF=0.25:ControlMinCases=2:ControlFuzzyThreshold=kTRUE:ControlSample=0:ControlEarlyStopping=kTRUE:!V" );
-   
-
-   
+     TMVA::MethodBase *method=factory->BookMethod( TMVA::Types::kC50, "C50",
+      "!H:NTrials=1:Rules=kFALSE:ControlSubSet=kFALSE:ControlBands=0:ControlWinnow=kFALSE:ControlNoGlobalPruning=kTRUE:ControlCF=0.25:ControlMinCases=2:ControlFuzzyThreshold=kTRUE:ControlSample=0:ControlEarlyStopping=kTRUE:!V" );
+//    method->Init();
+//    method->Train();
+//    method->TestClassification();
       // Train MVAs using the set of training events
    factory->TrainAllMethods();
 
    // ---- Evaluate all MVAs using the set of test events
-//    factory->TestAllMethods();
+   factory->TestAllMethods();
 
    // ----- Evaluate and compare performance of all configured MVAs
-//    factory->EvaluateAllMethods();
+   factory->EvaluateAllMethods();
    // --------------------------------------------------------------
 
    // Save the output

@@ -230,14 +230,14 @@ namespace TMVA {
       virtual void ReadWeightsFromXML   ( void* wghtnode ) = 0;
       virtual void ReadWeightsFromStream( std::istream& ) = 0;       // backward compatibility
       virtual void ReadWeightsFromStream( TFile& ) {}                // backward compatibility
+      void WriteStateToStream   ( std::ostream& tf ) const;   // needed for MakeClass
+      void WriteVarsToStream    ( std::ostream& tf, const TString& prefix = "" ) const;  // needed for MakeClass
 
    private:
       friend class MethodCategory;
       friend class MethodCompositeBase;
       void WriteStateToXML      ( void* parent ) const;
       void ReadStateFromXML     ( void* parent );
-      void WriteStateToStream   ( std::ostream& tf ) const;   // needed for MakeClass
-      void WriteVarsToStream    ( std::ostream& tf, const TString& prefix = "" ) const;  // needed for MakeClass
 
 
    public: // these two need to be public, they are used to read in-memory weight-files

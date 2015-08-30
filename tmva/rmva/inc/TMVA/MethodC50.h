@@ -64,13 +64,14 @@ namespace TMVA {
       
       
       Double_t GetMvaValue( Double_t* errLower = 0, Double_t* errUpper = 0);
-      
+      virtual void     MakeClass( const TString& classFileName = TString("") ) const;//required for model persistence
       using MethodBase::ReadWeightsFromStream;
       // the actual "weights"
       virtual void AddWeightsXMLTo      ( void* parent ) const {}// = 0;
       virtual void ReadWeightsFromXML   ( void* wghtnode ){}// = 0;
       virtual void ReadWeightsFromStream( std::istream& ) {}//= 0;       // backward compatibility
-
+      
+      void ReadStateFromFile    ();
    private :
       DataSetManager*    fDataSetManager;     // DSMTEST
       friend class Factory;                   // DSMTEST
