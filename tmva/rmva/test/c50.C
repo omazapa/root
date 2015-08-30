@@ -105,26 +105,26 @@ void c50()
    //                                         "NSigTrain=3000:NBkgTrain=3000:NSigTest=3000:NBkgTest=3000:SplitMode=Random:!V" );
    factory->PrepareTrainingAndTestTree( mycuts, mycutb,
                                         "nTrain_Signal=0:nTrain_Background=0:nTest_Signal=0:nTest_Background=0:SplitMode=Random:NormMode=NumEvents:!V" );
-      // Boosted Decision Trees
-      // Gradient Boost
-      factory->BookMethod( TMVA::Types::kBDT, "BDTG",
-                           "!H:!V:NTrees=1000:MinNodeSize=2.5%:BoostType=Grad:Shrinkage=0.10:UseBaggedBoost:BaggedSampleFraction=0.5:nCuts=20:MaxDepth=2" );
-
-      // Adaptive Boost
-      factory->BookMethod( TMVA::Types::kBDT, "BDT",
-                           "!H:!V:NTrees=850:MinNodeSize=2.5%:MaxDepth=3:BoostType=AdaBoost:AdaBoostBeta=0.5:UseBaggedBoost:BaggedSampleFraction=0.5:SeparationType=GiniIndex:nCuts=20" );
-
-      // Bagging
-      factory->BookMethod( TMVA::Types::kBDT, "BDTB",
-                           "!H:!V:NTrees=400:BoostType=Bagging:SeparationType=GiniIndex:nCuts=20" );
-
-      // Decorrelation + Adaptive Boost
-      factory->BookMethod( TMVA::Types::kBDT, "BDTD",
-                           "!H:!V:NTrees=400:MinNodeSize=5%:MaxDepth=3:BoostType=AdaBoost:SeparationType=GiniIndex:nCuts=20:VarTransform=Decorrelate" );
-
-      // Allow Using Fisher discriminant in node splitting for (strong) linearly correlated variables
-      factory->BookMethod( TMVA::Types::kBDT, "BDTMitFisher",
-                           "!H:!V:NTrees=50:MinNodeSize=2.5%:UseFisherCuts:MaxDepth=3:BoostType=AdaBoost:AdaBoostBeta=0.5:SeparationType=GiniIndex:nCuts=20" );
+//       // Boosted Decision Trees
+//       // Gradient Boost
+//       factory->BookMethod( TMVA::Types::kBDT, "BDTG",
+//                            "!H:!V:NTrees=1000:MinNodeSize=2.5%:BoostType=Grad:Shrinkage=0.10:UseBaggedBoost:BaggedSampleFraction=0.5:nCuts=20:MaxDepth=2" );
+// 
+//       // Adaptive Boost
+//       factory->BookMethod( TMVA::Types::kBDT, "BDT",
+//                            "!H:!V:NTrees=850:MinNodeSize=2.5%:MaxDepth=3:BoostType=AdaBoost:AdaBoostBeta=0.5:UseBaggedBoost:BaggedSampleFraction=0.5:SeparationType=GiniIndex:nCuts=20" );
+// 
+//       // Bagging
+//       factory->BookMethod( TMVA::Types::kBDT, "BDTB",
+//                            "!H:!V:NTrees=400:BoostType=Bagging:SeparationType=GiniIndex:nCuts=20" );
+// 
+//       // Decorrelation + Adaptive Boost
+//       factory->BookMethod( TMVA::Types::kBDT, "BDTD",
+//                            "!H:!V:NTrees=400:MinNodeSize=5%:MaxDepth=3:BoostType=AdaBoost:SeparationType=GiniIndex:nCuts=20:VarTransform=Decorrelate" );
+// 
+//       // Allow Using Fisher discriminant in node splitting for (strong) linearly correlated variables
+//       factory->BookMethod( TMVA::Types::kBDT, "BDTMitFisher",
+//                            "!H:!V:NTrees=50:MinNodeSize=2.5%:UseFisherCuts:MaxDepth=3:BoostType=AdaBoost:AdaBoostBeta=0.5:SeparationType=GiniIndex:nCuts=20" );
 
       factory->BookMethod( TMVA::Types::kC50, "C50",
       "!H:NTrials=10:Rules=kFALSE:ControlSubSet=kFALSE:ControlBands=0:ControlWinnow=kFALSE:ControlNoGlobalPruning=kTRUE:ControlCF=0.25:ControlMinCases=2:ControlFuzzyThreshold=kTRUE:ControlSample=0:ControlEarlyStopping=kTRUE:!V" );
@@ -135,10 +135,10 @@ void c50()
    factory->TrainAllMethods();
 
    // ---- Evaluate all MVAs using the set of test events
-   factory->TestAllMethods();
+//    factory->TestAllMethods();
 
    // ----- Evaluate and compare performance of all configured MVAs
-   factory->EvaluateAllMethods();
+//    factory->EvaluateAllMethods();
    // --------------------------------------------------------------
 
    // Save the output

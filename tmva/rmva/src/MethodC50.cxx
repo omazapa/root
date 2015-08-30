@@ -41,14 +41,22 @@ REGISTER_METHOD(C50)
 
 ClassImp(MethodC50)
 
+//creating an Instance
+Bool_t MethodC50::IsModuleLoaded=ROOT::R::TRInterface::Instance().Require("C50");
 
 //_______________________________________________________________________
 MethodC50::MethodC50(const TString &jobName,
                      const TString &methodTitle,
                      DataSetInfo &dsi,
                      const TString &theOption,
-                     TDirectory *theTargetDir) :
-   RMethodBase(jobName, Types::kC50, methodTitle, dsi, theOption, theTargetDir), fNTrials(1), fRules(kFALSE), fMvaCounter(0)
+                     TDirectory *theTargetDir) :RMethodBase(jobName, Types::kC50, methodTitle, dsi, theOption, theTargetDir),
+   fNTrials(1), 
+   fRules(kFALSE), 
+   fMvaCounter(0),
+   predict("predict.C5.0"),
+   C50("C5.0"),
+   C50Control("C5.0Control"),
+   asfactor("as.factor")
 {
    // standard constructor for the C50
 
@@ -68,7 +76,14 @@ MethodC50::MethodC50(const TString &jobName,
 
 //_______________________________________________________________________
 MethodC50::MethodC50(DataSetInfo &theData, const TString &theWeightFile, TDirectory *theTargetDir)
-   : RMethodBase(Types::kC50, theData, theWeightFile, theTargetDir), fNTrials(1), fRules(kFALSE), fMvaCounter(0)
+   : RMethodBase(Types::kC50, theData, theWeightFile, theTargetDir),
+   fNTrials(1), 
+   fRules(kFALSE), 
+   fMvaCounter(0),
+   predict("predict.C5.0"),
+   C50("C5.0"),
+   C50Control("C5.0Control"),
+   asfactor("as.factor")
 {
 
    // constructor from weight file
@@ -102,45 +117,54 @@ Bool_t MethodC50::HasAnalysisType(Types::EAnalysisType type, UInt_t numberClasse
 //_______________________________________________________________________
 void     MethodC50::Init()
 {
-   if (!r.Require("partykit")) {
-      Error("Init", "R's package partykit can not be loaded.");
-      Log() << kFATAL << " R's package partykit can not be loaded."
-            << Endl;
-      return;
-   }
-   if (!r.IsInstalled("C50")) {
-      Error("Init", "R's package C50 is not installed.");
-      Log() << kFATAL << " R's package C50 is not installed."
-            << Endl;
-      return;
-   }
 
-   if (!r.Require("C50")) {
+   if (!IsModuleLoaded) {
       Error("Init", "R's package C50 can not be loaded.");
       Log() << kFATAL << " R's package C50 can not be loaded."
             << Endl;
       return;
    }
-   //Paassing Data to R's environment
-   //NOTE:need improved names in R's environment using JobName of TMVA
-   r["RMVA.C50.fDfTrain"] = fDfTrain;
-   r["RMVA.C50.fWeightTrain"] = fWeightTrain;
-   r << "write.table(RMVA.C50.fDfTrain,file='fDfTrain.txt')";
 
-   r["RMVA.C50.fDfTest"] = fDfTest;
-   r["RMVA.C50.fWeightTest"] = fWeightTest;
-   r << "write.table(RMVA.C50.fDfTest,file='fDfTest.txt')";
-
-   //factors creations
-   r["RMVA.C50.fFactorTrain"] = fFactorTrain;
-   r << "RMVA.C50.fFactorTrain<-factor(RMVA.C50.fFactorTrain)";
-   r["RMVA.C50.fFactorTest"] = fFactorTest;
-   r << "RMVA.C50.fFactorTest<-factor(RMVA.C50.fFactorTest)";
-
-   //Spectator creation
-   r["RMVA.C50.fDfSpectators"] = fDfSpectators;
-
-   r["RMVA.C50.fCounter"] = 0;
+    
+//    if (!r.Require("partykit")) {
+//       Error("Init", "R's package partykit can not be loaded.");
+//       Log() << kFATAL << " R's package partykit can not be loaded."
+//             << Endl;
+//       return;
+//    }
+//    if (!r.IsInstalled("C50")) {
+//       Error("Init", "R's package C50 is not installed.");
+//       Log() << kFATAL << " R's package C50 is not installed."
+//             << Endl;
+//       return;
+//    }
+// 
+//    if (!r.Require("C50")) {
+//       Error("Init", "R's package C50 can not be loaded.");
+//       Log() << kFATAL << " R's package C50 can not be loaded."
+//             << Endl;
+//       return;
+//    }
+//    //Paassing Data to R's environment
+//    //NOTE:need improved names in R's environment using JobName of TMVA
+//    r["RMVA.C50.fDfTrain"] = fDfTrain;
+//    r["RMVA.C50.fWeightTrain"] = fWeightTrain;
+//    r << "write.table(RMVA.C50.fDfTrain,file='fDfTrain.txt')";
+// 
+//    r["RMVA.C50.fDfTest"] = fDfTest;
+//    r["RMVA.C50.fWeightTest"] = fWeightTest;
+//    r << "write.table(RMVA.C50.fDfTest,file='fDfTest.txt')";
+// 
+//    //factors creations
+//    r["RMVA.C50.fFactorTrain"] = fFactorTrain;
+//    r << "RMVA.C50.fFactorTrain<-factor(RMVA.C50.fFactorTrain)";
+//    r["RMVA.C50.fFactorTest"] = fFactorTest;
+//    r << "RMVA.C50.fFactorTest<-factor(RMVA.C50.fFactorTest)";
+// 
+//    //Spectator creation
+//    r["RMVA.C50.fDfSpectators"] = fDfSpectators;
+// 
+//    r["RMVA.C50.fCounter"] = 0;
 
 
 
@@ -150,17 +174,12 @@ void MethodC50::Train()
 {
    if (Data()->GetNTrainingEvents() == 0) Log() << kFATAL << "<Train> Data() has zero events" << Endl;
 
-   r << "RMVA.C50.Model<-C5.0( x        = RMVA.C50.fDfTrain, \
-                              y        = RMVA.C50.fFactorTrain, \
-                              trials   = RMVA.C50.NTrials, \
-                              rules    = RMVA.C50.Rules, \
-                              weights  = RMVA.C50.fWeightTrain, \
-                              control  = RMVA.C50.Control )";
-//    r.SetVerbose(1);
-   r << "summary(RMVA.C50.Model)";
-
-//    Log() << kWARNING << " RMVA.C50.Predictor.ClassResultForTest SIze. = "<<fClassResultForTest.size()<< Endl;
-//    r.SetVerbose(0);
+   fModel=C50(ROOT::R::Label["x"]=fDfTrain, \
+              ROOT::R::Label["y"]=asfactor(fFactorTrain), \
+              ROOT::R::Label["trials"]=fNTrials, \
+              ROOT::R::Label["rules"]=fRules, \
+              ROOT::R::Label["weights"]=fWeightTrain, \
+              ROOT::R::Label["control"]=fModelControl);
 }
 
 //_______________________________________________________________________
@@ -212,85 +231,66 @@ void MethodC50::ProcessOptions()
             << Endl;
       fNTrials = 1;
    }
-   r["RMVA.C50.NTrials"] = fNTrials;
-   Log() << "NTrials  " << fNTrials << Endl;
-   r["RMVA.C50.Rules"] = fRules;
-   Log() << "Rules  " << fRules << Endl;
-
-   // constructor from weight file
-   r["RMVA.C50.ControlOptions.ControlSubset"] = fControlSubset;
-   r["RMVA.C50.ControlOptions.ControlBands"] = fControlBands;
-   r["RMVA.C50.ControlOptions.ControlWinnow"] = fControlWinnow;
-   r["RMVA.C50.ControlOptions.ControlNoGlobalPruning"] = fControlNoGlobalPruning;
-   r["RMVA.C50.ControlOptions.ControlCF"] = fControlCF;
-   r["RMVA.C50.ControlOptions.ControlMinCases"] = fControlMinCases;
-   r["RMVA.C50.ControlOptions.ControlFuzzyThreshold"] = fControlFuzzyThreshold;
-   r["RMVA.C50.ControlOptions.ControlSample"] = fControlSample;
-   r["RMVA.C50.ControlOptions.ControlSeed"] = fControlSeed;
-   r["RMVA.C50.ControlOptions.ControlEarlyStopping"] = fControlEarlyStopping;
-
-   //C5.0Control Creation
-   r << "RMVA.C50.Control<-C5.0Control( subset           = RMVA.C50.ControlOptions.ControlSubset, \
-                                       bands            = RMVA.C50.ControlOptions.ControlBands, \
-                                       winnow           = RMVA.C50.ControlOptions.ControlWinnow, \
-                                       noGlobalPruning  = RMVA.C50.ControlOptions.ControlNoGlobalPruning, \
-                                       CF               = RMVA.C50.ControlOptions.ControlCF, \
-                                       minCases         = RMVA.C50.ControlOptions.ControlMinCases, \
-                                       fuzzyThreshold   = RMVA.C50.ControlOptions.ControlFuzzyThreshold, \
-                                       sample           = RMVA.C50.ControlOptions.ControlSample, \
-                                       seed             = RMVA.C50.ControlOptions.ControlSeed, \
-                                       earlyStopping    = RMVA.C50.ControlOptions.ControlEarlyStopping )";
-
+   fModelControl=C50Control(ROOT::R::Label["subset"]=fControlSubset, \
+                            ROOT::R::Label["bands"]=fControlBands, \
+                            ROOT::R::Label["winnow"]=fControlWinnow, \
+                            ROOT::R::Label["noGlobalPruning"]=fControlNoGlobalPruning, \
+                            ROOT::R::Label["CF"]=fControlCF, \
+                            ROOT::R::Label["minCases"]=fControlMinCases, \
+                            ROOT::R::Label["fuzzyThreshold"]=fControlFuzzyThreshold, \
+                            ROOT::R::Label["sample"]=fControlSample, \
+                            ROOT::R::Label["seed"]=fControlSeed, \
+                            ROOT::R::Label["earlyStopping"]=fControlEarlyStopping);
 }
 
 //_______________________________________________________________________
 void MethodC50::TestClassification()
 {
    Log() << kINFO << "Testing Classification C50 METHOD  " << Endl;
-   r << "RMVA.C50.Predictor.Test.Class <-predict.C5.0(RMVA.C50.Model,RMVA.C50.fDfTest,type='class')";
+//    r << "RMVA.C50.Predictor.Test.Class <-predict.C5.0(RMVA.C50.Model,RMVA.C50.fDfTest,type='class')";
 
    gSystem->MakeDirectory("C50");
    gSystem->MakeDirectory("C50/plots");
 
-   if (r.IsInstalled("ROCR")) {
-      if (r.Require("ROCR")) {
-         //calculation ROC curves https://ifordata.wordpress.com/category/predictions-in-r/
-         r << "RMVA.C50.ROCRPredictionSig<-ROCR::prediction(predictions = RMVA.C50.Predictor.Test.Prob[,2], labels=RMVA.C50.fFactorTest)";
-         //at the moment I am using default performance method for ROCR but it mush be an option to parse from booking
-
-         //plots TPR (True Positive Rate) and FPR (False Positive Rate)
-         r << "RMVA.C50.ROCRPerformanceSig<-ROCR::performance(RMVA.C50.ROCRPredictionSig, measure='tpr', x.measure='fpr')";
-
-         r << "setEPS()";
-         r << "postscript('C50/plots/C50ROCSigTPR-FPR.eps')";
-         r << "plot(RMVA.C50.ROCRPerformanceSig, main='ROC curve for Signal', col='darkmagenta', lwd=3)";
-         r << "abline(a=0, b=1, lwd=2, lty=2)";
-         r << "dev.off()";
-
-         //Getting AUC  (Area Under the Curve)
-         r << "RMVA.C50.ROCRPerformanceSig<-ROCR::performance(RMVA.C50.ROCRPredictionSig, measure='auc')";
-         Log() << "----------------------------------" << Endl;
-         Float_t ROC_AUC;
-         r["RMVA.C50.ROCRPerformanceSig@y.values[[1]]"] >> ROC_AUC;
-         r.SetVerbose(1);
-         Log() << gTools().Color("bold") << "Area under the ROC curve " << gTools().Color("reset") << "= " << ROC_AUC << " (see ranking below) " << Endl;
-         Log() << "0.9-1.0 -> A (perfect)" << Endl;
-         Log() << "0.8-0.9 -> B (excellent)" << Endl;
-         Log() << "0.7-0.8 -> C (fair)" << Endl;
-         Log() << "0.6-0.7 -> D (poor)" << Endl;
-         Log() << "0.5-0.6 -> F (no value)" << Endl;
-         Log() << "----------------------------------" << Endl;
-         r.SetVerbose(0);
-      }
-   }
-   if (r.IsInstalled("caret")) {
-      if (r.Require("caret")) {
-         //performing confusion matrix with the analysis of tests
-         r.SetVerbose(1);
-         r << "RMVA.C50.TestConfusionMatrix<-caret::confusionMatrix(RMVA.C50.Predictor.Test.Class,RMVA.C50.fFactorTest,positive='signal')";
-         r.SetVerbose(0);
-      }
-   }
+//    if (r.IsInstalled("ROCR")) {
+//       if (r.Require("ROCR")) {
+//          //calculation ROC curves https://ifordata.wordpress.com/category/predictions-in-r/
+//          r << "RMVA.C50.ROCRPredictionSig<-ROCR::prediction(predictions = RMVA.C50.Predictor.Test.Prob[,2], labels=RMVA.C50.fFactorTest)";
+//          //at the moment I am using default performance method for ROCR but it mush be an option to parse from booking
+// 
+//          //plots TPR (True Positive Rate) and FPR (False Positive Rate)
+//          r << "RMVA.C50.ROCRPerformanceSig<-ROCR::performance(RMVA.C50.ROCRPredictionSig, measure='tpr', x.measure='fpr')";
+// 
+//          r << "setEPS()";
+//          r << "postscript('C50/plots/C50ROCSigTPR-FPR.eps')";
+//          r << "plot(RMVA.C50.ROCRPerformanceSig, main='ROC curve for Signal', col='darkmagenta', lwd=3)";
+//          r << "abline(a=0, b=1, lwd=2, lty=2)";
+//          r << "dev.off()";
+// 
+//          //Getting AUC  (Area Under the Curve)
+//          r << "RMVA.C50.ROCRPerformanceSig<-ROCR::performance(RMVA.C50.ROCRPredictionSig, measure='auc')";
+//          Log() << "----------------------------------" << Endl;
+//          Float_t ROC_AUC;
+//          r["RMVA.C50.ROCRPerformanceSig@y.values[[1]]"] >> ROC_AUC;
+//          r.SetVerbose(1);
+//          Log() << gTools().Color("bold") << "Area under the ROC curve " << gTools().Color("reset") << "= " << ROC_AUC << " (see ranking below) " << Endl;
+//          Log() << "0.9-1.0 -> A (perfect)" << Endl;
+//          Log() << "0.8-0.9 -> B (excellent)" << Endl;
+//          Log() << "0.7-0.8 -> C (fair)" << Endl;
+//          Log() << "0.6-0.7 -> D (poor)" << Endl;
+//          Log() << "0.5-0.6 -> F (no value)" << Endl;
+//          Log() << "----------------------------------" << Endl;
+//          r.SetVerbose(0);
+//       }
+//    }
+//    if (r.IsInstalled("caret")) {
+//       if (r.Require("caret")) {
+//          //performing confusion matrix with the analysis of tests
+//          r.SetVerbose(1);
+//          r << "RMVA.C50.TestConfusionMatrix<-caret::confusionMatrix(RMVA.C50.Predictor.Test.Class,RMVA.C50.fFactorTest,positive='signal')";
+//          r.SetVerbose(0);
+//       }
+//    }
    MethodBase::TestClassification();
 }
 
@@ -299,24 +299,15 @@ void MethodC50::TestClassification()
 Double_t MethodC50::GetMvaValue(Double_t *errLower, Double_t *errUpper)
 {
    Double_t mvaValue;
-   if (Data()->GetCurrentType() == Types::kTraining) {
-      if (fProbResultForTrainSig.size() == 0) {
-         r << "RMVA.C50.Predictor.Train.Prob<-predict.C5.0(RMVA.C50.Model,RMVA.C50.fDfTrain,type='prob')"; //pridiction type prob
-         r["as.vector(RMVA.C50.Predictor.Train.Prob[,2])"] >> fProbResultForTrainSig;
-      }
-      mvaValue = fProbResultForTrainSig[fMvaCounter];
-
-      if (fMvaCounter < Data()->GetNTrainingEvents() - 1) fMvaCounter++;
-      else fMvaCounter = 0;
-   } else {
-      if (fProbResultForTestSig.size() == 0) {
-         r << "RMVA.C50.Predictor.Test.Prob <-predict.C5.0(RMVA.C50.Model,RMVA.C50.fDfTest,type='prob')";
-         r["as.vector(RMVA.C50.Predictor.Test.Prob[,2])"] >> fProbResultForTestSig;
-      }
-      mvaValue = fProbResultForTestSig[fMvaCounter];
-      if (fMvaCounter < Data()->GetNTestEvents() - 1) fMvaCounter++;
-      else fMvaCounter = 0;
+   const TMVA::Event *ev=GetEvent();
+   const UInt_t nvar = DataInfo().GetNVariables();
+   ROOT::R::TRDataFrame fDfEvent;
+   for(UInt_t i=0;i<nvar;i++)
+   {
+      fDfEvent[GetInputLabel( i ).Data()]=ev->GetValues()[i];
    }
+   TVectorD result=predict(fModel,fDfEvent,ROOT::R::Label["type"]="prob");
+   mvaValue=result[1];
    return mvaValue;
 }
 

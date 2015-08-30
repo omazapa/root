@@ -93,9 +93,19 @@ namespace TMVA {
        Bool_t fControlEarlyStopping;// logical to toggle whether the internal method for stopping boosting should be used.
        
        UInt_t fMvaCounter;
+       static Bool_t IsModuleLoaded;
        //prediction result using type='prob' in predict.C5.0(..)
        std::vector<Float_t> fProbResultForTrainSig;
        std::vector<Float_t> fProbResultForTestSig;
+       
+       ROOT::R::TRFunctionImport predict;
+       ROOT::R::TRFunctionImport C50;
+       ROOT::R::TRFunctionImport C50Control;
+       ROOT::R::TRFunctionImport asfactor;
+       ROOT::R::TRObject fModel;
+       ROOT::R::TRObject fModelControl;
+       
+       
       // get help message text
       void GetHelpMessage() const;
 
