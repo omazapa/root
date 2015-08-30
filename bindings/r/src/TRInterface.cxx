@@ -177,9 +177,7 @@ Bool_t TRInterface::IsInstalled(TString pkg)
 //______________________________________________________________________________
 Bool_t TRInterface::Require(TString pkg)
 {
-    TString cmd;
-    if(silent)  cmd="suppressWarnings(suppressMessages(require('"+pkg+"',quiet=TRUE)))";
-    else cmd="require('"+pkg+"',quiet=TRUE)";
+    TString cmd="require('"+pkg+"',quiet=TRUE)";
     return fR->parseEval(cmd.Data());
 }
 
