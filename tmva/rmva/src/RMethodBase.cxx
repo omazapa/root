@@ -12,6 +12,7 @@
  **********************************************************************************/
 
 #include<TMVA/RMethodBase.h>
+#include <TMVA/DataSetInfo.h>
 #include<TApplication.h>
 using namespace TMVA;
 
@@ -24,8 +25,7 @@ RMethodBase::RMethodBase(const TString &jobName,
                          DataSetInfo &dsi,
                          const TString &theOption ,
                          TDirectory *theBaseDir , ROOT::R::TRInterface &_r): MethodBase(jobName, methodType, methodTitle, dsi, theOption, theBaseDir),
-                         r(_r),
-                         fModelPersistence(kFALSE)
+                         r(_r)
 {
    LoadData();
 }
@@ -35,8 +35,7 @@ RMethodBase::RMethodBase(Types::EMVA methodType,
                          DataSetInfo &dsi,
                          const TString &weightFile,
                          TDirectory *theBaseDir, ROOT::R::TRInterface &_r): MethodBase(methodType, dsi, weightFile, theBaseDir), 
-                         r(_r),
-                         fModelPersistence(kFALSE)
+                         r(_r)
 {
    LoadData();
 }
@@ -73,9 +72,8 @@ void RMethodBase::LoadData()
 
    }
    for (UInt_t i = 0; i < nvar; i++) {
-      fDfTrain[GetInputLabel(i).Data()] = fArrayTrain[i];
+      fDfTrain[DataInfo().GetListOfVariables()[i].Data()] = fArrayTrain[i];
    }
-
    ////////////////////////
    //Loading Test  Data  //
    ////////////////////////
@@ -106,7 +104,7 @@ void RMethodBase::LoadData()
       }
    }
    for (UInt_t i = 0; i < nvar; i++) {
-      fDfTest[GetInputLabel(i).Data()] = fArrayTest[i];
+      fDfTest[DataInfo().GetListOfVariables()[i].Data()] = fArrayTest[i];
    }
    for (UInt_t i = 0; i < nspectators; i++) {
       fDfSpectators[DataInfo().GetSpectatorInfo(i).GetLabel().Data()] = fArraySpectators[i];

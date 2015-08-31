@@ -103,8 +103,9 @@ namespace TMVA {
        ROOT::R::TRFunctionImport C50;
        ROOT::R::TRFunctionImport C50Control;
        ROOT::R::TRFunctionImport asfactor;
-       ROOT::R::TRObject fModel;
+       ROOT::R::TRObject *fModel;
        ROOT::R::TRObject fModelControl;
+       std::vector <TString > ListOfVariables;
        
        
       // get help message text

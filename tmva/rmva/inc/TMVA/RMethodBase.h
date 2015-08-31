@@ -99,8 +99,6 @@ namespace TMVA {
        std::vector<std::string> fFactorTest;
        ROOT::R::TRDataFrame fDfSpectators;
        
-       Bool_t fModelPersistence;
-
     private:
       ClassDef(RMethodBase,0)  // Virtual base class for all TMVA method
 

@@ -57,7 +57,8 @@ MethodC50::MethodC50(const TString &jobName,
    predict("predict.C5.0"),
    C50("C5.0"),
    C50Control("C5.0Control"),
-   asfactor("as.factor")
+   asfactor("as.factor"),
+   fModel(NULL)   
 {
    // standard constructor for the C50
 
@@ -72,6 +73,8 @@ MethodC50::MethodC50(const TString &jobName,
    fControlSample = 0;
    r["sample.int(4096, size = 1) - 1L"] >> fControlSeed;
    fControlEarlyStopping = kTRUE;
+
+   ListOfVariables=DataInfo().GetListOfVariables();
 // default extension for weight files
    SetWeightFileDir( gConfig().GetIONames().fWeightFileDir );
 }
@@ -85,7 +88,8 @@ MethodC50::MethodC50(DataSetInfo &theData, const TString &theWeightFile, TDirect
    predict("predict.C5.0"),
    C50("C5.0"),
    C50Control("C5.0Control"),
-   asfactor("as.factor")
+   asfactor("as.factor"),
+   fModel(NULL)   
 {
 
    // constructor from weight file
@@ -107,6 +111,7 @@ MethodC50::MethodC50(DataSetInfo &theData, const TString &theWeightFile, TDirect
 //_______________________________________________________________________
 MethodC50::~MethodC50(void)
 {
+    if(fModel) delete fModel;
 }
 
 //_______________________________________________________________________
@@ -127,64 +132,23 @@ void     MethodC50::Init()
             << Endl;
       return;
    }
-
-    
-//    if (!r.Require("partykit")) {
-//       Error("Init", "R's package partykit can not be loaded.");
-//       Log() << kFATAL << " R's package partykit can not be loaded."
-//             << Endl;
-//       return;
-//    }
-//    if (!r.IsInstalled("C50")) {
-//       Error("Init", "R's package C50 is not installed.");
-//       Log() << kFATAL << " R's package C50 is not installed."
-//             << Endl;
-//       return;
-//    }
-// 
-//    if (!r.Require("C50")) {
-//       Error("Init", "R's package C50 can not be loaded.");
-//       Log() << kFATAL << " R's package C50 can not be loaded."
-//             << Endl;
-//       return;
-//    }
-//    //Paassing Data to R's environment
-//    //NOTE:need improved names in R's environment using JobName of TMVA
-//    r["RMVA.C50.fDfTrain"] = fDfTrain;
-//    r["RMVA.C50.fWeightTrain"] = fWeightTrain;
-//    r << "write.table(RMVA.C50.fDfTrain,file='fDfTrain.txt')";
-// 
-//    r["RMVA.C50.fDfTest"] = fDfTest;
-//    r["RMVA.C50.fWeightTest"] = fWeightTest;
-//    r << "write.table(RMVA.C50.fDfTest,file='fDfTest.txt')";
-// 
-//    //factors creations
-//    r["RMVA.C50.fFactorTrain"] = fFactorTrain;
-//    r << "RMVA.C50.fFactorTrain<-factor(RMVA.C50.fFactorTrain)";
-//    r["RMVA.C50.fFactorTest"] = fFactorTest;
-//    r << "RMVA.C50.fFactorTest<-factor(RMVA.C50.fFactorTest)";
-// 
-//    //Spectator creation
-//    r["RMVA.C50.fDfSpectators"] = fDfSpectators;
-// 
-//    r["RMVA.C50.fCounter"] = 0;
-
-
-
 }
 
 void MethodC50::Train()
 {
    if (Data()->GetNTrainingEvents() == 0) Log() << kFATAL << "<Train> Data() has zero events" << Endl;
-
-   fModel=C50(ROOT::R::Label["x"]=fDfTrain, \
+   SEXP Model=C50(ROOT::R::Label["x"]=fDfTrain, \
               ROOT::R::Label["y"]=asfactor(fFactorTrain), \
               ROOT::R::Label["trials"]=fNTrials, \
               ROOT::R::Label["rules"]=fRules, \
               ROOT::R::Label["weights"]=fWeightTrain, \
               ROOT::R::Label["control"]=fModelControl);
-   r["C50Model"]<<fModel;
+   fModel=new ROOT::R::TRObject(Model);
    TString path=GetWeightFileDir()+"/C50Model.RData";
+   Log() << Endl;
+   Log() << gTools().Color("bold") << "--- Saving State File In:" << gTools().Color("reset")<<path<< Endl;
+   Log() << Endl;
+   r["C50Model"]<<Model;
    r<<"save(C50Model,file='"+path+"')";
 }
 
@@ -253,50 +217,6 @@ void MethodC50::ProcessOptions()
 void MethodC50::TestClassification()
 {
    Log() << kINFO << "Testing Classification C50 METHOD  " << Endl;
-//    r << "RMVA.C50.Predictor.Test.Class <-predict.C5.0(RMVA.C50.Model,RMVA.C50.fDfTest,type='class')";
-
-//    gSystem->MakeDirectory("C50");
-//    gSystem->MakeDirectory("C50/plots");
-
-//    if (r.IsInstalled("ROCR")) {
-//       if (r.Require("ROCR")) {
-//          //calculation ROC curves https://ifordata.wordpress.com/category/predictions-in-r/
-//          r << "RMVA.C50.ROCRPredictionSig<-ROCR::prediction(predictions = RMVA.C50.Predictor.Test.Prob[,2], labels=RMVA.C50.fFactorTest)";
-//          //at the moment I am using default performance method for ROCR but it mush be an option to parse from booking
-// 
-//          //plots TPR (True Positive Rate) and FPR (False Positive Rate)
-//          r << "RMVA.C50.ROCRPerformanceSig<-ROCR::performance(RMVA.C50.ROCRPredictionSig, measure='tpr', x.measure='fpr')";
-// 
-//          r << "setEPS()";
-//          r << "postscript('C50/plots/C50ROCSigTPR-FPR.eps')";
-//          r << "plot(RMVA.C50.ROCRPerformanceSig, main='ROC curve for Signal', col='darkmagenta', lwd=3)";
-//          r << "abline(a=0, b=1, lwd=2, lty=2)";
-//          r << "dev.off()";
-// 
-//          //Getting AUC  (Area Under the Curve)
-//          r << "RMVA.C50.ROCRPerformanceSig<-ROCR::performance(RMVA.C50.ROCRPredictionSig, measure='auc')";
-//          Log() << "----------------------------------" << Endl;
-//          Float_t ROC_AUC;
-//          r["RMVA.C50.ROCRPerformanceSig@y.values[[1]]"] >> ROC_AUC;
-//          r.SetVerbose(1);
-//          Log() << gTools().Color("bold") << "Area under the ROC curve " << gTools().Color("reset") << "= " << ROC_AUC << " (see ranking below) " << Endl;
-//          Log() << "0.9-1.0 -> A (perfect)" << Endl;
-//          Log() << "0.8-0.9 -> B (excellent)" << Endl;
-//          Log() << "0.7-0.8 -> C (fair)" << Endl;
-//          Log() << "0.6-0.7 -> D (poor)" << Endl;
-//          Log() << "0.5-0.6 -> F (no value)" << Endl;
-//          Log() << "----------------------------------" << Endl;
-//          r.SetVerbose(0);
-//       }
-//    }
-//    if (r.IsInstalled("caret")) {
-//       if (r.Require("caret")) {
-//          //performing confusion matrix with the analysis of tests
-//          r.SetVerbose(1);
-//          r << "RMVA.C50.TestConfusionMatrix<-caret::confusionMatrix(RMVA.C50.Predictor.Test.Class,RMVA.C50.fFactorTest,positive='signal')";
-//          r.SetVerbose(0);
-//       }
-//    }
    MethodBase::TestClassification();
 }
 
@@ -304,26 +224,22 @@ void MethodC50::TestClassification()
 //_______________________________________________________________________
 Double_t MethodC50::GetMvaValue(Double_t *errLower, Double_t *errUpper)
 {
+   NoErrorCalc(errLower,errUpper);
    Double_t mvaValue;
    const TMVA::Event *ev=GetEvent();
    const UInt_t nvar = DataInfo().GetNVariables();
    ROOT::R::TRDataFrame fDfEvent;
    for(UInt_t i=0;i<nvar;i++)
    {
-      fDfEvent[GetInputLabel( i ).Data()]=ev->GetValues()[i];
+      fDfEvent[DataInfo().GetListOfVariables()[i].Data()]=ev->GetValues()[i];
    }
-    if(Data()->GetCurrentType()==Types::kTesting) 
-    {
-        //after Training the  system is rebuild
-        //The model must be loaded
-        if(!fModelPersistence)
-        {
-            ReadStateFromFile();
-            fModelPersistence=kTRUE;
-        }
-    }
-   TVectorD result=predict(fModel,fDfEvent,ROOT::R::Label["type"]="prob");
-   mvaValue=result[1];
+   //if using persistence model
+   if(!fModel)
+   {
+       ReadStateFromFile();
+   }
+   TVectorD result=predict(*fModel,fDfEvent,ROOT::R::Label["type"]="prob");
+   mvaValue=result[1];//returning signal prob
    return mvaValue;
 }
 
@@ -356,7 +272,10 @@ void TMVA::MethodC50::ReadStateFromFile()
    Log() << gTools().Color("bold") << "--- Loading State File From:" << gTools().Color("reset")<<path<< Endl;
    Log() << Endl;
    r<<"load('"+path+"')"; 
-   r["C50Model"]>>fModel;
+   SEXP Model;
+   r["C50Model"]>>Model;
+   fModel=new ROOT::R::TRObject(Model);
+   
 }
 
 //_______________________________________________________________________
