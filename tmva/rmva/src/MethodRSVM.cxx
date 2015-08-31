@@ -40,6 +40,8 @@ using namespace TMVA;
 REGISTER_METHOD(RSVM)
 
 ClassImp(MethodRSVM)
+//creating an Instance
+Bool_t MethodRSVM::IsModuleLoaded=ROOT::R::TRInterface::Instance().Require("e1071");
 
 
 //_______________________________________________________________________
@@ -48,7 +50,12 @@ MethodRSVM::MethodRSVM(const TString &jobName,
                        DataSetInfo &dsi,
                        const TString &theOption,
                        TDirectory *theTargetDir) :
-   RMethodBase(jobName, Types::kRSVM, methodTitle, dsi, theOption, theTargetDir), fMvaCounter(0)
+   RMethodBase(jobName, Types::kRSVM, methodTitle, dsi, theOption, theTargetDir), 
+   fMvaCounter(0),
+   svm("svm"),
+   predict("predict"),
+   asfactor("as.factor"),
+   fModel(NULL)
 {
    // standard constructor for the RSVM
    //Booking options
@@ -73,7 +80,12 @@ MethodRSVM::MethodRSVM(const TString &jobName,
 
 //_______________________________________________________________________
 MethodRSVM::MethodRSVM(DataSetInfo &theData, const TString &theWeightFile, TDirectory *theTargetDir)
-   : RMethodBase(Types::kRSVM, theData, theWeightFile, theTargetDir), fMvaCounter(0)
+   : RMethodBase(Types::kRSVM, theData, theWeightFile, theTargetDir), 
+   fMvaCounter(0),
+   svm("svm"),
+   predict("predict"),
+   asfactor("as.factor"),
+   fModel(NULL)
 {
    // standard constructor for the RSVM
    //Booking options
@@ -113,73 +125,49 @@ Bool_t MethodRSVM::HasAnalysisType(Types::EAnalysisType type, UInt_t numberClass
 //_______________________________________________________________________
 void     MethodRSVM::Init()
 {
-   if (!r.IsInstalled("e1071")) {
-      Error("Init", "R's package e1071 is not installed.");
-      Log() << kFATAL << " R's package e1071 is not installed."
-            << Endl;
-      return;
-   }
-
-   if (!r.Require("e1071")) {
+   if (!IsModuleLoaded) {
       Error("Init", "R's package e1071 can not be loaded.");
       Log() << kFATAL << " R's package e1071 can not be loaded."
             << Endl;
       return;
    }
-   //Paassing Data to R's environment
-   //NOTE:need improved names in R's environment using JobName of TMVA
-   r["RMVA.RSVM.fDfTrain"] = fDfTrain;
-   
-   r["RMVA.RSVM.fWeightTrain"] = fWeightTrain;
-   r << "write.table(RMVA.RSVM.fDfTrain,file='fDfTrain.txt')";
-
-   r["RMVA.RSVM.fDfTest"] = fDfTest;
-   r["RMVA.RSVM.fWeightTest"] = fWeightTest;
-   r << "write.table(RMVA.RSVM.fDfTest,file='fDfTest.txt')";
-
-   //factors creations
-   r["RMVA.RSVM.fFactorTrain"] = fFactorTrain;
-   r << "RMVA.RSVM.fFactorTrain<-factor(RMVA.RSVM.fFactorTrain)";
-   r["RMVA.RSVM.fFactorTest"] = fFactorTest;
-   r << "RMVA.RSVM.fFactorTest<-factor(RMVA.RSVM.fFactorTest)";
-
-   //SVM require a named vector
-   ROOT::R::TRDataFrame ClassWeightsTrain;
-   ClassWeightsTrain["background"]=Data()->GetNEvtBkgdTrain();
-   ClassWeightsTrain["signal"]=Data()->GetNEvtSigTrain();
-   r["RMVA.RSVM.ClassWeightsTrain"]=ClassWeightsTrain;   
-
-   //Spectator creation
-   r["RMVA.RSVM.fDfSpectators"] = fDfSpectators;
-
-
 }
 
 void MethodRSVM::Train()
 {
    if (Data()->GetNTrainingEvents() == 0) Log() << kFATAL << "<Train> Data() has zero events" << Endl;
+   //SVM require a named vector
+   ROOT::R::TRDataFrame ClassWeightsTrain;
+   ClassWeightsTrain["background"]=Data()->GetNEvtBkgdTrain();
+   ClassWeightsTrain["signal"]=Data()->GetNEvtSigTrain();
+     
+   
+   SEXP Model=svm(ROOT::R::Label["x"]=fDfTrain, \
+                  ROOT::R::Label["y"]=asfactor(fFactorTrain), \
+                  ROOT::R::Label["scale"]=fScale, \
+                  ROOT::R::Label["type"]=fType, \
+                  ROOT::R::Label["kernel"]=fKernel, \
+                  ROOT::R::Label["degree"]=fDegree, \
+                  ROOT::R::Label["gamma"]=fGamma, \
+                  ROOT::R::Label["coef0"]=fCoef0, \
+                  ROOT::R::Label["cost"]=fCost, \
+                  ROOT::R::Label["nu"]=fNu, \
+                  ROOT::R::Label["class.weights"]=ClassWeightsTrain, \
+                  ROOT::R::Label["cachesize"]=fCacheSize, \
+                  ROOT::R::Label["tolerance"]=fTolerance, \
+                  ROOT::R::Label["epsilon"]=fEpsilon, \
+                  ROOT::R::Label["shrinking"]=fShrinking, \
+                  ROOT::R::Label["cross"]=fCross, \
+                  ROOT::R::Label["probability"]=fProbability, \
+                  ROOT::R::Label["fitted"]=fFitted); 
+   fModel=new ROOT::R::TRObject(Model);
+   TString path=GetWeightFileDir()+"/RSVMModel.RData";
+   Log() << Endl;
+   Log() << gTools().Color("bold") << "--- Saving State File In:" << gTools().Color("reset")<<path<< Endl;
+   Log() << Endl;
+   r["RSVMModel"]<<Model;
+   r<<"save(RSVMModel,file='"+path+"')";
 
-   r << "RMVA.RSVM.Model<-svm( x             = RMVA.RSVM.fDfTrain, \
-                               y             = RMVA.RSVM.fFactorTrain,\
-                               scale         = RMVA.RSVM.Scale,\
-                               type          = RMVA.RSVM.Type,\
-                               kernel        = RMVA.RSVM.Kernel, \
-                               degree        = RMVA.RSVM.Degree, \
-                               gamma         = RMVA.RSVM.Gamma,\
-                               coef0         = RMVA.RSVM.Coef0,\
-                               cost          = RMVA.RSVM.Cost,\
-                               nu            = RMVA.RSVM.Nu,\
-                               class.weights = RMVA.RSVM.ClassWeightsTrain,\
-                               cachesize     = RMVA.RSVM.CacheSize,\
-                               tolerance     = RMVA.RSVM.Tolerance,\
-                               epsilon       = RMVA.RSVM.Epsilon,\
-                               shrinking     = RMVA.RSVM.Shrinking,\
-                               cross         = RMVA.RSVM.Cross,\
-                               probability   = RMVA.RSVM.Probability,\
-                               fitted        = RMVA.RSVM.Fitted)";
-   r.SetVerbose(1);
-   r << "summary(RMVA.RSVM.Model)";
-   r.SetVerbose(0);
 }
 
 //_______________________________________________________________________
@@ -256,26 +244,40 @@ void MethodRSVM::TestClassification()
 //_______________________________________________________________________
 Double_t MethodRSVM::GetMvaValue(Double_t *errLower, Double_t *errUpper)
 {
+   NoErrorCalc(errLower,errUpper);
    Double_t mvaValue;
-   if (Data()->GetCurrentType() == Types::kTraining) {
-      if (fProbResultForTrainSig.size() == 0) {
-         r << "RMVA.RSVM.Predictor.Train.Prob<-predict(RMVA.RSVM.Model,RMVA.RSVM.fDfTrain,type='prob', decision.values = T, probability = T)"; //pridiction type prob use for ROC curves
-         r["as.vector(attributes(RMVA.RSVM.Predictor.Train.Prob)$decision.values)"] >> fProbResultForTrainSig;
-      }
-      mvaValue = fProbResultForTrainSig[fMvaCounter];
-
-      if (fMvaCounter < Data()->GetNTrainingEvents() - 1) fMvaCounter++;
-      else fMvaCounter = 0;
-   } else {
-      if (fProbResultForTestSig.size() == 0) {
-         r << "RMVA.RSVM.Predictor.Test.Prob <-predict(RMVA.RSVM.Model,RMVA.RSVM.fDfTest,type='prob', decision.values = T, probability = T)";
-         r["as.vector(attributes(RMVA.RSVM.Predictor.Test.Prob)$decision.values)"] >> fProbResultForTestSig;
-      }
-      mvaValue = fProbResultForTestSig[fMvaCounter];
-      if (fMvaCounter < Data()->GetNTestEvents() - 1) fMvaCounter++;
-      else fMvaCounter = 0;
+   const TMVA::Event *ev=GetEvent();
+   const UInt_t nvar = DataInfo().GetNVariables();
+   ROOT::R::TRDataFrame fDfEvent;
+   for(UInt_t i=0;i<nvar;i++)
+   {
+      fDfEvent[DataInfo().GetListOfVariables()[i].Data()]=ev->GetValues()[i];
    }
+   //if using persistence model
+   if(!fModel)
+   {
+       ReadStateFromFile();
+   }
+   ROOT::R::TRObject result=predict(*fModel,fDfEvent,ROOT::R::Label["decision.values"] = kTRUE, ROOT::R::Label["probability"] = kTRUE);
+   TVectorD values=result.GetAttribute("decision.values");
+   mvaValue=values[0];//returning signal prob
    return mvaValue;
+}
+
+
+//_______________________________________________________________________
+void TMVA::MethodRSVM::ReadStateFromFile()
+{
+   ROOT::R::TRInterface::Instance().Require("e1071");
+   TString path=GetWeightFileDir()+"/RSVMModel.RData";
+   Log() << Endl;
+   Log() << gTools().Color("bold") << "--- Loading State File From:" << gTools().Color("reset")<<path<< Endl;
+   Log() << Endl;
+   r<<"load('"+path+"')"; 
+   SEXP Model;
+   r["RSVMModel"]>>Model;
+   fModel=new ROOT::R::TRObject(Model);
+   
 }
 
 //_______________________________________________________________________

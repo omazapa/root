@@ -70,7 +70,7 @@ namespace TMVA {
       virtual void AddWeightsXMLTo      ( void* parent ) const {}// = 0;
       virtual void ReadWeightsFromXML   ( void* wghtnode ){}// = 0;
       virtual void ReadWeightsFromStream( std::istream& ) {}//= 0;       // backward compatibility
-
+      void ReadStateFromFile();
    private :
       DataSetManager*    fDataSetManager;     // DSMTEST
       friend class Factory;                   // DSMTEST
@@ -120,6 +120,11 @@ namespace TMVA {
         Float_t fProbability;//logical indicating whether the model should allow for probability predictions.
         Bool_t fFitted;//logical indicating whether the fitted values should be computed and included in the model or not (default: ‘TRUE’)
 
+        static Bool_t IsModuleLoaded;
+        ROOT::R::TRFunctionImport svm; 
+        ROOT::R::TRFunctionImport predict;
+        ROOT::R::TRFunctionImport asfactor;
+        ROOT::R::TRObject *fModel;
       // get help message text
       void GetHelpMessage() const;
 
