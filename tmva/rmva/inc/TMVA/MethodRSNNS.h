@@ -70,7 +70,7 @@ namespace TMVA {
       virtual void AddWeightsXMLTo      ( void* parent ) const {}// = 0;
       virtual void ReadWeightsFromXML   ( void* wghtnode ){}// = 0;
       virtual void ReadWeightsFromStream( std::istream& ) {}//= 0;       // backward compatibility
-
+      void ReadStateFromFile();
    private :
       DataSetManager*    fDataSetManager;     // DSMTEST
       friend class Factory;                   // DSMTEST
@@ -102,7 +102,13 @@ namespace TMVA {
        TString fPruneFuncParams;//the parameters for the pruning function. Unlike the
                                  //other functions, these have to be given in a named list. See
                                  //the pruning demos for further explanation.
-       
+       std::vector<UInt_t>  fFactorNumeric;   //factors creations
+                                              //RSNNS mlp require a numeric factor then background=0 signal=1 from fFactorTrain
+       static Bool_t IsModuleLoaded;
+       ROOT::R::TRFunctionImport predict;
+       ROOT::R::TRFunctionImport mlp;
+       ROOT::R::TRFunctionImport asfactor;
+       ROOT::R::TRObject         *fModel;
       // get help message text
       void GetHelpMessage() const;
 

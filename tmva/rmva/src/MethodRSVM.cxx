@@ -112,6 +112,7 @@ MethodRSVM::MethodRSVM(DataSetInfo &theData, const TString &theWeightFile, TDire
 //_______________________________________________________________________
 MethodRSVM::~MethodRSVM(void)
 {
+    if(fModel) delete fModel;
 }
 
 //_______________________________________________________________________

@@ -28,6 +28,7 @@
 #include "TMVA/VariableTransformBase.h"
 #include "TMVA/MethodRSNNS.h"
 #include "TMVA/Tools.h"
+#include "TMVA/Config.h"
 #include "TMVA/Ranking.h"
 #include "TMVA/Types.h"
 #include "TMVA/PDF.h"
@@ -41,6 +42,8 @@ REGISTER_METHOD(RSNNS)
 
 ClassImp(MethodRSNNS)
 
+//creating an Instance
+Bool_t MethodRSNNS::IsModuleLoaded=ROOT::R::TRInterface::Instance().Require("RSNNS");
 
 //_______________________________________________________________________
 MethodRSNNS::MethodRSNNS(const TString &jobName,
@@ -48,7 +51,12 @@ MethodRSNNS::MethodRSNNS(const TString &jobName,
                          DataSetInfo &dsi,
                          const TString &theOption,
                          TDirectory *theTargetDir) :
-   RMethodBase(jobName, Types::kRSNNS, methodTitle, dsi, theOption, theTargetDir), fMvaCounter(0)
+   RMethodBase(jobName, Types::kRSNNS, methodTitle, dsi, theOption, theTargetDir), 
+   fMvaCounter(0),
+   predict("predict"),
+   mlp("mlp"),
+   asfactor("as.factor"),
+   fModel(NULL)
 {
    fNetType = methodTitle;
    if (fNetType != "RMLP") {
@@ -76,11 +84,19 @@ MethodRSNNS::MethodRSNNS(const TString &jobName,
    fLinOut = kFALSE;
    fPruneFunc = "NULL";
    fPruneFuncParams = "NULL";
+   
+    SetWeightFileDir( gConfig().GetIONames().fWeightFileDir );
 }
 
 //_______________________________________________________________________
 MethodRSNNS::MethodRSNNS(DataSetInfo &theData, const TString &theWeightFile, TDirectory *theTargetDir)
-   : RMethodBase(Types::kRSNNS, theData, theWeightFile, theTargetDir), fMvaCounter(0)
+   : RMethodBase(Types::kRSNNS, theData, theWeightFile, theTargetDir), 
+   fMvaCounter(0),
+   predict("predict"),
+   mlp("mlp"),
+   asfactor("as.factor"),
+   fModel(NULL)
+
 {
    fNetType = "RMLP"; //GetMethodName();//GetMethodName() is not returning RMLP is reting MethodBase why?
    if (fNetType != "RMLP") {
@@ -109,12 +125,14 @@ MethodRSNNS::MethodRSNNS(DataSetInfo &theData, const TString &theWeightFile, TDi
    fPruneFunc = "NULL";
    fPruneFuncParams = "NULL";
 
+    SetWeightFileDir( gConfig().GetIONames().fWeightFileDir );
 }
 
 
 //_______________________________________________________________________
 MethodRSNNS::~MethodRSNNS(void)
 {
+    if(fModel) delete fModel;
 }
 
 //_______________________________________________________________________
@@ -128,81 +146,89 @@ Bool_t MethodRSNNS::HasAnalysisType(Types::EAnalysisType type, UInt_t numberClas
 //_______________________________________________________________________
 void     MethodRSNNS::Init()
 {
-   if (!r.Require("Rcpp")) {
-      Error("Init", "R's package Rcpp can not be loaded.");
-      Log() << kFATAL << " R's package Rcpp can not be loaded."
-            << Endl;
-      return;
-   }
-   if (!r.IsInstalled("RSNNS")) {
-      Error("Init", "R's package RSNNS is not installed.");
-      Log() << kFATAL << " R's package RSNNS is not installed."
-            << Endl;
-      return;
-   }
-
-   if (!r.Require("RSNNS")) {
+      if (!IsModuleLoaded) {
       Error("Init", "R's package RSNNS can not be loaded.");
       Log() << kFATAL << " R's package RSNNS can not be loaded."
             << Endl;
       return;
    }
-
-   if (!r.Require("caret")) {
-      Error("Init", "R's package caret can not be loaded.");
-      Log() << kFATAL << " R's package caret can not be loaded."
-            << Endl;
-      return;
-   }
-   //Paassing Data to R's environment
-   //NOTE:need improved names in R's environment using JobName of TMVA
-   if (fNetType == "RMLP") {
-      r["RMVA.RSNNSRMLP.fDfTrain"] = fDfTrain;
-      r["RMVA.RSNNSRMLP.fWeightTrain"] = fWeightTrain;
-
-      r["RMVA.RSNNSRMLP.fDfTest"] = fDfTest;
-      r["RMVA.RSNNSRMLP.fWeightTest"] = fWeightTest;
-   }
    //factors creations
-   //RSNNS mlp require a numeric factor then background=0 signal=1 from fFactorTrain/fFactorTest
+   //RSNNS mlp require a numeric factor then background=0 signal=1 from fFactorTrain/fFactorTest 
    UInt_t size = fFactorTrain.size();
-   std::vector<UInt_t>  fFactorNumeric(size);
+   fFactorNumeric.resize(size);
 
    for (UInt_t i = 0; i < size; i++) {
       if (fFactorTrain[i] == "signal") fFactorNumeric[i] = 1;
       else fFactorNumeric[i] = 0;
    }
-   if (fNetType == "RMLP") {
-      r["RMVA.RSNNSRMLP.fFactorTrain"] = fFactorNumeric;
-   }
-   fFactorNumeric.clear();
-   size = fFactorTest.size();
-   fFactorNumeric.resize(size);
-   for (UInt_t i = 0; i < size; i++) {
-      if (fFactorTest[i] == "signal") fFactorNumeric[i] = 1;
-      else fFactorNumeric[i] = 0;
-   }
-   if (fNetType == "RMLP") {
-      r["RMVA.RSNNSRMLP.fFactorTest"] = fFactorNumeric;
-
-      //Spectator creation
-      r["RMVA.RSNNSRMLP.fDfSpectators"] = fDfSpectators;
-   }
+    
+//    if (!r.Require("Rcpp")) {
+//       Error("Init", "R's package Rcpp can not be loaded.");
+//       Log() << kFATAL << " R's package Rcpp can not be loaded."
+//             << Endl;
+//       return;
+//    }
+//    if (!r.IsInstalled("RSNNS")) {
+//       Error("Init", "R's package RSNNS is not installed.");
+//       Log() << kFATAL << " R's package RSNNS is not installed."
+//             << Endl;
+//       return;
+//    }
+// 
+//    if (!r.Require("RSNNS")) {
+//       Error("Init", "R's package RSNNS can not be loaded.");
+//       Log() << kFATAL << " R's package RSNNS can not be loaded."
+//             << Endl;
+//       return;
+//    }
+// 
+//    if (!r.Require("caret")) {
+//       Error("Init", "R's package caret can not be loaded.");
+//       Log() << kFATAL << " R's package caret can not be loaded."
+//             << Endl;
+//       return;
+//    }
+//    //Paassing Data to R's environment
+//    //NOTE:need improved names in R's environment using JobName of TMVA
+//    if (fNetType == "RMLP") {
+//       r["RMVA.RSNNSRMLP.fDfTrain"] = fDfTrain;
+//       r["RMVA.RSNNSRMLP.fWeightTrain"] = fWeightTrain;
+// 
+//       r["RMVA.RSNNSRMLP.fDfTest"] = fDfTest;
+//       r["RMVA.RSNNSRMLP.fWeightTest"] = fWeightTest;
+//    }
 }
 
 void MethodRSNNS::Train()
 {
    if (Data()->GetNTrainingEvents() == 0) Log() << kFATAL << "<Train> Data() has zero events" << Endl;
    if (fNetType == "RMLP") {
-      r << "RMVA.RSNNSRMLP.Model<-mlp(x=RMVA.RSNNSRMLP.fDfTrain,y=RMVA.RSNNSRMLP.fFactorTrain,size = RMVA.RSNNSRMLP.Size,maxit = RMVA.RSNNSRMLP.Maxit,\
-                                  initFunc = RMVA.RSNNSRMLP.InitFunc,initFuncParams = RMVA.RSNNSRMLP.InitFuncParams,\
-                                  learnFunc = RMVA.RSNNSRMLP.LearnFunc,learnFuncParams = RMVA.RSNNSRMLP.LearnFuncParams,\
-                                  updateFunc = RMVA.RSNNSRMLP.UpdateFunc,updateFuncParams = RMVA.RSNNSRMLP.UpdateFuncParams,\
-                                  hiddenActFunc = RMVA.RSNNSRMLP.HiddenActFunc, shufflePatterns = RMVA.RSNNSRMLP.ShufflePatterns, linOut =RMVA.RSNNSRMLP.LinOut,\
-                                  pruneFunc = RMVA.RSNNSRMLP.PruneFunc, pruneFuncParams = RMVA.RSNNSRMLP.PruneFuncParams)";
-      r.SetVerbose(1);
-      r<<"RMVA.RSNNSRMLP.Model";
-      r.SetVerbose(0);
+     ROOT::R::TRObject PruneFunc;
+     if(fPruneFunc=="NULL") PruneFunc=r.Eval("NULL");
+     else PruneFunc=r.Eval(Form("'%s'",fPruneFunc.Data()));
+     
+      SEXP Model=mlp(ROOT::R::Label["x"]=fDfTrain,
+                     ROOT::R::Label["y"]=fFactorNumeric,
+                     ROOT::R::Label["size"]=r.Eval(fSize),
+                     ROOT::R::Label["maxit"]=fMaxit,
+                     ROOT::R::Label["initFunc"]=fInitFunc,
+                     ROOT::R::Label["initFuncParams"]=r.Eval(fInitFuncParams),
+                     ROOT::R::Label["learnFunc"]=fLearnFunc,
+                     ROOT::R::Label["learnFuncParams"]=r.Eval(fLearnFuncParams),
+                     ROOT::R::Label["updateFunc"]=fUpdateFunc,
+                     ROOT::R::Label["updateFuncParams"]=r.Eval(fUpdateFuncParams),
+                     ROOT::R::Label["hiddenActFunc"]=fHiddenActFunc,
+                     ROOT::R::Label["shufflePatterns"]=fShufflePatterns,
+                     ROOT::R::Label["libOut"]=fLinOut,
+                     ROOT::R::Label["pruneFunc"]=PruneFunc,
+                     ROOT::R::Label["pruneFuncParams"]=r.Eval(fPruneFuncParams));
+      fModel=new ROOT::R::TRObject(Model);
+      TString path=GetWeightFileDir()+"/RMLPModel.RData";
+      Log() << Endl;
+      Log() << gTools().Color("bold") << "--- Saving State File In:" << gTools().Color("reset")<<path<< Endl;
+      Log() << Endl;
+      r["RMLPModel"]<<Model;
+      r<<"save(RMLPModel,file='"+path+"')";
    }
 }
 
@@ -245,27 +271,6 @@ void MethodRSNNS::ProcessOptions()
    }
    // standard constructor for the RSNNS
    //RSNNS Options for all NN methods
-   if (fNetType == "RMLP") {
-      r << "RMVA.RSNNSRMLP.Size<-" + fSize;
-      r["RMVA.RSNNSRMLP.Maxit"] = fMaxit;
-
-      r["RMVA.RSNNSRMLP.InitFunc"] = fInitFunc;
-      r << "RMVA.RSNNSRMLP.InitFuncParams<-" + fInitFuncParams;
-
-      r["RMVA.RSNNSRMLP.LearnFunc"] = fLearnFunc;
-      r << "RMVA.RSNNSRMLP.LearnFuncParams<-" + fLearnFuncParams;
-
-      r["RMVA.RSNNSRMLP.UpdateFunc"] = fUpdateFunc;
-      r << "RMVA.RSNNSRMLP.UpdateFuncParams<-" + fUpdateFuncParams;
-
-      r["RMVA.RSNNSRMLP.HiddenActFunc"] = fHiddenActFunc;
-      r["RMVA.RSNNSRMLP.ShufflePatterns"] = fShufflePatterns;
-      r["RMVA.RSNNSRMLP.LinOut"] = fLinOut;
-
-      r << "RMVA.RSNNSRMLP.PruneFunc<-" + fPruneFunc;
-      r << "RMVA.RSNNSRMLP.PruneFuncParams<-" + fPruneFuncParams;
-   }
-
 
 }
 
@@ -281,31 +286,38 @@ void MethodRSNNS::TestClassification()
 //_______________________________________________________________________
 Double_t MethodRSNNS::GetMvaValue(Double_t *errLower, Double_t *errUpper)
 {
+   NoErrorCalc(errLower,errUpper);
    Double_t mvaValue;
-   if (Data()->GetCurrentType() == Types::kTraining) {
-      if (fProbResultForTrainSig.size() == 0) {
-         if (fNetType == "RMLP") {
-            r << "RMVA.RSNNSRMLP.Predictor.Train.Prob<-predict(RMVA.RSNNSRMLP.Model,RMVA.RSNNSRMLP.fDfTrain,type='prob')";
-            r["as.vector(RMVA.RSNNSRMLP.Predictor.Train.Prob[,1])"] >> fProbResultForTrainSig;
-         }
-      }
-      mvaValue = fProbResultForTrainSig[fMvaCounter];
-      if (fMvaCounter < Data()->GetNTrainingEvents() - 1) fMvaCounter++;
-      else fMvaCounter = 0;
-   } else {
-      if (fProbResultForTestSig.size() == 0) {
-         if (fNetType == "RMLP") {
-            r << "RMVA.RSNNSRMLP.Predictor.Test.Prob<-predict(RMVA.RSNNSRMLP.Model,RMVA.RSNNSRMLP.fDfTest,type='prob')";
-            r["as.vector(RMVA.RSNNSRMLP.Predictor.Test.Prob[,1])"] >> fProbResultForTestSig;
-         }
-      }
-
-      mvaValue = fProbResultForTestSig[fMvaCounter];
-
-      if (fMvaCounter < Data()->GetNTestEvents() - 1) fMvaCounter++;
-      else fMvaCounter = 0;
+   const TMVA::Event *ev=GetEvent();
+   const UInt_t nvar = DataInfo().GetNVariables();
+   ROOT::R::TRDataFrame fDfEvent;
+   for(UInt_t i=0;i<nvar;i++)
+   {
+      fDfEvent[DataInfo().GetListOfVariables()[i].Data()]=ev->GetValues()[i];
    }
+   //if using persistence model
+   if(!fModel)
+   {
+       ReadStateFromFile();
+   }
+   TVectorD result=predict(*fModel,fDfEvent,ROOT::R::Label["type"]="prob");
+   mvaValue=result[0];//returning signal prob
    return mvaValue;
+}
+
+//_______________________________________________________________________
+void TMVA::MethodRSNNS::ReadStateFromFile()
+{
+   ROOT::R::TRInterface::Instance().Require("RSNNS");
+   TString path=GetWeightFileDir()+"/RMLPModel.RData";
+   Log() << Endl;
+   Log() << gTools().Color("bold") << "--- Loading State File From:" << gTools().Color("reset")<<path<< Endl;
+   Log() << Endl;
+   r<<"load('"+path+"')"; 
+   SEXP Model;
+   r["RMLPModel"]>>Model;
+   fModel=new ROOT::R::TRObject(Model);
+   
 }
 
 
