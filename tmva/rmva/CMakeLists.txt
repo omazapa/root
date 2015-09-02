@@ -14,6 +14,7 @@ set(R_HEADERS ${CMAKE_SOURCE_DIR}/tmva/rmva/inc/TMVA/RMethodBase.h
               ${CMAKE_SOURCE_DIR}/tmva/rmva/inc/TMVA/MethodC50.h
               ${CMAKE_SOURCE_DIR}/tmva/rmva/inc/TMVA/MethodRSNNS.h
               ${CMAKE_SOURCE_DIR}/tmva/rmva/inc/TMVA/MethodRSVM.h
+              ${CMAKE_SOURCE_DIR}/tmva/rmva/inc/TMVA/MethodRXGB.h
               )
 
 SET(CMAKE_BUILD_WITH_INSTALL_RPATH TRUE)
