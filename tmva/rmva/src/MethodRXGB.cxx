@@ -52,6 +52,8 @@ MethodRXGB::MethodRXGB(const TString &jobName,
                      const TString &theOption,
                      TDirectory *theTargetDir) :RMethodBase(jobName, Types::kRXGB, methodTitle, dsi, theOption, theTargetDir),
    fNRounds(10),
+   fEta(0.3),
+   fMaxDepth(6),
    predict("predict","xgboost"),
    xgbtrain("xgboost"),
    xgbdmatrix("xgb.DMatrix"),
@@ -69,6 +71,8 @@ MethodRXGB::MethodRXGB(const TString &jobName,
 MethodRXGB::MethodRXGB(DataSetInfo &theData, const TString &theWeightFile, TDirectory *theTargetDir)
    : RMethodBase(Types::kRXGB, theData, theWeightFile, theTargetDir),
    fNRounds(10),
+   fEta(0.3),
+   fMaxDepth(6),
    predict("predict","xgboost"),
    xgbtrain("xgboost"),
    xgbdmatrix("xgb.DMatrix"),
@@ -124,9 +128,15 @@ void MethodRXGB::Train()
 {
    if (Data()->GetNTrainingEvents() == 0) Log() << kFATAL << "<Train> Data() has zero events" << Endl;
    ROOT::R::TRObject dmatrix=xgbdmatrix(ROOT::R::Label["data"]=asmatrix(fDfTrain),ROOT::R::Label["label"]=fFactorNumeric);
+   ROOT::R::TRDataFrame params;
+   params["eta"]=fEta;
+   params["max.depth"]=fMaxDepth;
+   
    SEXP Model=xgbtrain(ROOT::R::Label["data"]=dmatrix, \
                        ROOT::R::Label["label"]=fFactorNumeric,
-                       ROOT::R::Label["nrounds"]=fNRounds);
+                       ROOT::R::Label["nrounds"]=fNRounds,
+                       ROOT::R::Label["params"]=params);
+   
    fModel=new ROOT::R::TRObject(Model);
    TString path=GetWeightFileDir()+"/RXGBModel.RData";
    Log() << Endl;
@@ -140,6 +150,8 @@ void MethodRXGB::Train()
 void MethodRXGB::DeclareOptions()
 {
    DeclareOptionRef(fNRounds, "NRounds", "The max number of iterations");
+   DeclareOptionRef(fEta, "Eta", "Step size shrinkage used in update to prevents overfitting. After each boosting step, we can directly get the weights of new features. and eta actually shrinks the feature weights to make the boosting process more conservative.");
+   DeclareOptionRef(fMaxDepth, "MaxDepth", "Maximum depth of the tree");
 }
 
 //_______________________________________________________________________

@@ -78,7 +78,10 @@ namespace TMVA {
       friend class Reader;                    // DSMTEST      
    protected:
        //RXGBfunction options
+       //https://github.com/dmlc/xgboost/blob/master/doc/parameter.md
        UInt_t fNRounds;
+       Float_t fEta;
+       UInt_t fMaxDepth;
        static Bool_t IsModuleLoaded;
        
        std::vector<UInt_t>  fFactorNumeric;   //factors creations
