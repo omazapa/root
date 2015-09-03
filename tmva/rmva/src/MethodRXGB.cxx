@@ -57,6 +57,8 @@ MethodRXGB::MethodRXGB(const TString &jobName,
    predict("predict","xgboost"),
    xgbtrain("xgboost"),
    xgbdmatrix("xgb.DMatrix"),
+   xgbsave("xgb.save"),
+   xgbload("xgb.load"),
    asfactor("as.factor"),
    asmatrix("as.matrix"),
    fModel(NULL)   
@@ -76,6 +78,8 @@ MethodRXGB::MethodRXGB(DataSetInfo &theData, const TString &theWeightFile, TDire
    predict("predict","xgboost"),
    xgbtrain("xgboost"),
    xgbdmatrix("xgb.DMatrix"),
+   xgbsave("xgb.save"),
+   xgbload("xgb.load"),
    asfactor("as.factor"),
    asmatrix("as.matrix"),
    fModel(NULL)   
@@ -142,8 +146,7 @@ void MethodRXGB::Train()
    Log() << Endl;
    Log() << gTools().Color("bold") << "--- Saving State File In:" << gTools().Color("reset")<<path<< Endl;
    Log() << Endl;
-   r["RXGBModel"]<<Model;
-   r<<"save(RXGBModel,file='"+path+"')";
+   xgbsave(Model,path);
 }
 
 //_______________________________________________________________________
@@ -217,9 +220,8 @@ void TMVA::MethodRXGB::ReadStateFromFile()
    Log() << Endl;
    Log() << gTools().Color("bold") << "--- Loading State File From:" << gTools().Color("reset")<<path<< Endl;
    Log() << Endl;
-   r<<"load('"+path+"')"; 
-   SEXP Model;
-   r["RXGBModel"]>>Model;
+   
+   SEXP Model=xgbload(path);
    fModel=new ROOT::R::TRObject(Model);
    
 }

@@ -90,6 +90,8 @@ namespace TMVA {
        ROOT::R::TRFunctionImport predict;
        ROOT::R::TRFunctionImport xgbtrain;
        ROOT::R::TRFunctionImport xgbdmatrix;
+       ROOT::R::TRFunctionImport xgbsave;
+       ROOT::R::TRFunctionImport xgbload;
        ROOT::R::TRFunctionImport asfactor;
        ROOT::R::TRFunctionImport asmatrix;
        ROOT::R::TRObject *fModel;
