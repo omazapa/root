@@ -1852,6 +1852,21 @@ else()
   set(tmva-rmva  OFF CACHE BOOL "Disabled because 'tmva' is disabled (${tmva-rmva_description})"  FORCE)
 endif()
 
+#---Check for Ipopt library---------------------------------------------------------------
+if(ipopt )
+  message(STATUS "Looking for Ipopt")
+    find_package(IPOPT)
+    if(NOT IPOPT_FOUND)
+      if(fail-on-missing)
+        message(FATAL_ERROR "Ipopt package not found and 'ipopt' component if required ('fail-on-missing' enabled). ")
+      else()
+        message(STATUS "Ipopt not found. Set variable IPOPT_DIR to point to your Ipopt installation")
+        message(STATUS "               For the time being switching OFF 'ipopt' option")
+        set(ipopt OFF CACHE BOOL "" FORCE)
+      endif()
+    endif()
+endif()
+
 #---Check for PyROOT---------------------------------------------------------------------
 if(pyroot)
   if(fail-on-missing AND (NOT PYTHONLIBS_FOUND AND NOT Python2_Interpreter_Development_FOUND AND NOT Python3_Interpreter_Development_FOUND))

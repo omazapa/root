@@ -304,11 +304,13 @@ bool ScipyMinimizer::Minimize()
    auto obj_value = (*gFunction)(x);
    SetMinValue(obj_value);
    fCalls = nfev; // number of function evaluations
-
-   std::cout << "=== Success: " << success << std::endl;
-   std::cout << "=== Status: " << status << std::endl;
-   std::cout << "=== Message: " << message << std::endl;
-   std::cout << "=== Function calls: " << nfev << std::endl;
+   if(PrintLevel() > 0)
+   {
+      std::cout << "=== Success: " << success << std::endl;
+      std::cout << "=== Status: " << status << std::endl;
+      std::cout << "=== Message: " << message << std::endl;
+      std::cout << "=== Function calls: " << nfev << std::endl;
+   }
    return success;
 }
 
