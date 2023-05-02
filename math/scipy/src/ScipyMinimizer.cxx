@@ -200,6 +200,7 @@ bool ScipyMinimizer::Minimize()
    gfHessianFunction = fHessianFunc;
    if (gGradFunction == nullptr) {
       fJacobian = Py_None;
+      //Jacobian = PyUnicode_FromString("cs");
    }
    if (!gfHessianFunction) {
       fHessian = Py_None;
@@ -304,13 +305,14 @@ bool ScipyMinimizer::Minimize()
    auto obj_value = (*gFunction)(x);
    SetMinValue(obj_value);
    fCalls = nfev; // number of function evaluations
-   if(PrintLevel() > 0)
-   {
+   // if(PrintLevel() > 0)
+   // {
       std::cout << "=== Success: " << success << std::endl;
       std::cout << "=== Status: " << status << std::endl;
       std::cout << "=== Message: " << message << std::endl;
       std::cout << "=== Function calls: " << nfev << std::endl;
-   }
+   // }
+   if(success) fStatus=0;
    return success;
 }
 

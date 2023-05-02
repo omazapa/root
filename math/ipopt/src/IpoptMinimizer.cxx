@@ -186,7 +186,7 @@ bool IpoptMinimizer::IpoptMinimizer::InternalTNLP::eval_h(Index /*n*/, const Num
 }
 
 //_______________________________________________________________________
-void IpoptMinimizer::IpoptMinimizer::InternalTNLP::finalize_solution(SolverReturn /*status*/, Index n, const Number *x,
+void IpoptMinimizer::IpoptMinimizer::InternalTNLP::finalize_solution(SolverReturn status, Index n, const Number *x,
                                                                      const Number *z_L, const Number *z_U, Index m,
                                                                      const Number *g, const Number * /*lambda*/,
                                                                      Number obj_value, const IpoptData * /*ip_data*/,
@@ -196,6 +196,7 @@ void IpoptMinimizer::IpoptMinimizer::InternalTNLP::finalize_solution(SolverRetur
    // so we could use the solution.
 
    // For this example, we write the solution to the console
+   std::cout << std::endl << std::endl << "Solution status = "<< status << std::endl;
    std::cout << std::endl << std::endl << "Solution of the primal variables, x" << std::endl;
    for (Index i = 0; i < n; i++) {
       std::cout << "x[" << i << "] = " << x[i] << std::endl;
@@ -219,6 +220,8 @@ void IpoptMinimizer::IpoptMinimizer::InternalTNLP::finalize_solution(SolverRetur
    fMinimizer->SetFinalValues(x);
 
    fMinimizer->SetMinValue(obj_value);
+   fMinimizer->fStatus = status;
+   
 
 }
 
