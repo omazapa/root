@@ -9182,6 +9182,7 @@ Int_t TH1::ShowPeaks(Double_t sigma, Option_t *option, Double_t threshold)
 TH1 *TH1::Slice(Int_t xinit, Int_t xend, const char *suffix)
 {
    auto h_slice = (TH1 *)Clone(fName + suffix);
+   h_slice->SetTitle(fName + suffix);
    if (xinit < GetXaxis()->GetXmin() || xinit > GetXaxis()->GetXmax() || xend < GetXaxis()->GetXmin() ||
        xend > GetXaxis()->GetXmax() || xinit > xend) {
       Error("Slice", "Invalid range");
