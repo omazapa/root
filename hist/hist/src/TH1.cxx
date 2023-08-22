@@ -9176,6 +9176,33 @@ Int_t TH1::ShowPeaks(Double_t sigma, Option_t *option, Double_t threshold)
 }
 
 ////////////////////////////////////////////////////////////////////////////////
+// Allows to slice an interval of a 1D histogram and returns a new histogram
+// with the sliced interval. The number of entries in the new histogram is
+// updated using SetEntries.
+TH1 *TH1::Slice(Int_t xinit, Int_t xend, const char *suffix)
+{
+   auto h_slice = (TH1 *)Clone(fName + suffix);
+   if (xinit < GetXaxis()->GetXmin() || xinit > GetXaxis()->GetXmax() || xend < GetXaxis()->GetXmin() ||
+       xend > GetXaxis()->GetXmax() || xinit > xend) {
+      Error("Slice", "Invalid range");
+      return nullptr;
+   }
+   // find the bin corresponding to the minimum value of the interval
+   Int_t bin_min = GetXaxis()->FindBin(xinit);
+
+   // find the bin corresponding to the maximum value of the interval
+   Int_t bin_max = GetXaxis()->FindBin(xend);
+
+   Double_t entriesInInterval = Integral(bin_min, bin_max);
+   // updates the number of entries in the histogram using SetEntries
+   h_slice->SetEntries(entriesInInterval);
+
+   h_slice->GetXaxis()->SetRange(bin_min, bin_max);
+
+   return h_slice;
+}
+
+////////////////////////////////////////////////////////////////////////////////
 /// For a given transform (first parameter), fills the histogram (second parameter)
 /// with the transform output data, specified in the third parameter
 /// If the 2nd parameter h_output is empty, a new histogram (TH1D or TH2D) is created
