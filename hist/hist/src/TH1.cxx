@@ -9203,6 +9203,7 @@ TH1 *TH1::Slice(Int_t xinit, Int_t xend, const char *suffix)
    return h_slice;
 }
 
+
 ////////////////////////////////////////////////////////////////////////////////
 /// For a given transform (first parameter), fills the histogram (second parameter)
 /// with the transform output data, specified in the third parameter

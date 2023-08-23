@@ -2637,6 +2637,41 @@ Int_t TH2::ShowPeaks(Double_t sigma, Option_t *option, Double_t threshold)
                                              (size_t)this, sigma, option, threshold).Data());
 }
 
+////////////////////////////////////////////////////////////////////////////////
+// Allows to slice an interval of a 2D histogram and returns a new histogram
+// with the sliced interval. The number of entries in the new histogram is
+// updated using SetEntries.
+TH2 *TH2::Slice(Int_t xinit, Int_t xend, Int_t yinit, Int_t yend, const char *suffix)
+{
+   auto h_slice = (TH2 *)Clone(fName + suffix);
+   h_slice->SetTitle(fName + suffix);
+   if (xinit < GetXaxis()->GetXmin() || xinit > GetXaxis()->GetXmax() || xend < GetXaxis()->GetXmin() ||
+       xend > GetXaxis()->GetXmax() || xinit > xend) {
+    Error("Slice", "Invalid range");
+    return nullptr;
+   }
+   if (yinit < GetYaxis()->GetXmin() || yinit > GetYaxis()->GetXmax() || yend < GetYaxis()->GetXmin() ||
+       yend > GetYaxis()->GetXmax() || yinit > yend) {
+    Error("Slice", "Invalid range");
+    return nullptr;
+   }
+   // find the bin corresponding to the minimum value of the interval
+   Int_t bin_min_x = GetXaxis()->FindBin(xinit);
+   Int_t bin_min_y = GetYaxis()->FindBin(yinit);
+
+   // find the bin corresponding to the maximum value of the interval
+   Int_t bin_max_x = GetXaxis()->FindBin(xend);
+   Int_t bin_max_y = GetYaxis()->FindBin(yend);
+
+   Double_t entriesInInterval = Integral(bin_min_x, bin_max_x, bin_min_y, bin_max_y);
+   // updates the number of entries in the histogram using SetEntries
+   h_slice->SetEntries(entriesInInterval);
+
+   h_slice->GetXaxis()->SetRange(bin_min_x, bin_max_x);
+   h_slice->GetYaxis()->SetRange(bin_min_y, bin_max_y);
+
+   return h_slice;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Smooth bin contents of this 2-d histogram using kernel algorithms

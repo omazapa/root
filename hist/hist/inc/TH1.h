@@ -417,8 +417,8 @@ public:
    virtual void     SetZTitle(const char *title) {fZaxis.SetTitle(title);}
    virtual TH1     *ShowBackground(Int_t niter=20, Option_t *option="same"); // *MENU*
    virtual Int_t    ShowPeaks(Double_t sigma=2, Option_t *option="", Double_t threshold=0.05); // *MENU*
-   virtual TH1     *Slice(Int_t xinit, Int_t xend, const char *suffix);
-   virtual void     Smooth(Int_t ntimes=1, Option_t *option=""); // *MENU*
+   virtual TH1     *Slice(Int_t xinit, Int_t xend, const char *suffix="_slice");
+   virtual void     Smooth(Int_t ntimes = 1, Option_t *option = ""); // *MENU*
    static  void     SmoothArray(Int_t NN, Double_t *XX, Int_t ntimes=1);
    static  void     StatOverflows(Bool_t flag=kTRUE);
    virtual void     Sumw2(Bool_t flag = kTRUE);
