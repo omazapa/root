@@ -3595,6 +3595,46 @@ void TH3::SetShowProjection(const char *option,Int_t nbins)
    if (fPainter) fPainter->SetShowProjection(option,nbins);
 }
 
+TH3 *TH3::Slice(Int_t xinit, Int_t xend, Int_t yinit, Int_t yend, Int_t zinit, Int_t zend,
+                const char *suffix)
+{
+   auto h_slice = (TH3 *)Clone(fName + suffix);
+   h_slice->SetTitle(fName + suffix);
+   if (xinit < GetXaxis()->GetXmin() || xinit > GetXaxis()->GetXmax() || xend < GetXaxis()->GetXmin() ||
+       xend > GetXaxis()->GetXmax() || xinit > xend) {
+      Error("Slice", "Invalid range");
+      return nullptr;
+   }
+   if (yinit < GetYaxis()->GetXmin() || yinit > GetYaxis()->GetXmax() || yend < GetYaxis()->GetXmin() ||
+       yend > GetYaxis()->GetXmax() || yinit > yend) {
+      Error("Slice", "Invalid range");
+      return nullptr;
+   }
+   if (zinit < GetZaxis()->GetXmin() || zinit > GetZaxis()->GetXmax() || zend < GetZaxis()->GetXmin() ||
+       zend > GetZaxis()->GetXmax() || zinit > zend) {
+      Error("Slice", "Invalid range");
+      return nullptr;
+   }
+   // find the bin corresponding to the minimum value of the interval
+   Int_t bin_min_x = GetXaxis()->FindBin(xinit);
+   Int_t bin_min_y = GetYaxis()->FindBin(yinit);
+   Int_t bin_min_z = GetZaxis()->FindBin(zinit);
+
+   // find the bin corresponding to the maximum value of the interval
+   Int_t bin_max_x = GetXaxis()->FindBin(xend);
+   Int_t bin_max_y = GetYaxis()->FindBin(yend);
+   Int_t bin_max_z = GetZaxis()->FindBin(zend);
+
+   Double_t entriesInInterval = Integral(bin_min_x, bin_max_x, bin_min_y, bin_max_y, bin_min_z, bin_max_z);
+   // updates the number of entries in the histogram using SetEntries
+   h_slice->SetEntries(entriesInInterval);
+
+   h_slice->GetXaxis()->SetRange(bin_min_x, bin_max_x);
+   h_slice->GetYaxis()->SetRange(bin_min_y, bin_max_y);
+   h_slice->GetZaxis()->SetRange(bin_min_z, bin_max_z);
+
+   return h_slice;
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Stream an object of class TH3C.

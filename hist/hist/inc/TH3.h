@@ -69,9 +69,10 @@ private:
 
    TH3(const TH3&) = delete;
    TH3& operator=(const TH3&) = delete;
-
+ 
    using TH1::Integral;
    using TH1::IntegralAndError;
+   using TH1::Slice;
 
 public:
    virtual ~TH3();
@@ -127,6 +128,7 @@ public:
            void     SetBinContent(Int_t bin, Int_t, Double_t content) override { SetBinContent(bin, content); }
            void     SetBinContent(Int_t binx, Int_t biny, Int_t binz, Double_t content) override { SetBinContent(GetBin(binx, biny, binz), content); }
    virtual void     SetShowProjection(const char *option="xy",Int_t nbins=1);   // *MENU*
+           TH3     *Slice(Int_t xinit, Int_t xend, Int_t yinit, Int_t yend, Int_t zinit, Int_t zend, const char *suffix = "_slice");
 
 protected:
 
